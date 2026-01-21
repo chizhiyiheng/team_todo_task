@@ -576,12 +576,12 @@ function getTimeObj(taskData) {
 
 function getStatusColor(status) {
   const colorMap = {
-    pending: '#ff9800',
-    in_progress: '#2196f3',
-    completed: '#4caf50',
-    overdue: '#f44336'
+    pending: 'var(--el-color-warning)',
+    in_progress: 'var(--el-color-primary)',
+    completed: 'var(--el-color-success)',
+    overdue: 'var(--el-color-danger)'
   }
-  return colorMap[status] || '#058ce4'
+  return colorMap[status] || 'var(--el-color-primary)'
 }
 </script>
 
@@ -670,7 +670,7 @@ function getStatusColor(status) {
               white-space: nowrap;
 
               &:hover {
-                color: #1890ff;
+                color: $primary-color;
               }
             }
 
@@ -754,14 +754,14 @@ function getStatusColor(status) {
 
               &.today {
                 font-weight: 500;
-                background-color: #ff9900;
-                border-color: #ff9900;
+                background-color: $warning-color;
+                border-color: $warning-color;
               }
 
               &.overdue {
                 font-weight: 600;
-                background-color: #ed4014;
-                border-color: #ed4014;
+                background-color: $danger-color;
+                border-color: $danger-color;
               }
 
               .taskfont {
@@ -865,7 +865,7 @@ function getStatusColor(status) {
 
             .task-deadline {
               &.overdue {
-                color: #f56c6c;
+                color: $danger-color;
                 font-weight: 600;
               }
             }

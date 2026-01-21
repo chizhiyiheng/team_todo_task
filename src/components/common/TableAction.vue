@@ -86,7 +86,7 @@ function handleCommand(command) {
 
     &:hover {
       background: #f5f5f5;
-      color: #1890ff;
+      color: $primary-color;
     }
 
     .taskfont {

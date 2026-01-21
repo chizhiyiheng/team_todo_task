@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
+import 'element-plus/dist/index.css' // 如果完全使用 SCSS 变量覆盖，这行可能需要移除或调整，但为了保险起见先保留，SCSS 会覆盖它
 import Vant from 'vant'
 import 'vant/lib/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'

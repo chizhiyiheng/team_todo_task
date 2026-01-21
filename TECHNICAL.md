@@ -529,6 +529,10 @@ locale.value = 'en'
 
 ## 开发指南
 
+### 样式规范
+为支持动态主题，**禁止**硬编码 Hex 颜色。
+- **推荐**: 使用 SCSS 变量 (`$primary-color`) 或 CSS 变量 (`var(--el-color-primary)`)。
+
 ### 添加新页面
 
 1. 在 `src/views/` 创建页面组件

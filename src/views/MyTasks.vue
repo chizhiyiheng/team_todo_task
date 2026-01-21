@@ -261,14 +261,13 @@ watch(activeTab, () => {
 
 <style scoped lang="scss">
 // 模拟变量
-$primary-color: #3b82f6;
 $primary-title-color: #1f2937;
 $primary-desc-color: #909399;
-$flow-status-start-color: #FF7070;
+$flow-status-start-color: $danger-color;
 $flow-status-progress-color: #fc984b;
 $flow-status-test-color: #8b5cf6;
-$flow-status-end-color: #0bc037;
-$flow-status-cancel-color: #909399;
+$flow-status-end-color: $success-color;
+$flow-status-cancel-color: $info-color;
 
 .my-tasks-page {
   height: 100%;
@@ -388,6 +387,10 @@ $flow-status-cancel-color: #909399;
           display: flex;
           align-items: center;
           flex-wrap: wrap;
+
+          &:hover {
+            color: $primary-color;
+          }
 
           .flow-item-status {
              font-size: 12px;

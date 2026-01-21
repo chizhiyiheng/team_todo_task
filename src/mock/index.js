@@ -45,6 +45,93 @@ export const mockApi = {
     }
   },
 
+  async getTodoDetail(params) {
+    await delay()
+    const todoId = params.id || params
+    
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === todoId)
+    
+    if (!task) {
+      return {
+        code: '404',
+        message: 'Task not found',
+        body: null
+      }
+    }
+
+    return {
+      code: '200',
+      message: 'success',
+      body: {
+        id: task.id,
+        umId: task.creatorUmId || 'LIUQINGHONG264',
+        name: task.creatorName || '刘青红',
+        title: task.content || task.name || '任务标题',
+        content: task.desc || '',
+        status: parseInt(task.todoStatus || task.status || 0),
+        progress: task.percent || 0,
+        priority: task.priority || 2,
+        isTop: task.isTop || 0,
+        deadLine: task.deadLine || '',
+        startTime: task.startTime || task.createTime || '',
+        finishTime: task.finishTime || '',
+        remindOption: task.remindOption || 0,
+        remindTime: task.remindTime || '',
+        source: task.source || 0,
+        sourceId: task.sourceId || '',
+        attachmentList: task.attachmentList || [],
+        todoUsers: (task.attendeeList || []).map(user => ({
+          umId: user.umId,
+          name: user.name,
+          status: user.status || 0
+        })),
+        subTodoList: task.subTodoList || [],
+        activityLogList: [
+          {
+            id: 'LOG_1',
+            action: 'create',
+            desc: '创建了任务',
+            operator: task.creatorName || '刘青红',
+            time: task.createTime || new Date().toISOString()
+          }
+        ]
+      }
+    }
+  },
+
+  async updateTodo(data) {
+    await delay()
+    return {
+      code: '200',
+      message: 'success',
+      body: { ...data }
+    }
+  },
+
+  async addTodo(data) {
+    await delay()
+    return {
+      code: '200',
+      message: 'success',
+      body: {
+        id: 'NEW_TODO_' + Date.now(),
+        ...data,
+        createTime: new Date().toISOString()
+      }
+    }
+  },
+
+  async deleteTodo(params) {
+    await delay()
+    const todoId = params.id || params
+    return {
+      code: '200',
+      message: 'success',
+      body: { id: todoId }
+    }
+  },
+
   async getTaskStatistics(params) {
     await delay()
     return mockTaskStatistics

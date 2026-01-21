@@ -175,6 +175,14 @@
     <div v-else class="task-gantt-view">
       <div ref="ganttChart" style="height: 500px;"></div>
     </div>
+
+    <!-- Task Detail Dialog -->
+    <TaskDetailDialog
+      v-model="showTaskDetail"
+      :task-id="selectedTaskId"
+      @task-updated="handleTaskUpdated"
+      @task-deleted="handleTaskDeleted"
+    />
   </div>
 </template>
 
@@ -186,6 +194,7 @@ import * as echarts from 'echarts'
 import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
+import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
 
 const props = defineProps({
   viewMode: {
@@ -233,6 +242,10 @@ const taskRefs = ref({})
 
 const ganttChart = ref(null)
 const ganttChartInstance = ref(null)
+
+// Task detail dialog state
+const showTaskDetail = ref(false)
+const selectedTaskId = ref(null)
 
 const statusList = ['pending', 'in_progress', 'completed', 'overdue']
 
@@ -429,6 +442,9 @@ function assigneeChanged(assigneeId) {
 
 function viewTask(task, receive) {
   console.log('View task:', task)
+  // Open task detail dialog
+  selectedTaskId.value = task.id
+  showTaskDetail.value = true
 }
 
 function editTask(task) {
@@ -496,6 +512,18 @@ function setReminder(task) {
 
 function getSublist(task) {
   console.log('Get sublist:', task)
+}
+
+function handleTaskUpdated(updatedTask) {
+  console.log('Task updated in dialog:', updatedTask)
+  // Refresh the task list to show updated data
+  fetchTasks()
+}
+
+function handleTaskDeleted(taskId) {
+  console.log('Task deleted in dialog:', taskId)
+  // Refresh the task list to remove deleted task
+  fetchTasks()
 }
 
 function initGanttChart() {

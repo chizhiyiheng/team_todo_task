@@ -19,6 +19,10 @@ export const todoApi = {
 
   addTodo(data) {
     return request.post('/api/todo/add', data)
+  },
+
+  deleteTodo(todoId) {
+    return request.post('/api/todo/delete', { id: todoId })
   }
 }
 

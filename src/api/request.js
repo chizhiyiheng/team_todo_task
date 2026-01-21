@@ -41,6 +41,9 @@ class ApiService {
         case '/api/todo/detail':
           result = await this.mockApi.getTodoDetail(data || params)
           break
+        case '/api/todo/delete':
+          result = await this.mockApi.deleteTodo(data || params)
+          break
         case '/api/task/statistics':
           result = await this.mockApi.getTaskStatistics(params || data)
           break

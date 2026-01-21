@@ -22,7 +22,54 @@ export const mockTodoList = [
     status: '1',
     tag: 0,
     todoStatus: 1,
-    updateTime: '2026-01-19 16:49:02'
+    updateTime: '2026-01-19 16:49:02',
+    percent: 75,
+    attachmentList: [
+      {
+        fileName: '需求文档.pdf',
+        filePath: 'http://example.com/files/requirements.pdf',
+        fileSize: 1245184,
+        fileType: 'application/pdf',
+        storageType: 'cloud'
+      },
+      {
+        fileName: '系统架构图.png',
+        filePath: 'http://example.com/files/architecture.png',
+        fileSize: 524288,
+        fileType: 'image/png',
+        storageType: 'cloud'
+      },
+      {
+        fileName: '数据库设计.xlsx',
+        filePath: 'http://example.com/files/database.xlsx',
+        fileSize: 87654,
+        fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        storageType: 'cloud'
+      }
+    ],
+    subTodoList: [
+      {
+        id: 'SUBTASK001',
+        title: '编写功能需求章节',
+        content: '编写功能需求章节',
+        isFinished: true,
+        status: 1
+      },
+      {
+        id: 'SUBTASK002',
+        title: '编写技术架构章节',
+        content: '编写技术架构章节',
+        isFinished: true,
+        status: 1
+      },
+      {
+        id: 'SUBTASK003',
+        title: '编写数据库设计章节',
+        content: '编写数据库设计章节',
+        isFinished: false,
+        status: 0
+      }
+    ]
   },
   {
     attendeeList: [],

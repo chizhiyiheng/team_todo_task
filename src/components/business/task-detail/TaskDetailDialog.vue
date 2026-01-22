@@ -7,7 +7,7 @@
     :close-on-click-modal="false"
     :close-on-press-escape="true"
     class="task-detail-dialog"
-    width="800px"
+    width="700px"
     :fullscreen="isMobile"
     top="5vh"
   >
@@ -297,12 +297,12 @@ function handleSubTaskDialogClose() {
     justify-content: flex-start;
     gap: 12px;
     padding: 12px 12px 0;
-    border-top: 1px solid #e4e7ed;
+    border-top: 1px solid $border-light;
   }
 
   .tabs-section {
     margin-top: 24px;
-    border-top: 1px solid #e4e7ed;
+    border-top: 1px solid $border-light;
     padding-top: 24px;
 
     :deep(.el-tabs__header) {
@@ -324,7 +324,7 @@ function handleSubTaskDialogClose() {
       line-height: 40px;
       
       &:hover {
-        color: #409eff;
+        color: $primary-color;
       }
     }
 
@@ -338,7 +338,7 @@ function handleSubTaskDialogClose() {
 
     .tab-count {
       margin-left: 4px;
-      color: #909399;
+      color: $text-secondary;
       font-size: 13px;
     }
   }

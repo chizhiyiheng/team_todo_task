@@ -29,9 +29,9 @@ export const TASK_PRIORITY = {
 }
 
 export const TASK_PRIORITY_OPTIONS = [
-  { value: TASK_PRIORITY.LOW, label: '低', color: '#909399', dot: true },
-  { value: TASK_PRIORITY.MEDIUM, label: '中', color: '#E6A23C', dot: true },
-  { value: TASK_PRIORITY.HIGH, label: '高', color: '#F56C6C', dot: true }
+  { value: TASK_PRIORITY.LOW, label: '低', color: '#909399' },
+  { value: TASK_PRIORITY.MEDIUM, label: '中', color: '#E6A23C' },
+  { value: TASK_PRIORITY.HIGH, label: '高', color: '#F56C6C' }
 ]
 
 /**

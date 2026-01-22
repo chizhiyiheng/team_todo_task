@@ -115,12 +115,12 @@ watch(() => props.todoId, () => {
       }
       
       &::-webkit-scrollbar-track {
-        background: #E4E7ED;
+        background: $border-light;
         border-radius: 3px;
       }
       
       &::-webkit-scrollbar-thumb {
-        background: #C0C4CC;
+        background: $text-placeholder;
         border-radius: 3px;
         
         &:hover {
@@ -138,34 +138,34 @@ watch(() => props.todoId, () => {
 
       :deep(.el-timeline-item__timestamp) {
         font-size: 13px;
-        color: #909399;
+        color: $text-secondary;
         margin-bottom: 8px;
       }
 
       :deep(.el-timeline-item__node) {
-        background-color: #409eff;
+        background-color: $primary-color;
       }
 
       :deep(.el-timeline-item__tail) {
-        border-left: 2px solid #e4e7ed;
+        border-left: 2px solid $border-light;
       }
       
       .log-content {
         font-size: 14px;
-        color: #606266;
+        color: $text-regular;
         line-height: 1.6;
         padding: 8px 12px;
-        background-color: #f5f7fa;
+        background-color: $bg-page;
         border-radius: 4px;
         
         .log-operator {
           font-weight: 600;
-          color: #303133;
+          color: $text-primary;
           margin-right: 4px;
         }
         
         .log-desc {
-          color: #606266;
+          color: $text-regular;
         }
       }
     }

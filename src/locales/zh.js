@@ -124,6 +124,7 @@ export default {
     progressUpdateFailed: '进度更新失败',
     titlePlaceholder: '请输入任务标题',
     selectDeadline: '选择截止时间',
+    selectPriority: '选择优先级',
     selectAssignee: '请选择负责人',
     visibility: '任务可见性',
     visibilityPrivate: '仅自己可见',

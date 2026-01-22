@@ -150,22 +150,22 @@ function cancelEditTitle() {
   align-items: center;
   gap: 12px;
   padding: 20px 24px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid $border-light;
 
   .important-icon {
     font-size: 24px;
-    color: #c0c4cc;
+    color: $text-placeholder;
     cursor: pointer;
     transition: all 0.3s;
     flex-shrink: 0;
 
     &:hover {
-      color: #f56c6c;
+      color: $warning-color;
       transform: scale(1.1);
     }
 
     &.is-important {
-      color: #f56c6c;
+      color: $warning-color;
     }
   }
 
@@ -177,7 +177,7 @@ function cancelEditTitle() {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
-      color: #303133;
+      color: $text-primary;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -188,7 +188,7 @@ function cancelEditTitle() {
 
       .edit-icon {
         font-size: 16px;
-        color: #909399;
+        color: $text-secondary;
         opacity: 0;
         transition: opacity 0.3s;
       }
@@ -215,7 +215,7 @@ function cancelEditTitle() {
       :deep(.el-input__inner) {
         font-size: 18px;
         font-weight: 600;
-        color: #303133;
+        color: $text-primary;
         line-height: 32px;
         height: 32px;
         padding: 0;
@@ -225,13 +225,13 @@ function cancelEditTitle() {
 
   .close-icon {
     font-size: 20px;
-    color: #909399;
+    color: $text-secondary;
     cursor: pointer;
     transition: all 0.3s;
     flex-shrink: 0;
 
     &:hover {
-      color: #606266;
+      color: $text-regular;
       transform: scale(1.1);
     }
   }

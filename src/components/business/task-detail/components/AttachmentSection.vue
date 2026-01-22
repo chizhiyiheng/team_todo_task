@@ -197,12 +197,12 @@ function downloadAttachment(attachment) {
     margin: 0 0 12px 0;
     font-size: 15px;
     font-weight: 600;
-    color: #303133;
+    color: $text-primary;
     
     .count {
       font-size: 13px;
       font-weight: 400;
-      color: #909399;
+      color: $text-secondary;
     }
   }
   
@@ -213,15 +213,15 @@ function downloadAttachment(attachment) {
         align-items: center;
         gap: 10px;
         padding: 8px 12px;
-        background-color: #f5f7fa;
+        background-color: $bg-page;
         border-radius: 6px;
         border: 1px solid transparent;
         transition: all 0.2s ease;
         height: 100%;
         
         &:hover {
-          background-color: #ecf5ff;
-          border-color: #d9ecff;
+          background-color: var(--el-color-primary-light-9);
+          border-color: var(--el-color-primary-light-7);
           
           .attachment-actions {
             opacity: 1;
@@ -235,9 +235,9 @@ function downloadAttachment(attachment) {
           justify-content: center;
           width: 32px;
           height: 32px;
-          background-color: #fff;
+          background-color: $bg-white;
           border-radius: 4px;
-          color: #409eff;
+          color: $primary-color;
         }
         
         .attachment-info {
@@ -250,7 +250,7 @@ function downloadAttachment(attachment) {
           .attachment-name {
             font-size: 13px;
             font-weight: 500;
-            color: #303133;
+            color: $text-primary;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -258,7 +258,7 @@ function downloadAttachment(attachment) {
           
           .attachment-size {
             font-size: 11px;
-            color: #909399;
+            color: $text-secondary;
           }
         }
         
@@ -271,8 +271,14 @@ function downloadAttachment(attachment) {
     }
     
     .empty-state {
-      padding: 16px 0;
+      padding: 8px 0;
       text-align: center;
+      :deep(.el-empty) {
+        padding: 8px;
+      }
+      :deep(.el-empty__description) {
+        margin-top: 8px;
+      }
     }
   }
 }
@@ -318,7 +324,7 @@ function downloadAttachment(attachment) {
       }
       
       .empty-state {
-        padding: 12px 0;
+        padding: 6px 0;
       }
     }
   }

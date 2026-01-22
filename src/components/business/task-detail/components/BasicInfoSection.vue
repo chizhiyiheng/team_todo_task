@@ -3,27 +3,27 @@
     <h4 class="section-title">{{ t('task.basicInfo') }}</h4>
     
     <div class="info-grid">
-      <!-- 执行人选择 -->
-      <div class="info-item">
+      <!-- 执行人选择 - 单独一行 -->
+      <div class="info-item full-width">
         <label class="info-label">{{ t('task.assignee') }}</label>
         <div class="info-value executors-container">
-          <div class="executors-list">
+          <div class="user-list">
             <el-tooltip
               v-for="user in displayExecutors"
               :key="user.umId"
               :content="`${user.name} (${user.umId})`"
               placement="top"
             >
-              <div class="executor-item">
-                <el-avatar :size="28" class="executor-avatar">
+              <div class="user-item">
+                <el-avatar :size="28" class="user-avatar">
                   {{ user.name.charAt(0) }}
                 </el-avatar>
-                <span class="executor-name">{{ user.name }}</span>
+                <span class="user-name">{{ user.name }}</span>
               </div>
             </el-tooltip>
             
             <el-button
-              class="add-executor-btn"
+              class="add-user-btn"
               circle
               size="small"
               :loading="isUpdating"
@@ -94,8 +94,8 @@
         />
       </div>
 
-      <!-- 来源展示（只读） -->
-      <div class="info-item">
+      <!-- 来源展示（只读） - 单独一行 -->
+      <div class="info-item full-width">
         <label class="info-label">{{ t('task.source') }}</label>
         <div class="info-value readonly">
           {{ getSourceText(taskDetail?.source) }}
@@ -249,14 +249,13 @@ async function handlePriorityChange(value) {
 
 <style scoped lang="scss">
 .basic-info-section {
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid $border-light;
 
   .section-title {
     margin: 0 0 20px 0;
     font-size: 16px;
     font-weight: 600;
-    color: #303133;
+    color: $text-primary;
   }
 
   .info-grid {
@@ -272,9 +271,13 @@ async function handlePriorityChange(value) {
       gap: 12px;
       min-width: 0; // 关键：允许 flex 子元素收缩
 
+      &.full-width {
+        grid-column: 1 / -1; // 跨越所有列
+      }
+
       .info-label {
         font-size: 14px;
-        color: #606266;
+        color: $text-regular;
         font-weight: 500;
         white-space: nowrap;
         flex-shrink: 0;
@@ -294,51 +297,7 @@ async function handlePriorityChange(value) {
         min-width: 0; // 关键：允许内容收缩
 
         &.executors-container {
-          .executors-list {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-
-            .executor-item {
-              display: flex;
-              align-items: center;
-              gap: 6px;
-              padding: 4px 8px 4px 4px;
-              background-color: #f5f7fa;
-              border-radius: 16px;
-              transition: all 0.2s;
-
-              .executor-avatar {
-                flex-shrink: 0;
-                background-color: #409eff;
-                color: white;
-                font-size: 12px;
-              }
-
-              .executor-name {
-                font-size: 13px;
-                color: #303133;
-                white-space: nowrap;
-              }
-            }
-
-            .add-executor-btn {
-              width: 28px;
-              height: 28px;
-              padding: 0;
-              border: 1px dashed #d9d9d9;
-              background-color: transparent;
-              color: #909399;
-              transition: all 0.2s;
-
-              &:hover {
-                border-color: #409eff;
-                color: #409eff;
-                background-color: #ecf5ff;
-              }
-            }
-          }
+          // 使用全局 .user-list 样式
         }
 
         &.readonly {
@@ -346,10 +305,10 @@ async function handlePriorityChange(value) {
           align-items: center;
           gap: 8px;
           padding: 0 12px;
-          background-color: #f5f7fa;
+          background-color: $bg-page;
           border-radius: 4px;
           font-size: 14px;
-          color: #303133;
+          color: $text-primary;
           height: 32px;
           line-height: 32px;
           overflow: hidden; // 关键：隐藏溢出内容
@@ -371,7 +330,7 @@ async function handlePriorityChange(value) {
             }
 
             .creator-umid {
-              color: #909399;
+              color: $text-secondary;
               font-size: 12px;
               flex-shrink: 0;
               white-space: nowrap;
@@ -400,7 +359,7 @@ async function handlePriorityChange(value) {
 
       .user-avatar {
         flex-shrink: 0;
-        background-color: #409eff;
+        background-color: $primary-color;
         color: white;
         font-size: 12px;
       }
@@ -411,8 +370,6 @@ async function handlePriorityChange(value) {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .basic-info-section {
-    padding-bottom: 20px;
-
     .section-title {
       margin-bottom: 16px;
       font-size: 15px;

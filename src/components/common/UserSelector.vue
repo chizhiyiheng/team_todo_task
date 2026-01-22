@@ -19,7 +19,7 @@
       </el-input>
 
       <!-- 用户列表 -->
-      <div class="user-list">
+      <div class="userselect-list">
         <div
           v-for="user in filteredUsers"
           :key="user.umId"
@@ -132,7 +132,7 @@ function handleConfirm() {
     margin-bottom: 16px;
   }
 
-  .user-list {
+  .userselect-list {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid #e4e7ed;

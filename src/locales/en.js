@@ -124,6 +124,7 @@ export default {
     progressUpdateFailed: 'Progress update failed',
     titlePlaceholder: 'Please enter task title',
     selectDeadline: 'Select deadline',
+    selectPriority: 'Select priority',
     selectAssignee: 'Please select assignee',
     visibility: 'Task Visibility',
     visibilityPrivate: 'Private',

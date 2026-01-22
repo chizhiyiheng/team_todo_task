@@ -1,15 +1,16 @@
 <template>
   <el-dialog :model-value="modelValue" @update:model-value="handleClose" :title="t('task.createTask')"
     :close-on-click-modal="false" class="create-task-dialog" width="600px" :fullscreen="isMobile">
-    <!-- 创建至（仅团队任务） -->
-    <el-form-item v-if="isTeamTask" :label="t('task.createTo')" prop="projectId">
-      <el-select v-model="formData.projectId" :placeholder="t('task.selectProject')" style="width: 100%" clearable>
-        <el-option label="默认项目" value="" />
-        <!-- TODO: 后续从项目列表中加载 -->
-      </el-select>
-    </el-form-item>
-    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px" label-position="top"
-      v-loading="isSubmitting">
+    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px" label-position="left"
+      v-loading="isSubmitting" class="inline-form">
+      <!-- 创建至（仅团队任务） -->
+      <el-form-item v-if="isTeamTask" :label="t('task.createTo')" prop="projectId">
+        <el-select v-model="formData.projectId" :placeholder="t('task.selectProject')" clearable>
+          <el-option label="默认项目" value="" />
+          <!-- TODO: 后续从项目列表中加载 -->
+        </el-select>
+      </el-form-item>
+
       <!-- 任务主题 -->
       <el-form-item :label="t('task.title')" prop="title">
         <el-input v-model="formData.title" :placeholder="t('task.titlePlaceholder')" maxlength="100" show-word-limit
@@ -19,49 +20,37 @@
       <!-- 截止时间 -->
       <el-form-item :label="t('task.deadline')" prop="deadLine">
         <el-date-picker v-model="formData.deadLine" type="datetime" :placeholder="t('task.selectDeadline')"
-          format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%"
-          :disabled-date="disabledDate" />
+          format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="disabledDate" />
       </el-form-item>
 
       <!-- 优先级 -->
       <el-form-item :label="t('task.priority')" prop="priority">
-        <el-radio-group v-model="formData.priority">
-          <el-radio v-for="option in TASK_PRIORITY_OPTIONS" :key="option.value" :value="option.value">
-            <span :style="{ color: option.color }">
-              <span v-if="option.dot" class="priority-dot" :style="{ backgroundColor: option.color }"></span>
-              {{ option.label }}
-            </span>
-          </el-radio>
-        </el-radio-group>
+        <TagSelect v-model="formData.priority" :options="TASK_PRIORITY_OPTIONS"
+          :placeholder="t('task.selectPriority')" />
       </el-form-item>
-
-
 
       <!-- 负责人 -->
       <el-form-item :label="t('task.assignee')" prop="todoUsers">
         <div class="assignee-container">
-          <div class="assignee-list">
+          <div class="user-list">
             <el-tooltip v-for="user in selectedUsersList" :key="user.umId" :content="`${user.name} (${user.umId})`"
               placement="top">
-              <div class="assignee-item">
-                <el-avatar :size="28" class="assignee-avatar">
+              <div class="user-item">
+                <el-avatar :size="28" class="user-avatar">
                   {{ user.name.charAt(0) }}
                 </el-avatar>
-                <span class="assignee-name">{{ user.name }}</span>
+                <span class="user-name">{{ user.name }}</span>
                 <el-icon class="remove-icon" @click.stop="removeUser(user.umId)">
                   <Close />
                 </el-icon>
               </div>
             </el-tooltip>
 
-            <el-button class="add-assignee-btn" circle size="small" @click="showUserSelector = true">
+            <el-button class="add-user-btn" circle size="small" @click="showUserSelector = true">
               <el-icon>
                 <Plus />
               </el-icon>
             </el-button>
-          </div>
-          <div v-if="!selectedUsersList.length" class="empty-hint">
-            {{ t('task.clickToAddAssignee') }}
           </div>
         </div>
       </el-form-item>
@@ -75,7 +64,7 @@
       </el-form-item>
 
       <!-- 标记为重要任务 -->
-      <el-form-item>
+      <el-form-item label=" ">
         <el-checkbox v-model="formData.isImportant">
           {{ t('task.markAsImportant') }}
         </el-checkbox>
@@ -105,6 +94,7 @@ import { Plus, Close } from '@element-plus/icons-vue'
 import { todoApi } from '@/api'
 import { TASK_PRIORITY_OPTIONS } from '@/constants/taskEnums'
 import UserSelector from '@/components/common/UserSelector.vue'
+import TagSelect from '@/components/common/TagSelect.vue'
 import { useAvailableUsers } from './task-detail/hooks/useAvailableUsers'
 import { useUserStore } from '@/stores/user'
 
@@ -262,123 +252,131 @@ const handleSubmit = async () => {
 <style scoped lang="scss">
 .create-task-dialog {
   :deep(.el-dialog__body) {
-    padding: 20px 24px;
+    padding: $spacing-xxl;
   }
 
-  :deep(.el-form-item__label) {
-    font-weight: 500;
-    color: #303133;
-    margin-bottom: 8px;
-  }
+  // 内联表单样式
+  .inline-form {
+    :deep(.el-form-item) {
+      margin-bottom: $spacing-xl;
 
-  .priority-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 6px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    :deep(.el-form-item__label) {
+      font-weight: 500;
+      color: $text-regular;
+      font-size: $font-size-base;
+      padding-right: $spacing-md;
+      line-height: 32px;
+    }
+
+    :deep(.el-form-item__content) {
+      flex: 1;
+    }
+
+    // 弱化输入框边框
+    :deep(.el-input__wrapper) {
+      box-shadow: none;
+      border: 1px solid $border-light;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: $text-placeholder;
+      }
+
+      &.is-focus {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba(var(--el-color-primary-rgb), 0.1);
+      }
+    }
+
+    // 日期选择器样式
+    :deep(.el-date-editor) {
+      width: 100%;
+
+      .el-input__wrapper {
+        box-shadow: none;
+        border: 1px solid $border-light;
+
+        &:hover {
+          border-color: $text-placeholder;
+        }
+      }
+
+      &.is-active .el-input__wrapper {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba(var(--el-color-primary-rgb), 0.1);
+      }
+    }
+
+    // 下拉选择器样式
+    :deep(.el-select) {
+      width: 100%;
+
+      .el-input__wrapper {
+        box-shadow: none;
+        border: 1px solid $border-light;
+
+        &:hover {
+          border-color: $text-placeholder;
+        }
+      }
+
+      &.is-focus .el-input__wrapper {
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba(var(--el-color-primary-rgb), 0.1);
+      }
+    }
   }
 
   .assignee-container {
     width: 100%;
     min-height: 40px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    padding: 8px 12px;
-    transition: border-color 0.2s;
 
-    &:hover {
-      border-color: #c0c4cc;
-    }
-
-    .assignee-list {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-
-      .assignee-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 8px 4px 4px;
-        background-color: #f5f7fa;
-        border-radius: 16px;
-        transition: all 0.2s;
-        cursor: default;
-
-        &:hover {
-          background-color: #e9ecef;
-
-          .remove-icon {
-            opacity: 1;
-          }
-        }
-
-        .assignee-avatar {
-          flex-shrink: 0;
-          background-color: #409eff;
-          color: white;
-          font-size: 12px;
-        }
-
-        .assignee-name {
-          font-size: 13px;
-          color: #303133;
-          white-space: nowrap;
-        }
-
-        .remove-icon {
-          font-size: 14px;
-          color: #909399;
-          cursor: pointer;
-          opacity: 0;
-          transition: all 0.2s;
-
-          &:hover {
-            color: #f56c6c;
-          }
-        }
-      }
-
-      .add-assignee-btn {
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        border: 1px dashed #d9d9d9;
-        background-color: transparent;
-        color: #909399;
-        transition: all 0.2s;
-
-        &:hover {
-          border-color: #409eff;
-          color: #409eff;
-          background-color: #ecf5ff;
-        }
-      }
-    }
-
-    .empty-hint {
-      font-size: 13px;
-      color: #c0c4cc;
-      padding: 4px 0;
+    .add-user-btn {
+      width: 32px;
+      height: 32px;
     }
   }
 
   .dialog-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    gap: $spacing-md;
   }
 }
 
 // Mobile responsive styles
 @media (max-width: 768px) {
   .create-task-dialog {
-    :deep(.el-form) {
-      .el-form-item__label {
-        padding-bottom: 8px;
+    :deep(.el-dialog__body) {
+      padding: $spacing-xl;
+    }
+
+    .inline-form {
+      :deep(.el-form-item) {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: $spacing-lg;
       }
+
+      :deep(.el-form-item__label) {
+        width: 100% !important;
+        padding-bottom: 6px;
+        line-height: 1.5;
+      }
+
+      :deep(.el-form-item__content) {
+        width: 100%;
+        margin-left: 0 !important;
+      }
+    }
+
+    .assignee-container {
+      min-height: 32px;
     }
 
     .dialog-footer {

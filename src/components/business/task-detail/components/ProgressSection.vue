@@ -165,9 +165,9 @@ const currentProgress = computed(() => {
 
 const progressColor = computed(() => {
   const progress = isEditing.value ? editProgressValue.value : currentProgress.value
-  if (progress < 30) return '#F56C6C'
-  if (progress < 70) return '#E6A23C'
-  return '#67C23A'
+  if (progress < 30) return 'var(--el-color-danger)'
+  if (progress < 70) return 'var(--el-color-warning)'
+  return 'var(--el-color-success)'
 })
 
 const hasChanges = computed(() => {
@@ -419,7 +419,7 @@ async function handleSubmitProgress() {
   .section-content {
     .progress-display {
       padding: 20px;
-      background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
+      background: linear-gradient(135deg, $bg-page 0%, #fafbfc 100%);
       border-radius: 8px;
       border: 1px solid #e4e7ed;
       transition: all 0.3s ease;

@@ -111,13 +111,11 @@ onBeforeUnmount(() => {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 100%;
 
   .tag-trigger {
     cursor: pointer;
     user-select: none;
     transition: all 0.3s;
-    width: 100%;
 
     &:hover {
       opacity: 0.8;
@@ -131,22 +129,21 @@ onBeforeUnmount(() => {
     }
 
     .tag-inner {
-      width: 100%;
       height: 32px;
-      padding: 0 10px;
+      padding: 0 24px 0 12px;
       display: inline-flex !important;
       align-items: center;
       gap: 6px;
       font-size: 14px;
       white-space: nowrap;
       transition: all 0.3s;
+      position: relative;
 
       // 使用 :deep() 修改 el-tag 内部样式
       :deep(.el-tag__content) {
         display: flex;
         align-items: center;
         gap: 6px;
-        width: 100%;
         white-space: nowrap;
       }
 
@@ -160,21 +157,22 @@ onBeforeUnmount(() => {
       }
 
       .tag-text {
-        flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        min-width: 0;
       }
 
       .tag-arrow {
         font-size: 12px;
         transition: transform 0.3s;
         flex-shrink: 0;
-        margin-left: auto;
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
 
         &.is-reverse {
-          transform: rotate(180deg);
+          transform: translateY(-50%) rotate(180deg);
         }
       }
     }

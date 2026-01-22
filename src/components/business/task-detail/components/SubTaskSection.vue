@@ -165,7 +165,7 @@ function handleSubTaskClick(subTask) {
         align-items: center;
         gap: 12px;
         padding: 12px;
-        background-color: #f5f7fa;
+        background-color: $bg-page;
         border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s;
@@ -181,12 +181,12 @@ function handleSubTaskClick(subTask) {
         .subtask-content {
           flex: 1;
           font-size: 14px;
-          color: #303133;
+          color: $text-primary;
           line-height: 1.5;
           word-break: break-word;
 
           &.is-finished {
-            color: #909399;
+            color: $text-secondary;
             text-decoration: line-through;
           }
         }
@@ -213,18 +213,18 @@ function handleSubTaskClick(subTask) {
             transition: color 0.2s;
 
             &.confirm {
-              color: #67c23a;
+              color: $success-color;
 
               &:hover {
-                color: #85ce61;
+                color: var(--el-color-success-light-3);
               }
             }
 
             &.cancel {
-              color: #f56c6c;
+              color: $danger-color;
 
               &:hover {
-                color: #f78989;
+                color: var(--el-color-danger-light-3);
               }
             }
           }

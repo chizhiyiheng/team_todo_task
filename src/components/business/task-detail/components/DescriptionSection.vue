@@ -117,7 +117,7 @@ function cancelEditDescription() {
 <style scoped lang="scss">
 .description-section {
   padding: 24px 0;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid $border-light;
   
   .section-header {
     margin-bottom: 12px;
@@ -125,7 +125,7 @@ function cancelEditDescription() {
     .section-title {
       font-size: 16px;
       font-weight: 600;
-      color: #303133;
+      color: $text-primary;
       margin: 0;
     }
   }
@@ -134,19 +134,19 @@ function cancelEditDescription() {
     .description-view {
       min-height: 100px;
       padding: 16px;
-      background-color: #f5f7fa;
+      background-color: $bg-page;
       border-radius: 6px;
       cursor: pointer;
       transition: all 0.2s;
       border: 1px solid transparent;
       
       &:hover {
-        border-color: #409EFF;
-        background-color: #ecf5ff;
+        border-color: $primary-color;
+        background-color: var(--el-color-primary-light-9);
       }
       
       .description-text {
-        color: #303133;
+        color: $text-primary;
         font-size: 14px;
         line-height: 1.8;
         white-space: pre-wrap;
@@ -180,7 +180,7 @@ function cancelEditDescription() {
           padding: 16px;
           
           &:focus {
-            border-color: #409eff;
+            border-color: $primary-color;
             box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
           }
         }

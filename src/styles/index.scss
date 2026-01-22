@@ -1,3 +1,4 @@
+
 * {
   margin: 0;
   padding: 0;
@@ -170,9 +171,83 @@ a {
   padding-right: 20px;
 }
 
+// 执行人列表全局样式
+.user-list {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+
+  .user-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: $spacing-xs $spacing-sm $spacing-xs $spacing-xs;
+    background-color: $bg-page;
+    border-radius: 16px;
+    transition: all 0.2s;
+
+    .user-avatar {
+      flex-shrink: 0;
+      background-color: $primary-color;
+      color: $bg-white;
+      font-size: $font-size-small;
+    }
+
+    .user-name {
+      font-size: 13px;
+      color: $text-primary;
+      white-space: nowrap;
+    }
+
+    .remove-icon {
+      font-size: $font-size-base;
+      color: $text-secondary;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s;
+
+      &:hover {
+        color: $danger-color;
+      }
+    }
+
+    &:hover {
+      .remove-icon {
+        opacity: 1;
+      }
+    }
+  }
+
+  .add-user-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px dashed #d9d9d9;
+    background-color: transparent;
+    color: $text-secondary;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+      background-color: var(--el-color-primary-light-9);
+    }
+  }
+}
+
 @media (max-width: 768px) {
 
   .el-message-box {
     width: 90% !important;
+  }
+
+  // 移动端执行人列表样式调整
+  .user-list {
+    .user-item {
+      .remove-icon {
+        opacity: 1; // 移动端始终显示删除图标
+      }
+    }
   }
 }

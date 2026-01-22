@@ -132,6 +132,10 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
+  async function fetchTasks(params = {}) {
+    return fetchTaskList({ page: 1, pageSize: 10000, ...params })
+  }
+
   function clearTaskList() {
     taskList.value = []
   }
@@ -148,6 +152,7 @@ export const useTaskStore = defineStore('task', () => {
     overdueTasks,
     pendingTasks,
     fetchTaskList,
+    fetchTasks,
     fetchTaskStatistics,
     fetchTaskDetail,
     createTask,

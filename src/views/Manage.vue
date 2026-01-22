@@ -124,18 +124,18 @@ function handleAddTask() {
 function handleTaskCreated(taskId) {
   console.log('Task created:', taskId)
   // Refresh task list and statistics
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()
 }
 
 function handleSearch() {
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000, keyword: searchKeyword.value })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000, keyword: searchKeyword.value })
 }
 
 onMounted(() => {
   appStore.setDeviceType(isMobile.value)
   if (isDesktop.value) {
-    taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+    taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
     taskStore.fetchTaskStatistics()
     teamStore.fetchTeamList()
   }

@@ -178,7 +178,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
 import { formatDate, isOverdue } from '@/utils/date'
 import { Edit, Delete, Bell, Star, StarFilled, List, Grid, Calendar } from '@element-plus/icons-vue'
@@ -186,6 +186,9 @@ import TaskStatistics from '@/components/business/TaskStatistics.vue'
 import TaskList from '@/components/business/TaskList.vue'
 import TaskMenu from '@/components/business/TaskMenu.vue'
 import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
+import { todoApi } from '@/api'
+
+const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted'])
 
 const route = useRoute()
 const { t } = useI18n()
@@ -343,17 +346,54 @@ function editTask(task) {
   showTaskDetail.value = true
 }
 
+function deleteTask(task) {
+  console.log('Delete task:', task)
+  // 检查待办状态
+  if (task.todoStatus !== 1 && task.status !== '1') {
+    ElMessage.warning('只有已完成的待办才能删除')
+    return
+  }
+  
+  // 确认删除
+  ElMessageBox.confirm(
+    '确定要删除这个待办吗？',
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const result = await todoApi.deleteTodo(task.id)
+      if (result.code === '200') {
+        ElMessage.success('任务删除成功')
+        emit('task-deleted', task.id)
+        // 刷新任务列表
+        await taskStore.fetchTasks()
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('Delete task error:', error)
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
 function handleTaskUpdated(updatedTask) {
   console.log('Task updated in dialog:', updatedTask)
   // Refresh the task list to show updated data
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()
 }
 
 function handleTaskDeleted(taskId) {
   console.log('Task deleted in dialog:', taskId)
   // Refresh the task list to remove deleted task
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()
 }
 
@@ -367,7 +407,7 @@ function handleIconClick(action, task) {
       task.isTop = 0
     }
   } else if (action === 'delete-task') {
-    // Handle delete
+    deleteTask(task)
   } else if (action === 'set-reminder') {
     // Handle reminder
   }
@@ -375,7 +415,7 @@ function handleIconClick(action, task) {
 
 onMounted(() => {
   console.log('MyTasks onMounted')
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()
 })
 

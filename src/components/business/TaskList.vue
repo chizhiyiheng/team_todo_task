@@ -186,7 +186,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
 import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
@@ -194,6 +194,7 @@ import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/dat
 import TaskMenu from './TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
 import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
+import { todoApi } from '@/api'
 
 const props = defineProps({
   viewMode: {
@@ -533,7 +534,40 @@ function setImportant(task) {
 
 function removeTask(task) {
   console.log('Remove task:', task)
-  emit('task-deleted', task.id)
+  
+  // 检查待办状态
+  if (task.todoStatus !== 1 && task.status !== '1') {
+    ElMessage.warning('只有已完成的待办才能删除')
+    return
+  }
+  
+  // 确认删除
+  ElMessageBox.confirm(
+    '确定要删除这个待办吗？',
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const result = await todoApi.deleteTodo(task.id)
+      if (result.code === '200') {
+        ElMessage.success('任务删除成功')
+        emit('task-deleted', task.id)
+        // 刷新任务列表
+        await taskStore.fetchTasks()
+      } else {
+        ElMessage.error(result.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('Delete task error:', error)
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 function setReminder(task) {

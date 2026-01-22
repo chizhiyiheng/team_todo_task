@@ -64,7 +64,7 @@ function handleViewModeChange(mode) {
 }
 
 onMounted(() => {
-  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()
   teamStore.fetchTeamList()
 })

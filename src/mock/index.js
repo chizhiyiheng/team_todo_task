@@ -8,16 +8,42 @@ export const mockApi = {
   async getTodoList(params) {
     await delay()
 
-    const { pageNum = 1, pageSize = 20, todoStatus } = params
+    const { page = 1, pageSize = 10, status, queryType, deadLine, finishTime, projectId, parentTodoId } = params
 
     let allTasks = [...mockTodoList, ...mockTodoListPage2]
 
-    if (todoStatus !== undefined && todoStatus !== '2') {
-      allTasks = allTasks.filter(task => task.todoStatus === parseInt(todoStatus))
+    // 根据status筛选
+    if (status !== undefined && status !== null) {
+      allTasks = allTasks.filter(task => task.todoStatus === parseInt(status))
+    }
+
+    // 根据queryType筛选
+    if (queryType !== undefined && queryType !== null) {
+      if (queryType === 1) {
+        // 查我分配的待办
+        allTasks = allTasks.filter(task => task.creatorUmId === 'LIUQINGHONG264')
+      } else if (queryType === 2) {
+        // 查我执行的待办
+        allTasks = allTasks.filter(task => {
+          const attendees = task.attendeeList || []
+          return attendees.some(a => a.umId === 'LIUQINGHONG264')
+        })
+      }
+    }
+
+    // 根据projectId筛选
+    if (projectId) {
+      allTasks = allTasks.filter(task => task.projectId === projectId)
+    }
+
+    // 根据parentTodoId筛选
+    if (parentTodoId) {
+      allTasks = allTasks.filter(task => task.parentTodoId === parentTodoId)
     }
 
     const total = allTasks.length
-    const start = (pageNum - 1) * pageSize
+    const pageCount = Math.ceil(total / pageSize)
+    const start = (page - 1) * pageSize
     const end = start + pageSize
     const list = allTasks.slice(start, end)
 
@@ -26,22 +52,10 @@ export const mockApi = {
       message: 'success',
       body: {
         list,
-        pageNum,
-        pageSize,
         total,
-        pages: Math.ceil(total / pageSize),
-        isFirstPage: pageNum === 1,
-        isLastPage: pageNum >= Math.ceil(total / pageSize),
-        hasPreviousPage: pageNum > 1,
-        hasNextPage: pageNum < Math.ceil(total / pageSize),
-        navigateFirstPage: 1,
-        navigateLastPage: Math.ceil(total / pageSize),
-        navigatePages: [1, 2],
-        prePage: pageNum > 1 ? pageNum - 1 : 0,
-        nextPage: pageNum < Math.ceil(total / pageSize) ? pageNum + 1 : 0,
-        startRow: start + 1,
-        endRow: Math.min(end, total),
-        size: list.length
+        page,
+        pageSize,
+        pageCount
       }
     }
   },
@@ -123,13 +137,45 @@ export const mockApi = {
     }
   },
 
-  async deleteTodo(params) {
+  async deleteTodo(id) {
     await delay()
-    const todoId = params.id || params
+    
+    // 查找待办是否存在
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === id)
+    
+    if (!task) {
+      return {
+        code: 'TODO_NOT_FOUND',
+        message: '待办不存在',
+        data: null
+      }
+    }
+    
+    // 检查待办状态（只有已完成的待办才能删除）
+    if (task.todoStatus !== 1) {
+      return {
+        code: 'TEAM_TASK_OPERATE_STATUS_INVALID',
+        message: '待办状态无效，只有已完成的待办才能删除',
+        data: null
+      }
+    }
+    
+    // 模拟删除成功
+    const index = mockTodoList.findIndex(t => t.id === id)
+    if (index > -1) {
+      mockTodoList.splice(index, 1)
+    } else {
+      const index2 = mockTodoListPage2.findIndex(t => t.id === id)
+      if (index2 > -1) {
+        mockTodoListPage2.splice(index2, 1)
+      }
+    }
+    
     return {
       code: '200',
       message: 'success',
-      body: { id: todoId }
+      data: id
     }
   },
 

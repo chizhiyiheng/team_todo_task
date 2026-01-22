@@ -22,12 +22,19 @@ class ApiService {
   }
 
   async mockRequest(config) {
-    const { url, method = 'GET', params, data } = config
+    let { url, method = 'GET', params, data } = config
 
     console.log('Mock API Request:', { url, method, params, data })
 
     try {
       let result
+      // 处理路径参数形式的URL
+      const deleteMatch = url.match(/^\/api\/todo\/delete\/(.+)$/)
+      if (deleteMatch) {
+        url = '/api/todo/delete'
+        data = { id: deleteMatch[1] }
+      }
+      
       switch (url) {
         case '/api/todo/list':
           result = await this.mockApi.getTodoList(params || data)
@@ -42,7 +49,10 @@ class ApiService {
           result = await this.mockApi.getTodoDetail(data || params)
           break
         case '/api/todo/delete':
-          result = await this.mockApi.deleteTodo(data || params)
+          // 支持路径参数形式 /api/todo/delete/{id}
+          const deleteIdMatch = url.match(/\/api\/todo\/delete\/(.+)/)
+          const deleteId = deleteIdMatch ? deleteIdMatch[1] : (data?.id || params?.id)
+          result = await this.mockApi.deleteTodo(deleteId)
           break
         case '/api/task/statistics':
           result = await this.mockApi.getTaskStatistics(params || data)
@@ -141,8 +151,8 @@ class ApiService {
     return this.request({ url, method: 'PUT', data })
   }
 
-  delete(url, params) {
-    return this.request({ url, method: 'DELETE', params })
+  delete(url, data) {
+    return this.request({ url, method: 'DELETE', data })
   }
 }
 

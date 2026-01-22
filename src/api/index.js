@@ -21,8 +21,8 @@ export const todoApi = {
     return request.post('/api/todo/add', data)
   },
 
-  deleteTodo(todoId) {
-    return request.post('/api/todo/delete', { id: todoId })
+  deleteTodo(id) {
+    return request.delete(`/api/todo/delete/${id}`)
   },
 
   // TODO: 待补充进展详情接口

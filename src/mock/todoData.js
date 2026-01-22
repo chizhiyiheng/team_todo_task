@@ -1,5 +1,84 @@
 export const mockTodoList = [
   {
+    id: '031A87D71AFB4EEA8E0B529F7A7C249F',
+    umId: 'LIUQINGHONG264',
+    name: '刘庆红(平安科技集团经管平台行政科技部业务开发组)',
+    title: '完成项目需求文档编写',
+    source: 7,
+    sourceId: 'c_84477F77329A442BA0709B7A23068312',
+    status: 1,
+    deadLine: '2024-12-06 18:00:00',
+    remindOption: 1,
+    finishTime: '2026-01-19 16:49:02',
+    remindTime: '2024-12-06 17:45:00',
+    updateTime: '2026-01-19 16:49:02',
+    createTime: '2024-12-05 10:08:42',
+    startTime: '2024-12-02 10:08:42',
+    isTop: 0,
+    priority: 2,
+    projectId: 'PROJ001',
+    parentTodoId: '',
+    tag: 0,
+    content: '完成项目需求文档编写',
+    todoUsers: [
+      {
+        id: 'USER001',
+        todoId: '031A87D71AFB4EEA8E0B529F7A7C249F',
+        umId: 'USER001',
+        name: '张三',
+        transUmId: '',
+        transName: '',
+        status: 0,
+        updateTime: '2026-01-19 16:49:02',
+        createTime: '2024-12-05 10:08:42',
+        tag: 1,
+        finishTime: '',
+        priority: 2
+      },
+      {
+        id: 'USER002',
+        todoId: '031A87D71AFB4EEA8E0B529F7A7C249F',
+        umId: 'USER002',
+        name: '李四',
+        transUmId: '',
+        transName: '',
+        status: 1,
+        updateTime: '2026-01-19 16:49:02',
+        createTime: '2024-12-05 10:08:42',
+        tag: 1,
+        finishTime: '',
+        priority: 2
+      }
+    ],
+    attachmentList: [
+      {
+        id: 'ATT001',
+        todoId: '031A87D71AFB4EEA8E0B529F7A7C249F',
+        fileName: '需求文档.pdf',
+        filePath: 'http://example.com/files/requirements.pdf',
+        fileSize: 1245184,
+        fileType: 'application/pdf',
+        storageType: 'iobs'
+      },
+      {
+        id: 'ATT002',
+        todoId: '031A87D71AFB4EEA8E0B529F7A7C249F',
+        fileName: '系统架构图.png',
+        filePath: 'http://example.com/files/architecture.png',
+        fileSize: 524288,
+        fileType: 'image/png',
+        storageType: 'iobs'
+      },
+      {
+        id: 'ATT003',
+        todoId: '031A87D71AFB4EEA8E0B529F7A7C249F',
+        fileName: '数据库设计.xlsx',
+        filePath: 'http://example.com/files/database.xlsx',
+        fileSize: 87654,
+        fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        storageType: 'iobs'
+      }
+    ],
     attendeeList: [
       { umId: 'USER001', name: '张三', status: 0 },
       { umId: 'USER002', name: '李四', status: 1 }
@@ -11,7 +90,6 @@ export const mockTodoList = [
     deadLine: '2024-12-06 18:00:00',
     desc: '需要完成项目需求文档的编写，包括功能模块、技术架构、数据库设计等内容',
     finishTime: '2026-01-19 16:49:02',
-    id: '031A87D71AFB4EEA8E0B529F7A7C249F',
     isTop: 0,
     realDeadLine: 1,
     remindOption: 1,
@@ -24,29 +102,6 @@ export const mockTodoList = [
     todoStatus: 1,
     updateTime: '2026-01-19 16:49:02',
     percent: 75,
-    attachmentList: [
-      {
-        fileName: '需求文档.pdf',
-        filePath: 'http://example.com/files/requirements.pdf',
-        fileSize: 1245184,
-        fileType: 'application/pdf',
-        storageType: 'cloud'
-      },
-      {
-        fileName: '系统架构图.png',
-        filePath: 'http://example.com/files/architecture.png',
-        fileSize: 524288,
-        fileType: 'image/png',
-        storageType: 'cloud'
-      },
-      {
-        fileName: '数据库设计.xlsx',
-        filePath: 'http://example.com/files/database.xlsx',
-        fileSize: 87654,
-        fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        storageType: 'cloud'
-      }
-    ],
     subTodoList: [
       {
         id: 'SUBTASK001',
@@ -86,9 +141,9 @@ export const mockTodoList = [
     source: 0,
     sourceId: 'pc',
     startTime: '2024-09-27 19:39:02',
-    status: '1',
+    status: '2',
     tag: 0,
-    todoStatus: 1,
+    todoStatus: 2,
     updateTime: '2024-10-18 10:24:41'
   },
   {
@@ -111,10 +166,14 @@ export const mockTodoList = [
     source: 8,
     sourceId: 'project_123',
     startTime: '2024-12-01 09:30:00',
-    status: '0',
+    status: '2',
     tag: 1,
-    todoStatus: 0,
-    updateTime: '2024-12-01 09:30:00'
+    todoStatus: 2,
+    updateTime: '2024-12-01 09:30:00',
+    priority: 2,
+    projectId: 'PROJ002',
+    parentTodoId: '',
+    percent: 45
   },
   {
     attendeeList: [],
@@ -133,15 +192,13 @@ export const mockTodoList = [
     source: 9,
     sourceId: 'meeting_456',
     startTime: '2024-11-28 14:20:00',
-    status: '1',
+    status: '2',
     tag: 0,
     todoStatus: 1,
     updateTime: '2024-11-30 16:30:00'
   },
   {
-    attendeeList: [
-      { umId: 'USER005', name: '孙七', status: 1 }
-    ],
+    attendeeList: [],
     content: '更新用户文档',
     createTime: '2024-11-25 10:00:00',
     creatorName: '周强',
@@ -157,10 +214,14 @@ export const mockTodoList = [
     source: 7,
     sourceId: 'doc_789',
     startTime: '2024-11-25 10:00:00',
-    status: '0',
+    status: '2',
     tag: 0,
-    todoStatus: 0,
-    updateTime: '2024-11-25 10:00:00'
+    todoStatus: 2,
+    updateTime: '2024-11-25 10:00:00',
+    priority: 1,
+    projectId: 'PROJ003',
+    parentTodoId: '',
+    percent: 60
   },
   {
     attendeeList: [],
@@ -179,10 +240,14 @@ export const mockTodoList = [
     source: 8,
     sourceId: 'perf_001',
     startTime: '2024-11-20 16:00:00',
-    status: '0',
+    status: '1',
     tag: 1,
-    todoStatus: 0,
-    updateTime: '2024-11-20 16:00:00'
+    todoStatus: 2,
+    updateTime: '2024-11-20 16:00:00',
+    priority: 3,
+    projectId: 'PROJ004',
+    parentTodoId: '',
+    percent: 30
   },
   {
     attendeeList: [
@@ -226,10 +291,14 @@ export const mockTodoList = [
     source: 9,
     sourceId: 'security_002',
     startTime: '2024-11-10 14:30:00',
-    status: '0',
+    status: '2',
     tag: 1,
-    todoStatus: 0,
-    updateTime: '2024-11-10 14:30:00'
+    todoStatus: 2,
+    updateTime: '2024-11-10 14:30:00',
+    priority: 3,
+    projectId: 'PROJ005',
+    parentTodoId: '',
+    percent: 75
   },
   {
     attendeeList: [
@@ -272,10 +341,14 @@ export const mockTodoList = [
     source: 7,
     sourceId: 'feedback_004',
     startTime: '2024-11-01 15:00:00',
-    status: '0',
+    status: '2',
     tag: 0,
-    todoStatus: 0,
-    updateTime: '2024-11-01 15:00:00'
+    todoStatus: 2,
+    updateTime: '2024-11-01 15:00:00',
+    priority: 2,
+    projectId: 'PROJ006',
+    parentTodoId: '',
+    percent: 50
   }
 ]
 
@@ -368,10 +441,14 @@ export const mockTodoListPage2 = [
     source: 8,
     sourceId: 'refactor_008',
     startTime: '2024-10-15 11:00:00',
-    status: '0',
+    status: '2',
     tag: 1,
-    todoStatus: 0,
-    updateTime: '2024-10-15 11:00:00'
+    todoStatus: 2,
+    updateTime: '2024-10-15 11:00:00',
+    priority: 2,
+    projectId: 'PROJ007',
+    parentTodoId: '',
+    percent: 40
   },
   {
     attendeeList: [
@@ -461,10 +538,14 @@ export const mockTodoListPage2 = [
     source: 7,
     sourceId: 'cache_012',
     startTime: '2024-09-28 11:00:00',
-    status: '0',
+    status: '2',
     tag: 0,
-    todoStatus: 0,
-    updateTime: '2024-09-28 11:00:00'
+    todoStatus: 2,
+    updateTime: '2024-09-28 11:00:00',
+    priority: 2,
+    projectId: 'PROJ008',
+    parentTodoId: '',
+    percent: 35
   },
   {
     attendeeList: [

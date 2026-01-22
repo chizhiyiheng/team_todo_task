@@ -70,12 +70,12 @@
         <div class="project-table-head">
           <div class="task-row el-row">
             <div class="el-col" style="flex: 1">标题</div>
-            <div class="el-col" style="width: 100px; flex: none">状态</div>
-            <div class="el-col" style="width: 100px; flex: none">执行人</div>
-            <div class="el-col" style="width: 100px; flex: none">创建人</div>
-            <div class="el-col" style="width: 140px; flex: none">时间</div>
+            <div class="el-col" style="width: 120px; flex: none; justify-content: center">状态</div>
+            <div class="el-col" style="width: 120px; flex: none">执行人</div>
+            <div class="el-col" style="width: 120px; flex: none">创建人</div>
+            <div class="el-col" style="width: 170px; flex: none">时间</div>
             <div class="el-col" style="width: 100px; flex: none">来源</div>
-            <div class="el-col" style="width: 100px; flex: none">操作</div>
+            <div class="el-col" style="width: 160px; flex: none">操作</div>
           </div>
         </div>
         <div class="project-table-body">
@@ -93,7 +93,6 @@
                 </div>
                 <div class="item-title">
                   <el-icon v-if="task.mark === '1' || task.isTop === 1" class="important-star"><StarFilled /></el-icon>
-                  <span class="flow-item-status" :class="getTaskStatusClass(task)">{{ getTaskStatusName(task) }}</span>
                   {{ task.name || task.content }}
                 </div>
                 <div class="item-icons">
@@ -102,7 +101,10 @@
                   <div v-if="task.sub_num > 0" class="item-icon"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
                 </div>
               </div>
-              <div class="el-col row-user" style="width: 100px; flex: none">
+              <div class="el-col row-status" style="width: 120px; flex: none; justify-content: center">
+                <span class="flow-item-status" :class="getTaskStatusClass(task)">{{ getTaskStatusName(task) }}</span>
+              </div>
+              <div class="el-col row-user" style="width: 120px; flex: none">
                 <div class="user-list">
                   <el-avatar
                     v-for="user in getAttendeeList(task).slice(0, 3)"
@@ -115,10 +117,10 @@
                   </el-avatar>
                 </div>
               </div>
-              <div class="el-col row-assigner" style="width: 100px; flex: none">
+              <div class="el-col row-assigner" style="width: 120px; flex: none">
                 {{ task.creatorName || '-' }}
               </div>
-              <div class="el-col row-time" style="width: 140px; flex: none">
+              <div class="el-col row-time" style="width: 170px; flex: none">
                 <span :class="['task-time', { overdue: isOverdue(task.deadLine) }]">
                   {{ task.deadLine ? formatDate(task.deadLine) : '-' }}
                 </span>
@@ -126,7 +128,7 @@
               <div class="el-col row-source" style="width: 100px; flex: none">
                 {{ getSourceName(task.source) }}
               </div>
-              <div class="el-col row-operation" style="width: 100px; flex: none">
+              <div class="el-col row-operation" style="width: 160px; flex: none">
                 <div class="operation-icons">
                    <div class="op-icon" :class="{ active: task.mark === '1' }" @click.stop="handleIconClick('mark-important', task)">
                      <el-icon v-if="task.mark === '1'"><StarFilled /></el-icon>
@@ -134,6 +136,9 @@
                    </div>
                    <div class="op-icon" @click.stop="handleIconClick('edit-task', task)">
                      <el-icon><Edit /></el-icon>
+                   </div>
+                   <div class="op-icon" @click.stop="handleIconClick('set-reminder', task)">
+                     <el-icon><Bell /></el-icon>
                    </div>
                    <div class="op-icon" @click.stop="handleIconClick('delete-task', task)">
                      <el-icon><Delete /></el-icon>
@@ -570,37 +575,6 @@ $flow-status-cancel-color: $info-color;
           &:hover {
             color: $primary-color;
           }
-
-          .flow-item-status {
-             font-size: 12px;
-             height: 20px;
-             line-height: 18px;
-             padding: 0 4px;
-             border-radius: 3px;
-             margin-right: 6px;
-             border: 1px solid transparent;
-             
-             &.start {
-                 background-color: rgba($flow-status-start-color, 0.1);
-                 border-color: rgba($flow-status-start-color, 0.1);
-                 color: $flow-status-start-color;
-             }
-             &.progress {
-                 background-color: rgba($flow-status-progress-color, 0.1);
-                 border-color: rgba($flow-status-progress-color, 0.1);
-                 color: $flow-status-progress-color;
-             }
-             &.end {
-                 background-color: rgba($flow-status-end-color, 0.1);
-                 border-color: rgba($flow-status-end-color, 0.1);
-                 color: $flow-status-end-color;
-             }
-             &.cancel {
-                 background-color: rgba($flow-status-cancel-color, 0.1);
-                 border-color: rgba($flow-status-cancel-color, 0.1);
-                 color: $flow-status-cancel-color;
-             }
-          }
         }
         
         .item-icons {
@@ -625,6 +599,43 @@ $flow-status-cancel-color: $info-color;
               }
            }
         }
+      }
+
+      .row-status {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          .flow-item-status {
+             font-size: 12px;
+             height: 20px;
+             line-height: 18px;
+             padding: 0 4px;
+             border-radius: 3px;
+             border: 1px solid transparent;
+             display: inline-block;
+             
+             &.start {
+                 background-color: rgba($flow-status-start-color, 0.1);
+                 border-color: rgba($flow-status-start-color, 0.1);
+                 color: $flow-status-start-color;
+             }
+             &.progress {
+                 background-color: rgba($flow-status-progress-color, 0.1);
+                 border-color: rgba($flow-status-progress-color, 0.1);
+                 color: $flow-status-progress-color;
+             }
+             &.end {
+                 background-color: rgba($flow-status-end-color, 0.1);
+                 border-color: rgba($flow-status-end-color, 0.1);
+                 color: $flow-status-end-color;
+             }
+             &.cancel {
+                 background-color: rgba($flow-status-cancel-color, 0.1);
+                 border-color: rgba($flow-status-cancel-color, 0.1);
+                 color: $flow-status-cancel-color;
+             }
+          }
       }
       
       .row-user {

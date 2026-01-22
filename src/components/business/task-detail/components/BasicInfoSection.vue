@@ -137,6 +137,7 @@ import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import TagSelect from '@/components/common/TagSelect.vue'
 import UserSelector from '@/components/common/UserSelector.vue'
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from '@/constants/taskEnums'
 
 const { t } = useI18n()
 
@@ -160,20 +161,9 @@ const isUpdating = ref(false)
 const showUserSelector = ref(false)
 const tempDeadline = ref(null)
 
-// Status configuration
-const statusOptions = [
-  { value: 0, label: '待处理', type: 'warning' },
-  { value: 1, label: '已完成', type: 'success' },
-  { value: 2, label: '进行中', type: 'primary' },
-  { value: 3, label: '已逾期', type: 'danger' }
-]
-
-// Priority configuration
-const priorityOptions = [
-  { value: 1, label: '低', color: '#909399', dot: true },
-  { value: 2, label: '中', color: '#E6A23C', dot: true },
-  { value: 3, label: '高', color: '#F56C6C', dot: true }
-]
+// Status and Priority options from enums
+const statusOptions = TASK_STATUS_OPTIONS
+const priorityOptions = TASK_PRIORITY_OPTIONS
 
 // Source mapping
 const sourceConfig = {

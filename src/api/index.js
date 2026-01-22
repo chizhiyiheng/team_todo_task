@@ -23,6 +23,36 @@ export const todoApi = {
 
   deleteTodo(todoId) {
     return request.post('/api/todo/delete', { id: todoId })
+  },
+
+  // TODO: 待补充进展详情接口
+  getProgressDetail(todoId) {
+    return request.post('/api/todo/progress/detail', { todoId })
+  },
+
+  submitProgress(data) {
+    return request.post('/api/todo/progress/submit', data)
+  },
+
+  // 文件上传接口（对接第三方文件系统）
+  uploadFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request.post('/api/file/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
+  // 删除文件接口
+  deleteFile(fileId) {
+    return request.post('/api/file/delete', { fileId })
+  },
+
+  // 获取待办操作日志
+  getActivityLog(todoId) {
+    return request.post('/api/todo/activityLog', { todoId })
   }
 }
 

@@ -7,44 +7,48 @@
     </h4>
     
     <div class="section-content">
-      <!-- Attachment List -->
-      <div v-if="attachmentList.length > 0" class="attachment-list">
-        <div
+      <!-- Attachment Grid -->
+      <el-row v-if="attachmentList.length > 0" :gutter="12" class="attachment-grid">
+        <el-col
           v-for="(attachment, index) in attachmentList"
           :key="index"
-          class="attachment-item"
+          :xs="24"
+          :sm="12"
+          :md="8"
         >
-          <div class="attachment-icon">
-            <el-icon :size="24">
-              <component :is="getFileIcon(attachment.fileType)" />
-            </el-icon>
-          </div>
-          
-          <div class="attachment-info">
-            <div class="attachment-name" :title="attachment.fileName">
-              {{ attachment.fileName }}
+          <div class="attachment-item">
+            <div class="attachment-icon">
+              <el-icon :size="20">
+                <component :is="getFileIcon(attachment.fileType)" />
+              </el-icon>
             </div>
-            <div class="attachment-size">
-              {{ formatFileSize(attachment.fileSize) }}
+            
+            <div class="attachment-info">
+              <div class="attachment-name" :title="attachment.fileName">
+                {{ attachment.fileName }}
+              </div>
+              <div class="attachment-size">
+                {{ formatFileSize(attachment.fileSize) }}
+              </div>
+            </div>
+            
+            <div class="attachment-actions">
+              <el-button
+                type="primary"
+                :icon="Download"
+                size="small"
+                circle
+                @click="downloadAttachment(attachment)"
+                :title="t('task.download')"
+              />
             </div>
           </div>
-          
-          <div class="attachment-actions">
-            <el-button
-              type="primary"
-              link
-              @click="downloadAttachment(attachment)"
-            >
-              <el-icon><Download /></el-icon>
-              {{ t('task.download') }}
-            </el-button>
-          </div>
-        </div>
-      </div>
+        </el-col>
+      </el-row>
       
       <!-- Empty State -->
       <div v-else class="empty-state">
-        <el-empty :description="t('task.noAttachments')" :image-size="80" />
+        <el-empty :description="t('task.noAttachments')" :image-size="60" />
       </div>
     </div>
   </div>
@@ -184,42 +188,44 @@ function downloadAttachment(attachment) {
 
 <style scoped lang="scss">
 .attachment-section {
-  padding: 24px 0;
+  padding: 16px 0;
 
   .section-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 0 0 16px 0;
-    font-size: 16px;
+    margin: 0 0 12px 0;
+    font-size: 15px;
     font-weight: 600;
     color: #303133;
     
     .count {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 400;
       color: #909399;
     }
   }
   
   .section-content {
-    .attachment-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      
+    .attachment-grid {
       .attachment-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 12px;
+        gap: 10px;
+        padding: 8px 12px;
         background-color: #f5f7fa;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+        height: 100%;
         
         &:hover {
           background-color: #ecf5ff;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          border-color: #d9ecff;
+          
+          .attachment-actions {
+            opacity: 1;
+          }
         }
         
         .attachment-icon {
@@ -227,45 +233,45 @@ function downloadAttachment(attachment) {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
+          width: 32px;
+          height: 32px;
           background-color: #fff;
-          border-radius: 6px;
+          border-radius: 4px;
           color: #409eff;
         }
         
         .attachment-info {
           flex: 1;
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
           
           .attachment-name {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             color: #303133;
-            margin-bottom: 4px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
           }
           
           .attachment-size {
-            font-size: 12px;
+            font-size: 11px;
             color: #909399;
           }
         }
         
         .attachment-actions {
           flex-shrink: 0;
-          
-          .el-button {
-            font-size: 14px;
-          }
+          opacity: 0;
+          transition: opacity 0.2s ease;
         }
       }
     }
     
     .empty-state {
-      padding: 24px 0;
+      padding: 16px 0;
       text-align: center;
     }
   }
@@ -274,38 +280,45 @@ function downloadAttachment(attachment) {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .attachment-section {
-    padding: 20px 0;
+    padding: 12px 0;
+    
+    .section-title {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
     
     .section-content {
-      .attachment-list {
+      .attachment-grid {
         .attachment-item {
-          padding: 10px;
+          padding: 6px 10px;
           
           .attachment-icon {
-            width: 36px;
-            height: 36px;
+            width: 28px;
+            height: 28px;
             
             .el-icon {
-              font-size: 20px;
+              font-size: 18px;
             }
           }
           
           .attachment-info {
             .attachment-name {
-              font-size: 13px;
+              font-size: 12px;
             }
             
             .attachment-size {
-              font-size: 11px;
+              font-size: 10px;
             }
           }
           
           .attachment-actions {
-            .el-button {
-              font-size: 13px;
-            }
+            opacity: 1; // Always show on mobile
           }
         }
+      }
+      
+      .empty-state {
+        padding: 12px 0;
       }
     }
   }

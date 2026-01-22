@@ -226,10 +226,10 @@ function cancelEditDescription() {
         }
         
         .edit-actions {
-          flex-direction: column;
+          gap: 8px;
           
           .el-button {
-            width: 100%;
+            flex: 1;
           }
         }
       }

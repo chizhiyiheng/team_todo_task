@@ -114,7 +114,14 @@ export default {
     deleteSuccess: 'Delete successful',
     updateSuccess: 'Update successful',
     operationFailed: 'Operation failed',
-    titleCannotBeEmpty: 'Title cannot be empty'
+    titleCannotBeEmpty: 'Title cannot be empty',
+    uploadFile: 'Upload File',
+    uploadTip: 'Support multiple files, up to 5 files',
+    dragOrClick: 'Drag files here, or click to upload',
+    uploadLimitExceeded: 'Upload file limit exceeded',
+    fileProcessFailed: 'File {name} processing failed',
+    progressUpdateSuccess: 'Progress updated successfully',
+    progressUpdateFailed: 'Progress update failed'
   },
   ai: {
     title: 'AI Dynamic Analysis',

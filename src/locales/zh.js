@@ -114,7 +114,14 @@ export default {
     deleteSuccess: '删除成功',
     updateSuccess: '更新成功',
     operationFailed: '操作失败',
-    titleCannotBeEmpty: '标题不能为空'
+    titleCannotBeEmpty: '标题不能为空',
+    uploadFile: '上传文件',
+    uploadTip: '支持上传多个文件，最多5个',
+    dragOrClick: '将文件拖到此处，或点击上传',
+    uploadLimitExceeded: '上传文件数量超过限制',
+    fileProcessFailed: '文件 {name} 处理失败',
+    progressUpdateSuccess: '进度更新成功',
+    progressUpdateFailed: '进度更新失败'
   },
   ai: {
     title: 'AI动态分析',

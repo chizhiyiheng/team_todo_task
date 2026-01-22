@@ -65,6 +65,24 @@ class ApiService {
         case '/api/task/delete':
           result = await this.mockApi.deleteTask(params?.taskId || data?.taskId)
           break
+        // TODO: 进展相关接口 - 待后端联调
+        case '/api/todo/progress/detail':
+          result = await this.mockApi.getProgressDetail(data?.todoId || params?.todoId)
+          break
+        case '/api/todo/progress/submit':
+          result = await this.mockApi.submitProgress(data)
+          break
+        // 文件上传相关接口
+        case '/api/file/upload':
+          result = await this.mockApi.uploadFile(data.get('file'))
+          break
+        case '/api/file/delete':
+          result = await this.mockApi.deleteFile(data?.fileId || params?.fileId)
+          break
+        // 操作日志接口
+        case '/api/todo/activityLog':
+          result = await this.mockApi.getActivityLog(data?.todoId || params?.todoId)
+          break
         default:
           result = { code: '404', message: '接口不存在', body: null }
       }
@@ -80,14 +98,28 @@ class ApiService {
     const { url, method = 'GET', params, data, headers = {} } = config
 
     try {
-      const response = await fetch(`${this.baseURL}${url}`, {
+      let fetchOptions = {
         method,
         headers: {
-          'Content-Type': 'application/json',
           ...headers
-        },
-        body: method !== 'GET' ? JSON.stringify(data) : undefined
-      })
+        }
+      }
+
+      // 如果不是 FormData，添加 Content-Type
+      if (!(data instanceof FormData)) {
+        fetchOptions.headers['Content-Type'] = 'application/json'
+      }
+
+      // 处理请求体
+      if (method !== 'GET') {
+        if (data instanceof FormData) {
+          fetchOptions.body = data
+        } else {
+          fetchOptions.body = JSON.stringify(data)
+        }
+      }
+
+      const response = await fetch(`${this.baseURL}${url}`, fetchOptions)
 
       const result = await response.json()
       return result
@@ -101,8 +133,8 @@ class ApiService {
     return this.request({ url, method: 'GET', params })
   }
 
-  post(url, data) {
-    return this.request({ url, method: 'POST', data })
+  post(url, data, config = {}) {
+    return this.request({ url, method: 'POST', data, ...config })
   }
 
   put(url, data) {

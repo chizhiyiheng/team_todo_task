@@ -14,13 +14,20 @@ import { todoApi } from '@/api/index.js'
 export function useTaskDetail(taskId, t) {
   // State
   const isLoading = ref(false)
+  const isInitialLoad = ref(true)
   const taskDetail = ref(null)
 
   /**
    * Load task detail from API
+   * @param {boolean} isRefresh - Whether this is a refresh (not initial load)
    */
-  async function loadTaskDetail() {
+  async function loadTaskDetail(isRefresh = false) {
     if (!taskId.value) return
+
+    // Only set isInitialLoad to false if this is a refresh
+    if (isRefresh) {
+      isInitialLoad.value = false
+    }
 
     isLoading.value = true
     try {
@@ -42,6 +49,7 @@ export function useTaskDetail(taskId, t) {
 
   return {
     isLoading,
+    isInitialLoad,
     taskDetail,
     loadTaskDetail
   }

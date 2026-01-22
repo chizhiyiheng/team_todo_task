@@ -15,14 +15,9 @@
     <template #header>
       <TaskDetailHeader
         :task-detail="taskDetail"
-        :editing-title="editingTitle"
-        :edit-title-value="editTitleValue"
         @toggle-important="toggleImportant"
-        @start-edit-title="startEditTitle"
-        @save-title="saveTitle"
-        @cancel-edit-title="cancelEditTitle"
+        @update-field="updateField"
         @close="handleClose"
-        @update:edit-title-value="editTitleValue = $event"
       />
     </template>
 
@@ -43,12 +38,7 @@
       <!-- Description Section -->
       <DescriptionSection
         :task-detail="taskDetail"
-        :editing-description="editingDescription"
-        :edit-description-value="editDescriptionValue"
-        @start-edit-description="startEditDescription"
-        @save-description="saveDescription"
-        @cancel-edit-description="cancelEditDescription"
-        @update:edit-description-value="editDescriptionValue = $event"
+        @update-field="updateField"
       />
       
       <!-- Attachment Section -->
@@ -168,7 +158,6 @@ import ProgressSection from './components/ProgressSection.vue'
 import SubTaskSection from './components/SubTaskSection.vue'
 import ActivityLogSection from './components/ActivityLogSection.vue'
 import { useTaskDetail } from './hooks/useTaskDetail'
-import { useTaskEdit } from './hooks/useTaskEdit'
 import { useTaskActions } from './hooks/useTaskActions'
 import { useAvailableUsers } from './hooks/useAvailableUsers'
 
@@ -206,21 +195,6 @@ const { updateField, toggleImportant, markAsComplete, deleteTask, submitProgress
 
 // Use available users hook
 const { availableUsers } = useAvailableUsers()
-
-// Use task edit hook
-const {
-  editingTitle,
-  editTitleValue,
-  titleInputRef,
-  startEditTitle,
-  saveTitle,
-  cancelEditTitle,
-  editingDescription,
-  editDescriptionValue,
-  startEditDescription,
-  saveDescription,
-  cancelEditDescription
-} = useTaskEdit(taskDetail, updateField, t)
 
 // Computed properties
 const isMobile = computed(() => {

@@ -22,8 +22,7 @@
       <!-- Edit Mode -->
       <div v-else class="description-edit">
         <el-input
-          :model-value="editDescriptionValue"
-          @update:model-value="$emit('update:edit-description-value', $event)"
+          v-model="editDescriptionValue"
           type="textarea"
           :rows="6"
           :placeholder="t('task.clickToAddDescription')"
@@ -47,58 +46,71 @@
  * DescriptionSection Component
  * 
  * Displays and manages task description with inline editing.
+ * Manages its own editing state and validation internally.
  * 
  * @component
  * @props {Object} taskDetail - The task detail object
- * @props {boolean} editingDescription - Whether description is being edited
- * @props {string} editDescriptionValue - The temporary description value during editing
  * 
- * @emits start-edit-description - Emitted when user starts editing description
- * @emits save-description - Emitted when user saves description changes
- * @emits cancel-edit-description - Emitted when user cancels description editing
- * @emits update:edit-description-value - Emitted when description value changes
+ * @emits update-field - Emitted when a field needs to be updated with (fieldName, value)
  */
 
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // Composables
 const { t } = useI18n()
 
 // Props definition
-defineProps({
+const props = defineProps({
   taskDetail: {
     type: Object,
-    required: true
-  },
-  editingDescription: {
-    type: Boolean,
-    required: true
-  },
-  editDescriptionValue: {
-    type: String,
     required: true
   }
 })
 
 // Emits definition
-const emit = defineEmits([
-  'start-edit-description',
-  'save-description',
-  'cancel-edit-description',
-  'update:edit-description-value'
-])
+const emit = defineEmits(['update-field'])
 
-// Methods
+// Local editing state
+const editingDescription = ref(false)
+const editDescriptionValue = ref('')
+
+/**
+ * Start editing description
+ */
 function startEditDescription() {
-  emit('start-edit-description')
+  if (!props.taskDetail) return
+  
+  editingDescription.value = true
+  editDescriptionValue.value = props.taskDetail.content || ''
 }
 
+/**
+ * Save description changes
+ */
 function saveDescription() {
-  emit('save-description')
+  if (!props.taskDetail) return
+  
+  const currentContent = props.taskDetail.content || ''
+  
+  // Check if changed
+  if (editDescriptionValue.value === currentContent) {
+    editingDescription.value = false
+    return
+  }
+  
+  // Exit editing mode immediately for better UX
+  editingDescription.value = false
+  
+  // Update field (optimistic update handled in parent)
+  emit('update-field', 'content', editDescriptionValue.value)
 }
 
+/**
+ * Cancel description editing
+ */
 function cancelEditDescription() {
-  emit('cancel-edit-description')
+  editingDescription.value = false
 }
 </script>
 

@@ -15,24 +15,19 @@
     <template #header>
       <TaskDetailHeader
         :task-detail="taskDetail"
-        :editing-title="editingTitle"
-        :edit-title-value="editTitleValue"
         @toggle-important="toggleImportant"
-        @start-edit-title="startEditTitle"
-        @save-title="saveTitle"
-        @cancel-edit-title="cancelEditTitle"
+        @update-field="updateField"
         @close="handleClose"
-        @update:edit-title-value="editTitleValue = $event"
       />
     </template>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="loading-container" v-loading="true" element-loading-text="加载中...">
+    <!-- Initial Loading State with Skeleton -->
+    <div v-if="isLoading && isInitialLoad" class="loading-container">
       <el-skeleton :rows="8" animated />
     </div>
 
-    <!-- Content -->
-    <div v-else-if="taskDetail" class="dialog-content">
+    <!-- Content with Refresh Loading Overlay -->
+    <div v-else-if="taskDetail" class="dialog-content" v-loading="isLoading" element-loading-text="加载中...">
       <!-- Basic Information Section -->
       <BasicInfoSection
         :task-detail="taskDetail"
@@ -43,12 +38,7 @@
       <!-- Description Section -->
       <DescriptionSection
         :task-detail="taskDetail"
-        :editing-description="editingDescription"
-        :edit-description-value="editDescriptionValue"
-        @start-edit-description="startEditDescription"
-        @save-description="saveDescription"
-        @cancel-edit-description="cancelEditDescription"
-        @update:edit-description-value="editDescriptionValue = $event"
+        @update-field="updateField"
       />
       
       <!-- Attachment Section -->
@@ -56,17 +46,18 @@
         :attachment-list="taskDetail.attachmentList || []"
       />
       
-      <!-- Tabs Section: Progress, SubTasks, Activity Log -->
+      <!-- Tabs Section: Progress, Activity Log -->
       <div class="tabs-section">
         <el-tabs v-model="activeTab">
           <el-tab-pane :label="t('task.progress')" name="progress">
             <ProgressSection
-              :task-detail="taskDetail"
-              @submit-progress="submitProgress"
+              :todo-id="taskDetail.id"
+              @progress-updated="handleProgressUpdated"
             />
           </el-tab-pane>
           
-          <el-tab-pane name="subtasks">
+          <!-- SubTasks Tab - Temporarily Disabled -->
+          <!-- <el-tab-pane name="subtasks">
             <template #label>
               {{ t('task.subTasks') }}
               <span v-if="taskDetail.subTodoList && taskDetail.subTodoList.length > 0" class="tab-count">
@@ -79,17 +70,11 @@
               @toggle-subtask="handleToggleSubTask"
               @open-subtask="handleOpenSubTask"
             />
-          </el-tab-pane>
+          </el-tab-pane> -->
           
-          <el-tab-pane name="activity">
-            <template #label>
-              {{ t('task.activityLog') }}
-              <span v-if="taskDetail.activityLogList && taskDetail.activityLogList.length > 0" class="tab-count">
-                ({{ taskDetail.activityLogList.length }})
-              </span>
-            </template>
+          <el-tab-pane :label="t('task.activityLog')" name="activity">
             <ActivityLogSection
-              :activity-log-list="taskDetail.activityLogList || []"
+              :todo-id="taskDetail.id"
             />
           </el-tab-pane>
         </el-tabs>
@@ -168,7 +153,6 @@ import ProgressSection from './components/ProgressSection.vue'
 import SubTaskSection from './components/SubTaskSection.vue'
 import ActivityLogSection from './components/ActivityLogSection.vue'
 import { useTaskDetail } from './hooks/useTaskDetail'
-import { useTaskEdit } from './hooks/useTaskEdit'
 import { useTaskActions } from './hooks/useTaskActions'
 import { useAvailableUsers } from './hooks/useAvailableUsers'
 
@@ -195,10 +179,10 @@ const emit = defineEmits(['update:modelValue', 'task-updated', 'task-deleted'])
 const taskIdRef = toRef(props, 'taskId')
 
 // Use task detail hook
-const { isLoading, taskDetail, loadTaskDetail } = useTaskDetail(taskIdRef, t)
+const { isLoading, isInitialLoad, taskDetail, loadTaskDetail } = useTaskDetail(taskIdRef, t)
 
 // Use task actions hook
-const { updateField, toggleImportant, markAsComplete, deleteTask, submitProgress, addSubTask, toggleSubTask } = useTaskActions(
+const { updateField, toggleImportant, markAsComplete, deleteTask, addSubTask, toggleSubTask } = useTaskActions(
   taskDetail,
   emit,
   t
@@ -207,25 +191,7 @@ const { updateField, toggleImportant, markAsComplete, deleteTask, submitProgress
 // Use available users hook
 const { availableUsers } = useAvailableUsers()
 
-// Use task edit hook
-const {
-  editingTitle,
-  editTitleValue,
-  titleInputRef,
-  startEditTitle,
-  saveTitle,
-  cancelEditTitle,
-  editingDescription,
-  editDescriptionValue,
-  startEditDescription,
-  saveDescription,
-  cancelEditDescription
-} = useTaskEdit(taskDetail, updateField, t)
-
-// Computed properties
-const isMobile = computed(() => {
-  return window.innerWidth <= 768
-})
+const isMobile = window.innerWidth <= 768
 
 // State for nested dialog
 const openedSubTaskId = ref(null)
@@ -237,7 +203,7 @@ const activeTab = ref('progress')
 // Watch for dialog open
 watch(() => props.modelValue, (newVal) => {
   if (newVal && props.taskId) {
-    loadTaskDetail()
+    loadTaskDetail() // Initial load
   }
 })
 
@@ -253,7 +219,7 @@ async function handleAddSubTask(content) {
   const success = await addSubTask(content)
   if (success) {
     // Reload task detail to get updated subtask list
-    await loadTaskDetail()
+    await loadTaskDetail(true) // Pass true for refresh
   }
 }
 
@@ -264,7 +230,7 @@ async function handleToggleSubTask(subTaskId, isFinished) {
   const success = await toggleSubTask(subTaskId, isFinished)
   if (success) {
     // Reload task detail to get updated subtask list
-    await loadTaskDetail()
+    await loadTaskDetail(true) // Pass true for refresh
   }
 }
 
@@ -277,13 +243,21 @@ function handleOpenSubTask(subTaskId) {
 }
 
 /**
+ * Handle progress updated with attachments
+ * Reload task detail to get updated attachment list
+ */
+async function handleProgressUpdated() {
+  await loadTaskDetail(true) // Pass true for refresh
+}
+
+/**
  * Handle subtask dialog close
  */
 function handleSubTaskDialogClose() {
   showSubTaskDialog.value = false
   openedSubTaskId.value = null
   // Reload parent task to get updated data
-  loadTaskDetail()
+  loadTaskDetail(true) // Pass true for refresh
 }
 </script>
 
@@ -371,18 +345,46 @@ function handleSubTaskDialogClose() {
 
 // Mobile responsive styles
 @media (max-width: 768px) {
+  :global(.task-detail-dialog.el-dialog) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  :global(.task-detail-dialog .el-dialog__body) {
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+  }
+
   .task-detail-dialog {
     .dialog-content {
       padding: 16px;
-      max-height: calc(100vh - 120px);
+      height: 100%;
+      max-height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .dialog-footer {
-      flex-direction: column;
+      gap: 8px;
       padding: 12px 16px;
+      flex-shrink: 0;
       
       .el-button {
-        width: 100%;
+        flex: 1;
+        min-width: 0;
+        padding: 8px 12px;
+        font-size: 13px;
+        
+        // Hide button text, show only icons on mobile
+        span:not(.el-icon) {
+          display: none;
+        }
+        
+        .el-icon {
+          margin-right: 0;
+        }
       }
     }
   }

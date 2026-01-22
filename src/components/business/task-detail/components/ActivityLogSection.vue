@@ -1,8 +1,8 @@
 <template>
-  <div class="activity-log-section">
+  <div class="activity-log-section" v-loading="isLoading" element-loading-text="加载中...">
     <div class="section-content">
       <!-- Activity Log Timeline -->
-      <div v-if="activityLogList.length > 0" class="log-timeline">
+      <div v-if="!isLoading && activityLogList.length > 0" class="log-timeline">
         <el-timeline>
           <el-timeline-item
             v-for="log in activityLogList"
@@ -19,7 +19,7 @@
       </div>
       
       <!-- Empty State -->
-      <div v-else class="empty-state">
+      <div v-else-if="!isLoading" class="empty-state">
         <el-empty
           :description="t('task.noActivityLog')"
           :image-size="80"
@@ -35,25 +35,55 @@
  * 
  * Displays the activity log list for a task, showing operation history
  * with time, operator, and description.
+ * Fetches activity log data independently from the API.
  * 
  * @component
- * @props {Array} activityLogList - Array of activity log objects
+ * @props {string} todoId - The ID of the todo to fetch activity logs for
  */
 
+import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
+import { todoApi } from '@/api/index.js'
 
 // Composables
 const { t } = useI18n()
 
 // Props definition
 const props = defineProps({
-  activityLogList: {
-    type: Array,
-    required: true,
-    default: () => []
+  todoId: {
+    type: String,
+    required: true
   }
 })
+
+// State
+const isLoading = ref(false)
+const activityLogList = ref([])
+
+/**
+ * Load activity log from API
+ */
+async function loadActivityLog() {
+  if (!props.todoId) return
+
+  isLoading.value = true
+  try {
+    const response = await todoApi.getActivityLog(props.todoId)
+    if (response.code === '200') {
+      activityLogList.value = response.body || []
+    } else {
+      ElMessage.error(response.message || t('task.operationFailed'))
+      activityLogList.value = []
+    }
+  } catch (error) {
+    console.error('Load activity log error:', error)
+    activityLogList.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
 
 /**
  * Format time string to readable format
@@ -64,6 +94,11 @@ function formatTime(time) {
   if (!time) return ''
   return dayjs(time).format('YYYY-MM-DD HH:mm')
 }
+
+// Watch for todoId changes
+watch(() => props.todoId, () => {
+  loadActivityLog()
+}, { immediate: true })
 </script>
 
 <style scoped lang="scss">

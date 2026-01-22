@@ -6,31 +6,33 @@
       <!-- 执行人选择 -->
       <div class="info-item">
         <label class="info-label">{{ t('task.assignee') }}</label>
-        <el-select
-          :model-value="selectedExecutors"
-          @update:model-value="handleExecutorsChange"
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          :max-collapse-tags="3"
-          placeholder="请选择执行人"
-          class="info-value"
-          :loading="isUpdating"
-        >
-          <el-option
-            v-for="user in availableUsers"
-            :key="user.umId"
-            :label="user.name"
-            :value="user.umId"
-          >
-            <div class="user-option">
-              <el-avatar :size="24" class="user-avatar">
-                {{ user.name.charAt(0) }}
-              </el-avatar>
-              <span>{{ user.name }}</span>
-            </div>
-          </el-option>
-        </el-select>
+        <div class="info-value executors-container">
+          <div class="executors-list">
+            <el-tooltip
+              v-for="user in displayExecutors"
+              :key="user.umId"
+              :content="`${user.name} (${user.umId})`"
+              placement="top"
+            >
+              <div class="executor-item">
+                <el-avatar :size="28" class="executor-avatar">
+                  {{ user.name.charAt(0) }}
+                </el-avatar>
+                <span class="executor-name">{{ user.name }}</span>
+              </div>
+            </el-tooltip>
+            
+            <el-button
+              class="add-executor-btn"
+              circle
+              size="small"
+              :loading="isUpdating"
+              @click="showUserSelector = true"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-button>
+          </div>
+        </div>
       </div>
 
       <!-- 创建人展示（只读） -->
@@ -53,65 +55,43 @@
       <div class="info-item">
         <label class="info-label">{{ t('task.deadline') }}</label>
         <el-date-picker
-          :model-value="deadlineValue"
-          @update:model-value="handleDeadlineChange"
+          v-model="tempDeadline"
+          @change="handleDeadlineChange"
           type="datetime"
           placeholder="选择截止时间"
           format="YYYY-MM-DD HH:mm:ss"
           value-format="YYYY-MM-DD HH:mm:ss"
           class="info-value date-picker"
-          :loading="isUpdating"
+          :disabled="isUpdating"
           style="width: 100%"
+          :clearable="false"
         />
       </div>
 
       <!-- 状态选择 -->
       <div class="info-item">
         <label class="info-label">{{ t('task.status') }}</label>
-        <el-select
+        <TagSelect
           :model-value="taskDetail?.status"
           @update:model-value="handleStatusChange"
+          :options="statusOptions"
           placeholder="选择状态"
-          class="info-value"
           :loading="isUpdating"
-        >
-          <el-option
-            v-for="status in statusOptions"
-            :key="status.value"
-            :label="status.label"
-            :value="status.value"
-          >
-            <div class="status-option">
-              <el-tag :type="status.type" size="small">
-                {{ status.label }}
-              </el-tag>
-            </div>
-          </el-option>
-        </el-select>
+          class="info-value-tag"
+        />
       </div>
 
       <!-- 优先级选择 -->
       <div class="info-item">
         <label class="info-label">{{ t('task.priority') }}</label>
-        <el-select
+        <TagSelect
           :model-value="taskDetail?.priority"
           @update:model-value="handlePriorityChange"
+          :options="priorityOptions"
           placeholder="选择优先级"
-          class="info-value"
           :loading="isUpdating"
-        >
-          <el-option
-            v-for="priority in priorityOptions"
-            :key="priority.value"
-            :label="priority.label"
-            :value="priority.value"
-          >
-            <div class="priority-option">
-              <span class="priority-dot" :style="{ backgroundColor: priority.color }"></span>
-              <span>{{ priority.label }}</span>
-            </div>
-          </el-option>
-        </el-select>
+          class="info-value-tag"
+        />
       </div>
 
       <!-- 来源展示（只读） -->
@@ -122,6 +102,14 @@
         </div>
       </div>
     </div>
+
+    <!-- 选人组件 -->
+    <UserSelector
+      v-model="showUserSelector"
+      :users="availableUsers"
+      :selected-users="selectedExecutors"
+      @confirm="handleExecutorsConfirm"
+    />
   </div>
 </template>
 
@@ -144,8 +132,12 @@
  * @emits update-field - Emitted when a field needs to be updated
  */
 
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Plus } from '@element-plus/icons-vue'
+import TagSelect from '@/components/common/TagSelect.vue'
+import UserSelector from '@/components/common/UserSelector.vue'
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from '@/constants/taskEnums'
 
 const { t } = useI18n()
 
@@ -166,21 +158,12 @@ const emit = defineEmits(['update-field'])
 
 // State
 const isUpdating = ref(false)
+const showUserSelector = ref(false)
+const tempDeadline = ref(null)
 
-// Status configuration
-const statusOptions = [
-  { value: 0, label: '待处理', type: 'warning' },
-  { value: 1, label: '已完成', type: 'success' },
-  { value: 2, label: '进行中', type: 'primary' },
-  { value: 3, label: '已逾期', type: 'danger' }
-]
-
-// Priority configuration
-const priorityOptions = [
-  { value: 1, label: '低', color: '#909399' },
-  { value: 2, label: '中', color: '#E6A23C' },
-  { value: 3, label: '高', color: '#F56C6C' }
-]
+// Status and Priority options from enums
+const statusOptions = TASK_STATUS_OPTIONS
+const priorityOptions = TASK_PRIORITY_OPTIONS
 
 // Source mapping
 const sourceConfig = {
@@ -202,13 +185,23 @@ const deadlineValue = computed(() => {
   return props.taskDetail?.deadLine || null
 })
 
+const displayExecutors = computed(() => {
+  if (!props.taskDetail?.todoUsers) return []
+  return props.taskDetail.todoUsers
+})
+
+// Watch for taskDetail changes to update temp deadline
+watch(() => props.taskDetail?.deadLine, (newValue) => {
+  tempDeadline.value = newValue || null
+}, { immediate: true })
+
 // Methods
 function getSourceText(source) {
   if (source === null || source === undefined) return '-'
   return sourceConfig[String(source)] || `未知来源(${source})`
 }
 
-async function handleExecutorsChange(umIds) {
+async function handleExecutorsConfirm(umIds) {
   isUpdating.value = true
   try {
     // Convert umIds to todoUsers array
@@ -270,25 +263,84 @@ async function handlePriorityChange(value) {
   .info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px 24px;
-    align-items: start;
+    gap: 24px 40px;
+    align-items: center;
 
     .info-item {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
       min-width: 0; // 关键：允许 flex 子元素收缩
 
       .info-label {
-        font-size: 13px;
-        color: #909399;
+        font-size: 14px;
+        color: #606266;
         font-weight: 500;
-        line-height: 1.5;
+        white-space: nowrap;
+        flex-shrink: 0;
+        min-width: 70px;
+        text-align: right;
+      }
+
+      .info-value-tag {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        min-width: 0;
       }
 
       .info-value {
-        width: 100%;
+        flex: 1;
         min-width: 0; // 关键：允许内容收缩
+
+        &.executors-container {
+          .executors-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+
+            .executor-item {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 8px 4px 4px;
+              background-color: #f5f7fa;
+              border-radius: 16px;
+              transition: all 0.2s;
+
+              .executor-avatar {
+                flex-shrink: 0;
+                background-color: #409eff;
+                color: white;
+                font-size: 12px;
+              }
+
+              .executor-name {
+                font-size: 13px;
+                color: #303133;
+                white-space: nowrap;
+              }
+            }
+
+            .add-executor-btn {
+              width: 28px;
+              height: 28px;
+              padding: 0;
+              border: 1px dashed #d9d9d9;
+              background-color: transparent;
+              color: #909399;
+              transition: all 0.2s;
+
+              &:hover {
+                border-color: #409eff;
+                color: #409eff;
+                background-color: #ecf5ff;
+              }
+            }
+          }
+        }
 
         &.readonly {
           display: flex;
@@ -315,7 +367,7 @@ async function handlePriorityChange(value) {
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              flex: 1;
+              max-width: fit-content; // 改为适应内容宽度
               min-width: 0; // 关键：允许收缩
             }
 
@@ -355,35 +407,6 @@ async function handlePriorityChange(value) {
       }
     }
   }
-
-  .user-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .user-avatar {
-      background-color: #409eff;
-      color: white;
-      font-size: 12px;
-    }
-  }
-
-  .status-option {
-    display: flex;
-    align-items: center;
-  }
-
-  .priority-option {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .priority-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-  }
 }
 
 // Mobile responsive styles
@@ -398,7 +421,18 @@ async function handlePriorityChange(value) {
 
     .info-grid {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 14px;
+
+      .info-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+
+        .info-label {
+          text-align: left;
+          min-width: auto;
+        }
+      }
     }
   }
 }

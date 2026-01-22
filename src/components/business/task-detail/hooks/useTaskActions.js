@@ -18,7 +18,13 @@ export function useTaskActions(taskDetail, emit, t) {
    * Generic method to update a field
    */
   async function updateField(field, value) {
-    if (!taskDetail.value) return
+    if (!taskDetail.value) return false
+
+    // Store old value for potential rollback
+    const oldValue = taskDetail.value[field]
+    
+    // Optimistically update the UI
+    taskDetail.value[field] = value
 
     try {
       const response = await todoApi.updateTodo({
@@ -30,15 +36,21 @@ export function useTaskActions(taskDetail, emit, t) {
       })
       
       if (response.code === '200') {
-        taskDetail.value[field] = value
         ElMessage.success(t('task.updateSuccess'))
         emit('task-updated', taskDetail.value)
+        return true
       } else {
+        // Rollback on failure
+        taskDetail.value[field] = oldValue
         ElMessage.error(response.message || t('task.operationFailed'))
+        return false
       }
     } catch (error) {
+      // Rollback on error
+      taskDetail.value[field] = oldValue
       ElMessage.error(t('task.operationFailed'))
       console.error('Update field error:', error)
+      return false
     }
   }
 
@@ -135,42 +147,6 @@ export function useTaskActions(taskDetail, emit, t) {
   }
 
   /**
-   * Submit progress update with progress value and note
-   * @param {Object} data - Progress data containing progress value and note
-   * @param {number} data.progress - Progress percentage (0-100)
-   * @param {string} data.note - Progress note
-   */
-  async function submitProgress(data) {
-    if (!taskDetail.value) return
-
-    try {
-      const response = await todoApi.updateTodo({
-        id: taskDetail.value.id,
-        umId: taskDetail.value.umId,
-        name: taskDetail.value.name,
-        title: taskDetail.value.title,
-        progress: data.progress,
-        progressNote: data.note
-      })
-      
-      if (response.code === '200') {
-        // Update local progress value
-        taskDetail.value.progress = data.progress
-        ElMessage.success(t('task.submitSuccess'))
-        emit('task-updated', taskDetail.value)
-        return true
-      } else {
-        ElMessage.error(response.message || t('task.operationFailed'))
-        return false
-      }
-    } catch (error) {
-      ElMessage.error(t('task.operationFailed'))
-      console.error('Submit progress error:', error)
-      return false
-    }
-  }
-
-  /**
    * Add a new subtask
    * @param {string} content - The content of the subtask
    */
@@ -239,7 +215,6 @@ export function useTaskActions(taskDetail, emit, t) {
     toggleImportant,
     markAsComplete,
     deleteTask,
-    submitProgress,
     addSubTask,
     toggleSubTask
   }

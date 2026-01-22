@@ -121,7 +121,22 @@ export default {
     uploadLimitExceeded: '上传文件数量超过限制',
     fileProcessFailed: '文件 {name} 处理失败',
     progressUpdateSuccess: '进度更新成功',
-    progressUpdateFailed: '进度更新失败'
+    progressUpdateFailed: '进度更新失败',
+    titlePlaceholder: '请输入任务标题',
+    selectDeadline: '选择截止时间',
+    selectAssignee: '请选择负责人',
+    visibility: '任务可见性',
+    visibilityPrivate: '仅自己可见',
+    visibilityPublic: '团队可见',
+    markAsImportant: '标记为重要任务',
+    titleRequired: '请输入任务标题',
+    titleLength: '任务标题长度应在1-100个字符之间',
+    assigneeRequired: '请选择至少一个负责人',
+    clickToAddAssignee: '点击 + 号添加负责人',
+    createSuccess: '任务创建成功',
+    createFailed: '任务创建失败',
+    createTo: '创建至',
+    selectProject: '选择项目'
   },
   ai: {
     title: 'AI动态分析',

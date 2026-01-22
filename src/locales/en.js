@@ -109,6 +109,7 @@ export default {
     noActivityLog: 'No activity log',
     markComplete: 'Mark Complete',
     cancelImportant: 'Cancel Important',
+    cancelMarkImportantSuccess: 'Unmarked as important',
     confirmDelete: 'Confirm Delete',
     deleteConfirm: 'Are you sure you want to delete this task? This action cannot be undone.',
     deleteSuccess: 'Delete successful',

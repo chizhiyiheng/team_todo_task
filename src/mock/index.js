@@ -376,6 +376,62 @@ export const mockApi = {
       message: 'success',
       body: mockLogs
     }
+  },
+
+  // 标记重要接口 Mock
+  async markImportant(id) {
+    await delay()
+    
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === id)
+    
+    if (!task) {
+      return {
+        code: '404',
+        message: '待办不存在',
+        body: null
+      }
+    }
+    
+    // 更新 isTop 状态
+    task.isTop = 1
+    
+    return {
+      code: '200',
+      message: '标记重要成功',
+      body: {
+        id: id,
+        isTop: 1
+      }
+    }
+  },
+
+  // 取消标记重要接口 Mock
+  async unmarkImportant(id) {
+    await delay()
+    
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === id)
+    
+    if (!task) {
+      return {
+        code: '404',
+        message: '待办不存在',
+        body: null
+      }
+    }
+    
+    // 更新 isTop 状态
+    task.isTop = 0
+    
+    return {
+      code: '200',
+      message: '取消标记重要成功',
+      body: {
+        id: id,
+        isTop: 0
+      }
+    }
   }
 }
 

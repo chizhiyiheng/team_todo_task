@@ -34,6 +34,20 @@ class ApiService {
         url = '/api/todo/delete'
         data = { id: deleteMatch[1] }
       }
+
+      // 处理标记重要接口
+      const markImportantMatch = url.match(/^\/api\/todo\/markImportant\/(.+)$/)
+      if (markImportantMatch) {
+        url = '/api/todo/markImportant'
+        data = { id: markImportantMatch[1] }
+      }
+
+      // 处理取消标记重要接口
+      const unmarkImportantMatch = url.match(/^\/api\/todo\/unmarkImportant\/(.+)$/)
+      if (unmarkImportantMatch) {
+        url = '/api/todo/unmarkImportant'
+        data = { id: unmarkImportantMatch[1] }
+      }
       
       switch (url) {
         case '/api/todo/list':
@@ -92,6 +106,14 @@ class ApiService {
         // 操作日志接口
         case '/api/todo/activityLog':
           result = await this.mockApi.getActivityLog(data?.todoId || params?.todoId)
+          break
+        // 标记重要接口
+        case '/api/todo/markImportant':
+          result = await this.mockApi.markImportant(data?.id)
+          break
+        // 取消标记重要接口
+        case '/api/todo/unmarkImportant':
+          result = await this.mockApi.unmarkImportant(data?.id)
           break
         default:
           result = { code: '404', message: '接口不存在', body: null }

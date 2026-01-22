@@ -109,6 +109,7 @@ export default {
     noActivityLog: '暂无操作记录',
     markComplete: '标记完成',
     cancelImportant: '取消重要',
+    cancelMarkImportantSuccess: '取消标记重要',
     confirmDelete: '确认删除',
     deleteConfirm: '确定要删除这个任务吗？删除后无法恢复。',
     deleteSuccess: '删除成功',

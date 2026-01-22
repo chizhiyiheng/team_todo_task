@@ -53,6 +53,16 @@ export const todoApi = {
   // 获取待办操作日志
   getActivityLog(todoId) {
     return request.post('/api/todo/activityLog', { todoId })
+  },
+
+  // 标记重要
+  markImportant(id) {
+    return request.post(`/api/todo/markImportant/${id}`)
+  },
+
+  // 取消标记重要
+  unmarkImportant(id) {
+    return request.post(`/api/todo/unmarkImportant/${id}`)
   }
 }
 

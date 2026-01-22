@@ -63,6 +63,43 @@ const title = t('task.title')
 - 合理使用 `computed` 缓存计算结果
 - 避免在模板中使用复杂表达式
 
+## 新增接口开发流程
+
+新增接口需要修改 3 个文件（按顺序）：
+
+1. **src/api/index.js** - 定义接口方法
+```javascript
+// 在对应的 API 对象中添加方法
+markImportant(id) {
+  return request.post(`/api/todo/markImportant/${id}`)
+}
+```
+
+2. **src/mock/index.js** - 实现 Mock 逻辑
+```javascript
+// 在 mockApi 对象中添加方法
+async markImportant(id) {
+  await delay()
+  // 实现 mock 逻辑
+  return { code: '200', message: 'success', body: {...} }
+}
+```
+
+3. **src/api/request.js** - 添加路由映射
+```javascript
+// 如果是路径参数，在 switch 前添加解析
+const markImportantMatch = url.match(/^\/api\/todo\/markImportant\/(.+)$/)
+if (markImportantMatch) {
+  url = '/api/todo/markImportant'
+  data = { id: markImportantMatch[1] }
+}
+
+// 在 switch 中添加 case
+case '/api/todo/markImportant':
+  result = await this.mockApi.markImportant(data?.id)
+  break
+```
+
 ## 提交前检查
 
 - [ ] 无硬编码颜色、间距、字体大小

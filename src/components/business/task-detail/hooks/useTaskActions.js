@@ -61,23 +61,27 @@ export function useTaskActions(taskDetail, emit, t) {
     if (!taskDetail.value) return
 
     const newIsTop = taskDetail.value.isTop === 1 ? 0 : 1
+    const oldIsTop = taskDetail.value.isTop
+
+    // Optimistically update the UI
+    taskDetail.value.isTop = newIsTop
+
     try {
-      const response = await todoApi.updateTodo({
-        id: taskDetail.value.id,
-        umId: taskDetail.value.umId,
-        name: taskDetail.value.name,
-        title: taskDetail.value.title,
-        isTop: newIsTop
-      })
+      const response = newIsTop === 1 
+        ? await todoApi.markImportant(taskDetail.value.id)
+        : await todoApi.unmarkImportant(taskDetail.value.id)
       
       if (response.code === '200') {
-        taskDetail.value.isTop = newIsTop
-        ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelImportant'))
+        ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelMarkImportantSuccess'))
         emit('task-updated', taskDetail.value)
       } else {
+        // Rollback on failure
+        taskDetail.value.isTop = oldIsTop
         ElMessage.error(response.message || t('task.operationFailed'))
       }
     } catch (error) {
+      // Rollback on error
+      taskDetail.value.isTop = oldIsTop
       ElMessage.error(t('task.operationFailed'))
       console.error('Toggle important error:', error)
     }

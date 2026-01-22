@@ -93,20 +93,23 @@
           :type="taskDetail.isTop === 1 ? 'warning' : 'default'"
           :icon="taskDetail.isTop === 1 ? 'StarFilled' : 'Star'"
           @click="toggleImportant"
+          plain
         >
           {{ taskDetail.isTop === 1 ? t('task.cancelImportant') : t('task.markImportant') }}
         </el-button>
         
         <el-button
+          v-if="taskDetail.status !== 1 && taskDetail.status !== 4"
           type="success"
           icon="CircleCheck"
           @click="markAsComplete"
-          :disabled="taskDetail.status === 1"
+          plain
         >
           {{ t('task.markComplete') }}
         </el-button>
         
         <el-button
+          v-if="taskDetail.status === 1"
           type="danger"
           icon="Delete"
           @click="deleteTask"
@@ -274,18 +277,18 @@ function handleSubTaskDialogClose() {
   }
 
   .loading-container {
-    padding: 24px;
+    padding: $spacing-xxl;
     min-height: 400px;
   }
 
   .dialog-content {
-    padding: 12px;
+    padding: $spacing-md;
     max-height: calc(90vh - 200px);
     overflow-y: auto;
   }
 
   .error-container {
-    padding: 24px;
+    padding: $spacing-xxl;
     min-height: 400px;
     display: flex;
     align-items: center;
@@ -295,18 +298,17 @@ function handleSubTaskDialogClose() {
   .dialog-footer {
     display: flex;
     justify-content: flex-start;
-    gap: 12px;
-    padding: 12px 12px 0;
+    gap: $spacing-md;
+    padding: $spacing-md $spacing-md 0;
     border-top: 1px solid $border-light;
   }
 
   .tabs-section {
-    margin-top: 24px;
-    border-top: 1px solid $border-light;
-    padding-top: 24px;
+    margin-top: $spacing-xxl;
+    padding-top: $spacing-xxl;
 
     :deep(.el-tabs__header) {
-      margin-bottom: 20px;
+      margin-bottom: $spacing-xl;
     }
 
     :deep(.el-tabs__nav-wrap::after) {
@@ -318,8 +320,8 @@ function handleSubTaskDialogClose() {
     }
 
     :deep(.el-tabs__item) {
-      font-size: 14px;
-      padding: 0 20px;
+      font-size: $font-size-base;
+      padding: 0 $spacing-xl;
       height: 40px;
       line-height: 40px;
       
@@ -337,9 +339,9 @@ function handleSubTaskDialogClose() {
     }
 
     .tab-count {
-      margin-left: 4px;
+      margin-left: $spacing-xs;
       color: $text-secondary;
-      font-size: 13px;
+      font-size: $font-size-small;
     }
   }
 }

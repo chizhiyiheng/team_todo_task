@@ -2,7 +2,7 @@
   <div class="tag-select" ref="tagSelectRef">
     <div
       class="tag-trigger"
-      :class="{ 'is-active': isDropdownVisible }"
+      :class="{ 'is-active': isDropdownVisible, 'is-disabled': disabled }"
       @click="toggleDropdown"
     >
       <el-tag
@@ -25,7 +25,10 @@
           v-for="option in options"
           :key="option.value"
           class="dropdown-item"
-          :class="{ 'is-selected': modelValue === option.value }"
+          :class="{ 
+            'is-selected': modelValue === option.value,
+            'is-disabled': disabledValues.includes(option.value)
+          }"
           @click="handleSelect(option)"
         >
           <el-tag
@@ -68,6 +71,14 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  disabledValues: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -81,11 +92,15 @@ const selectedOption = computed(() => {
 })
 
 function toggleDropdown() {
-  if (props.loading) return
+  if (props.loading || props.disabled) return
   isDropdownVisible.value = !isDropdownVisible.value
 }
 
 function handleSelect(option) {
+  // Prevent selecting disabled options
+  if (props.disabledValues.includes(option.value)) {
+    return
+  }
   emit('update:modelValue', option.value)
   emit('change', option.value)
   isDropdownVisible.value = false
@@ -117,9 +132,14 @@ onBeforeUnmount(() => {
     user-select: none;
     transition: all 0.3s;
 
-    &:hover {
+    &:hover:not(.is-disabled) {
       opacity: 0.8;
       transform: translateY(-1px);
+    }
+
+    &.is-disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
     &.is-active {
@@ -205,6 +225,15 @@ onBeforeUnmount(() => {
 
       &.is-selected {
         background-color: #ecf5ff;
+      }
+
+      &.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        
+        &:hover {
+          background-color: transparent;
+        }
       }
 
       .option-tag {

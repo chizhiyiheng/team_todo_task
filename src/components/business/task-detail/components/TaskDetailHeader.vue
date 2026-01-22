@@ -149,7 +149,7 @@ function cancelEditTitle() {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 24px;
+  padding: $spacing-md 0;
   border-bottom: 1px solid $border-light;
 
   .important-icon {
@@ -240,8 +240,7 @@ function cancelEditTitle() {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .dialog-header {
-    padding: 16px;
-
+    padding: $spacing-md 0;
     .task-title {
       font-size: 16px;
       line-height: 28px;

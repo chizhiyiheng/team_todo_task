@@ -74,7 +74,8 @@
         <TagSelect
           :model-value="taskDetail?.status"
           @update:model-value="handleStatusChange"
-          :options="statusOptions"
+          :options="filteredStatusOptions"
+          :disabled-values="disabledStatusValues"
           placeholder="选择状态"
           :loading="isUpdating"
           class="info-value-tag"
@@ -137,7 +138,7 @@ import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import TagSelect from '@/components/common/TagSelect.vue'
 import UserSelector from '@/components/common/UserSelector.vue'
-import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS } from '@/constants/taskEnums'
+import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS } from '@/constants/taskEnums'
 
 const { t } = useI18n()
 
@@ -164,6 +165,30 @@ const tempDeadline = ref(null)
 // Status and Priority options from enums
 const statusOptions = TASK_STATUS_OPTIONS
 const priorityOptions = TASK_PRIORITY_OPTIONS
+
+// Filtered status options based on current status
+// If status is OVERDUE (3), only allow COMPLETED (1) or CANCELLED (4)
+// But keep OVERDUE in options for display purpose (read-only)
+const filteredStatusOptions = computed(() => {
+  if (props.taskDetail?.status === TASK_STATUS.OVERDUE) {
+    // Include OVERDUE for display, but user can only select COMPLETED or CANCELLED
+    return statusOptions.filter(option => 
+      option.value === TASK_STATUS.COMPLETED || 
+      option.value === TASK_STATUS.CANCELLED ||
+      option.value === TASK_STATUS.OVERDUE
+    )
+  }
+  // For other statuses, exclude OVERDUE from options (it's system-determined)
+  return statusOptions.filter(option => option.value !== TASK_STATUS.OVERDUE)
+})
+
+// Disabled status values - OVERDUE cannot be manually selected
+const disabledStatusValues = computed(() => {
+  if (props.taskDetail?.status === TASK_STATUS.OVERDUE) {
+    return [TASK_STATUS.OVERDUE]
+  }
+  return []
+})
 
 // Source mapping
 const sourceConfig = {
@@ -231,7 +256,7 @@ async function handleDeadlineChange(value) {
 async function handleStatusChange(value) {
   isUpdating.value = true
   try {
-    await emit('update-field', 'todoStatus', value)
+    await emit('update-field', 'status', value)
   } finally {
     isUpdating.value = false
   }
@@ -249,14 +274,7 @@ async function handlePriorityChange(value) {
 
 <style scoped lang="scss">
 .basic-info-section {
-  border-bottom: 1px solid $border-light;
-
-  .section-title {
-    margin: 0 0 20px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: $text-primary;
-  }
+  padding-bottom: $spacing-xxl;
 
   .info-grid {
     display: grid;

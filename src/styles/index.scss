@@ -236,6 +236,32 @@ a {
   }
 }
 
+// Task Detail Section Title - Unified Style
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin: 0 0 $spacing-lg 0;
+  padding-left: $spacing-sm;
+  font-size: $font-size-base;
+  font-weight: 600;
+  color: $text-primary;
+  border-left: 3px solid $primary-color;
+  line-height: 1.5;
+  
+  .el-icon {
+    font-size: 16px;
+    color: $primary-color;
+  }
+  
+  .count {
+    font-size: $font-size-small;
+    font-weight: 400;
+    color: $text-secondary;
+    margin-left: $spacing-xs;
+  }
+}
+
 @media (max-width: 768px) {
 
   .el-message-box {

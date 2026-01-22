@@ -84,7 +84,7 @@ export const mockApi = {
         name: task.creatorName || '刘青红',
         title: task.content || task.name || '任务标题',
         content: task.desc || '',
-        status: parseInt(task.todoStatus || task.status || 0),
+        status: parseInt(task.status || 0),
         progress: task.percent || 0,
         priority: task.priority || 2,
         isTop: task.isTop || 0,

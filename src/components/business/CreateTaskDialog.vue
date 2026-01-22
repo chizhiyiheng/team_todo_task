@@ -1,6 +1,24 @@
 <template>
-  <el-dialog :model-value="modelValue" @update:model-value="handleClose" :title="t('task.createTask')"
-    :close-on-click-modal="false" class="create-task-dialog" width="600px" :fullscreen="isMobile">
+  <el-dialog 
+    :model-value="modelValue" 
+    @update:model-value="handleClose" 
+    :title="null"
+    :show-close="false"
+    :close-on-click-modal="false" 
+    class="create-task-dialog" 
+    width="600px" 
+    :fullscreen="isMobile"
+  >
+    <!-- Custom Header -->
+    <template #header>
+      <div class="dialog-header">
+        <h3 class="dialog-title">{{ t('task.createTask') }}</h3>
+        <el-icon class="close-icon" @click="handleClose">
+          <Close />
+        </el-icon>
+      </div>
+    </template>
+
     <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px" label-position="left"
       v-loading="isSubmitting" class="inline-form">
       <!-- 创建至（仅团队任务） -->
@@ -251,6 +269,40 @@ const handleSubmit = async () => {
 
 <style scoped lang="scss">
 .create-task-dialog {
+  :deep(.el-dialog__header) {
+    padding: 0;
+    margin: 0;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-md 0;
+    border-bottom: 1px solid $border-light;
+
+    .dialog-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-primary;
+      line-height: 32px;
+    }
+
+    .close-icon {
+      font-size: 20px;
+      color: $text-secondary;
+      cursor: pointer;
+      transition: all 0.3s;
+      flex-shrink: 0;
+
+      &:hover {
+        color: $text-regular;
+        transform: scale(1.1);
+      }
+    }
+  }
+
   :deep(.el-dialog__body) {
     padding: $spacing-xxl;
   }
@@ -352,6 +404,18 @@ const handleSubmit = async () => {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .create-task-dialog {
+    .dialog-header {
+      padding: $spacing-md 0;
+      .dialog-title {
+        font-size: 16px;
+        line-height: 28px;
+      }
+
+      .close-icon {
+        font-size: 18px;
+      }
+    }
+
     :deep(.el-dialog__body) {
       padding: $spacing-xl;
     }

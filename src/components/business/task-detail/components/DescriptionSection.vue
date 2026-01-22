@@ -1,8 +1,6 @@
 <template>
   <div class="description-section">
-    <div class="section-header">
-      <h3 class="section-title">{{ t('task.description') }}</h3>
-    </div>
+    <h3 class="section-title">{{ t('task.description') }}</h3>
     
     <div class="section-content">
       <!-- View Mode -->
@@ -116,19 +114,7 @@ function cancelEditDescription() {
 
 <style scoped lang="scss">
 .description-section {
-  padding: 24px 0;
-  border-bottom: 1px solid $border-light;
-  
-  .section-header {
-    margin-bottom: 12px;
-    
-    .section-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: $text-primary;
-      margin: 0;
-    }
-  }
+  padding: $spacing-xxl 0;
   
   .section-content {
     .description-view {
@@ -198,13 +184,7 @@ function cancelEditDescription() {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .description-section {
-    padding: 20px 0;
-    
-    .section-header {
-      .section-title {
-        font-size: 15px;
-      }
-    }
+    padding: $spacing-xl 0;
     
     .section-content {
       .description-view {

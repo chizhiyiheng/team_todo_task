@@ -1,7 +1,6 @@
 <template>
   <div class="attachment-section">
     <h4 class="section-title">
-      <el-icon><Paperclip /></el-icon>
       {{ t('task.attachment') }}
       <span v-if="attachmentList.length > 0" class="count">({{ attachmentList.length }})</span>
     </h4>
@@ -188,23 +187,7 @@ function downloadAttachment(attachment) {
 
 <style scoped lang="scss">
 .attachment-section {
-  padding: 16px 0;
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 12px 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: $text-primary;
-    
-    .count {
-      font-size: 13px;
-      font-weight: 400;
-      color: $text-secondary;
-    }
-  }
+  padding: $spacing-lg 0;
   
   .section-content {
     .attachment-grid {
@@ -286,12 +269,7 @@ function downloadAttachment(attachment) {
 // Mobile responsive styles
 @media (max-width: 768px) {
   .attachment-section {
-    padding: 12px 0;
-    
-    .section-title {
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
+    padding: $spacing-md 0;
     
     .section-content {
       .attachment-grid {

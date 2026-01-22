@@ -1,6 +1,6 @@
 <template>
   <div class="task-list">
-    <div class="task-list-header">
+    <div v-if="showHeader" class="task-list-header">
       <h4>任务列表</h4>
       <div class="task-controls">
         <el-select v-model="statusFilter" placeholder="筛选任务状态" style="width: 120px" @change="filterChanged">
@@ -9,6 +9,7 @@
           <el-option label="进行中" value="in_progress" />
           <el-option label="已完成" value="completed" />
           <el-option label="已逾期" value="overdue" />
+          <el-option label="已取消" value="cancelled" />
         </el-select>
         <el-select v-model="assigneeFilter" placeholder="按执行人筛选" style="width: 120px" @change="assigneeChanged">
           <el-option label="全部人员" value="all" />
@@ -28,81 +29,68 @@
       </div>
     </div>
 
-    <div v-if="viewMode === 'list'" class="task-list-view">
-      <div class="task-rows">
+    <div v-if="viewMode === 'list'" class="task-list-view project-table">
+      <div class="project-table-head">
+        <div class="task-row">
+           <div class="el-col" style="flex: 1; padding-left: 32px;">任务名称</div>
+           <div class="el-col" style="width: 120px; flex: none;">负责人</div>
+           <div class="el-col" style="width: 120px; flex: none;">创建人</div>
+           <div class="el-col" style="width: 120px; flex: none;">截止时间</div>
+           <div class="el-col" style="width: 80px; flex: none;">来源</div>
+           <div class="el-col" style="width: 80px; flex: none;">操作</div>
+        </div>
+      </div>
+      <div class="project-table-body">
         <div
           v-for="task in filteredTasks"
-          :key="task.id"
-          class="task-item">
-          <div class="task-row" :style="taskItemStyle(task)">
+          :key="task.uniqueKey || task.id"
+          class="task-row"
+          @click="viewTask(task)"
+        >
             <em v-if="task.p_name" class="priority-color" :style="{backgroundColor:task.p_color}"></em>
-            <div class="row-name" :class="[task.status === '1' ? 'complete' : '']">
-              <TaskMenu :ref="`taskMenu_${task.id}`" :task="task" @on-update="onTaskUpdate"/>
-              <div class="item-title" @click="viewTask(task)">
-                <span v-if="task.flow_item_name" :class="task.flow_item_status" @click.stop="openMenu($event, task)">{{ task.flow_item_name }}</span>
-                <span v-if="task.sub_top === true">子任务</span>
-                <span v-if="task.sub_my && task.sub_my.length > 0">+{{ task.sub_my.length }}</span>
-                {{ task.name || task.content }}
-              </div>
-              <div class="item-icons" @click="viewTask(task)">
-                <div v-if="task.desc" class="item-icon">
-                  <i class="taskfont">&#xe71a;</i>
+            <div class="el-row">
+                <div class="el-col row-name" :class="[getTaskStatus(task) === 'completed' ? 'complete' : '']" style="flex: 1;">
+                   <div class="task-menu-wrapper" @click.stop>
+                      <TaskMenu :task="task.raw || task" @on-update="onTaskUpdate"/>
+                   </div>
+                   <div class="item-title">
+                      <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star"><StarFilled /></el-icon>
+                      <span v-if="task.flow_item_name" :class="task.flow_item_status">{{ task.flow_item_name }}</span>
+                      <span v-if="task.sub_top === true">子任务</span>
+                      <span v-if="task.sub_my && task.sub_my.length > 0">+{{ task.sub_my.length }}</span>
+                      {{ task.name || task.content }}
+                   </div>
+                   <div class="item-icons">
+                      <div v-if="task.desc" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
+                      <div v-if="task.file_num > 0" class="item-icon"><i class="taskfont">&#xe71c;</i><em>{{ task.file_num }}</em></div>
+                      <div v-if="task.msg_num > 0" class="item-icon"><i class="taskfont">&#xe71e;</i><em>{{ task.msg_num }}</em></div>
+                      <div v-if="task.sub_num > 0" class="item-icon" @click.stop="getSublist(task)"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
+                   </div>
                 </div>
-                <div v-if="task.file_num > 0" class="item-icon">
-                  <i class="taskfont">&#xe71c;</i>
-                  <em>{{ task.file_num }}</em>
+                <div class="el-col row-user" style="width: 120px; flex: none;">
+                   <div class="user-list">
+                      <el-avatar v-for="(user, keyu) in ownerUser(task.attendeeList || task.task_user).slice(0,3)" :key="keyu" :size="24" :src="user.avatar" class="user-avatar" :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
+                         {{ user.name ? user.name.substring(0, 1) : 'U' }}
+                      </el-avatar>
+                      <el-button v-if="ownerUser(task.attendeeList || task.task_user).length === 0" type="primary" link size="small" @click.stop="viewTask(task, true)">领取</el-button>
+                   </div>
                 </div>
-                <div v-if="task.msg_num > 0" class="item-icon">
-                  <i class="taskfont">&#xe71e;</i>
-                  <em>{{ task.msg_num }}</em>
+                <div class="el-col row-assigner" style="width: 120px; flex: none;">{{ task.creatorName || task.create_user || '-' }}</div>
+                <div class="el-col row-time" style="width: 120px; flex: none;">
+                   <div v-if="getTaskStatus(task) !== 'completed' && (task.deadLine || task.end_at)" :class="['task-time', isToday(task.deadLine || task.end_at) ? 'today' : '', isOverdue(task.deadLine || task.end_at) ? 'overdue' : '']">{{ expiresFormat(task.deadLine || task.end_at) }}</div>
+                   <div v-else-if="showCompleteAt && getTaskStatus(task) === 'completed'" :title="task.finishTime || task.complete_at">{{ completeAtFormat(task.finishTime || task.complete_at) }}</div>
                 </div>
-                <div v-if="task.sub_num > 0" class="item-icon" @click.stop="getSublist(task)">
-                  <i class="taskfont">&#xe71f;</i>
-                  <em>{{ task.sub_complete }}/{{ task.sub_num }}</em>
+                <div class="el-col row-source" style="width: 80px; flex: none;">{{ getSourceName(task.source) }}</div>
+                <div class="el-col row-operation" style="width: 80px; flex: none;">
+                   <div class="operation-icons">
+                      <div class="op-icon" :class="{ active: (task.mark || (task.isTop === 1 ? '1' : '0')) === '1' }" @click.stop="handleOperationAction('mark-important', task)">
+                         <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'"><StarFilled /></el-icon>
+                         <el-icon v-else><Star /></el-icon>
+                      </div>
+                      <TableAction :menu="operationMenu" align="right" @action="handleOperationAction($event, task)" />
+                   </div>
                 </div>
-              </div>
             </div>
-            <div class="row-user">
-              <ul @click="viewTask(task)">
-                <li v-for="(user, keyu) in ownerUser(task.attendeeList)" :key="keyu">
-                  <el-avatar
-                    v-if="keyu < 3"
-                    :size="32"
-                    :src="user.avatar"
-                    :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
-                    {{ user.name ? user.name.substring(0, 1) : 'U' }}
-                  </el-avatar>
-                </li>
-                <li v-if="ownerUser(task.attendeeList).length === 0" class="no-owner">
-                  <el-button type="primary" size="small" @click.stop="viewTask(task, true)">领取任务</el-button>
-                </li>
-              </ul>
-            </div>
-            <div class="row-assigner">
-              <div class="assigner-name">{{ task.creatorName || task.create_user || '' }}</div>
-            </div>
-            <div class="row-time">
-              <el-tooltip
-                v-if="task.status !== '1' && task.deadLine"
-                :class="['task-time', isToday(task.deadLine) ? 'today' : '', isOverdue(task.deadLine) ? 'overdue' : '']"
-                :disabled="false"
-                :open-delay="600"
-                :content="task.deadLine">
-                <div @click="viewTask(task)">{{ expiresFormat(task.deadLine) }}</div>
-              </el-tooltip>
-              <div v-else-if="showCompleteAt && task.status === '1'" :title="task.finishTime || task.complete_at">{{ completeAtFormat(task.finishTime || task.complete_at) }}</div>
-            </div>
-            <div class="row-source">
-              <div class="source-text"></div>
-            </div>
-            <div class="row-operation">
-              <TableAction
-                :menu="operationMenu"
-                align="right"
-                @action="handleOperationAction($event, task)"
-              />
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -112,8 +100,11 @@
         <div
           v-for="statusKey in statusList"
           :key="statusKey"
-          class="kanban-column"
-          :class="'status-' + statusKey"
+          :class="['kanban-column', 'status-' + statusKey, { 'drag-over': dragOverStatus === statusKey }]"
+          @dragover.prevent
+          @dragenter="handleDragEnter(statusKey)"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop(statusKey)"
         >
           <div class="kanban-column-header">
             <h5>{{ getStatusText(statusKey) }}</h5>
@@ -122,17 +113,24 @@
           <div class="kanban-tasks">
             <div
               v-for="task in columnTasks[statusKey]"
-              :key="task.id"
+              :key="task.uniqueKey || task.id"
               class="kanban-task"
               @click="viewTask(task)"
+              draggable="true"
+              @dragstart="handleDragStart(task)"
             >
               <div class="task-card">
                 <div class="task-card-priority" v-if="task.p_name" :style="{ backgroundColor: task.p_color }"></div>
-                <div class="task-title">{{ task.name || task.content }}</div>
+                <div class="task-title">
+                  <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star">
+                    <StarFilled />
+                  </el-icon>
+                  {{ task.name || task.content }}
+                </div>
                 <div class="task-info">
-                  <div class="task-assignee">{{ getAttendeeNames(task.attendeeList) }}</div>
-                  <div class="task-deadline" :class="{ 'overdue': isOverdue(task.deadLine) }">
-                    {{ task.deadLine }}
+                  <div class="task-assignee">{{ getAttendeeNames(task.attendeeList || task.task_user) }}</div>
+                  <div class="task-deadline" :class="{ 'overdue': isOverdue(task.deadLine || task.end_at) }">
+                    {{ task.deadLine || task.end_at }}
                   </div>
                 </div>
                 <div v-if="taskUsers(task).length" class="task-users">
@@ -155,13 +153,13 @@
                   </div>
                   <el-progress :percentage="task.percent || 0" :stroke-width="6" />
                   <el-tooltip
-                    v-if="task.deadLine"
-                    :class="['task-time', isToday(task.deadLine) ? 'today' : '', isOverdue(task.deadLine) ? 'overdue' : '']"
+                    v-if="task.deadLine || task.end_at"
+                    :class="['task-time', isToday(task.deadLine || task.end_at) ? 'today' : '', isOverdue(task.deadLine || task.end_at) ? 'overdue' : '']"
                     :disabled="false"
                     :open-delay="600"
-                    :content="task.deadLine">
+                    :content="task.deadLine || task.end_at">
                     <div v-if="task.status !== '1'">
-                      <i class="taskfont">&#xe71d;</i>{{ expiresFormat(task.deadLine) }}
+                      <i class="taskfont">&#xe71d;</i>{{ expiresFormat(task.deadLine || task.end_at) }}
                     </div>
                   </el-tooltip>
                 </div>
@@ -188,8 +186,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
-import { List, Grid, Calendar, MoreFilled, Star, Edit, Delete, Bell, Loading } from '@element-plus/icons-vue'
+import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
@@ -202,6 +201,10 @@ const props = defineProps({
     default: 'list'
   },
   statusFilter: {
+    type: String,
+    default: 'all'
+  },
+  assigneeFilter: {
     type: String,
     default: 'all'
   },
@@ -220,15 +223,21 @@ const props = defineProps({
   showCompleteAt: {
     type: Boolean,
     default: false
+  },
+  showHeader: {
+    type: Boolean,
+    default: true
+  },
+  showCompleted: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed'])
+const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted'])
 
 const taskStore = useTaskStore()
 
-const tasks = ref([])
-const assignees = ref([])
 const assigneeFilter = ref('all')
 const statusFilter = ref(props.statusFilter)
 const viewMode = ref(props.viewMode)
@@ -238,7 +247,8 @@ const kanbanColumns = ref({
   completed: [],
   overdue: []
 })
-const taskRefs = ref({})
+const draggingTask = ref(null)
+const dragOverStatus = ref(null)
 
 const ganttChart = ref(null)
 const ganttChartInstance = ref(null)
@@ -250,26 +260,34 @@ const selectedTaskId = ref(null)
 const statusList = ['pending', 'in_progress', 'completed', 'overdue']
 
 const operationMenu = [
-  { icon: '&#xe6ec;', title: '标记重点', action: 'mark-important' },
-  { icon: 'Edit', title: '编辑', action: 'edit-task' },
-  { icon: 'Delete', title: '删除', action: 'delete-task' },
-  { icon: 'Bell', title: '提醒', action: 'set-reminder' }
+  { icon: Star, title: '标记重点', action: 'mark-important' },
+  { icon: Edit, title: '编辑', action: 'edit-task' },
+  { icon: Delete, title: '删除', action: 'delete-task' },
+  { icon: Bell, title: '提醒', action: 'set-reminder' }
 ]
 
 const filteredTasks = computed(() => {
   let filtered = tasks.value
 
+  if (!props.showCompleted) {
+    filtered = filtered.filter(task => task.status !== '1')
+  }
+
   if (statusFilter.value !== 'all') {
-    filtered = filtered.filter(task => {
-      if (statusFilter.value === 'completed') {
-        return task.status === '1'
-      } else if (statusFilter.value === 'pending') {
-        return task.status === '0' && !isOverdue(task.deadLine || task.end_at)
-      } else if (statusFilter.value === 'overdue') {
-        return task.status === '0' && isOverdue(task.deadLine || task.end_at)
+    if (statusFilter.value === 'completed') {
+      if (!props.showCompleted) {
+        return []
       }
-      return true
-    })
+      filtered = filtered.filter(task => task.status === '1')
+    } else if (statusFilter.value === 'in_progress') {
+      filtered = filtered.filter(task => task.status === '2')
+    } else if (statusFilter.value === 'pending') {
+      filtered = filtered.filter(task => task.status === '0' && !isOverdue(task.deadLine || task.end_at))
+    } else if (statusFilter.value === 'overdue') {
+      filtered = filtered.filter(task => task.status === '0' && isOverdue(task.deadLine || task.end_at))
+    } else if (statusFilter.value === 'cancelled') {
+      filtered = filtered.filter(task => task.status === '-1')
+    }
   }
 
   if (assigneeFilter.value !== 'all') {
@@ -282,11 +300,26 @@ const filteredTasks = computed(() => {
   return filtered
 })
 
-const columnTasks = computed(() => kanbanColumns.value)
+const columnTasks = computed(() => {
+  if (viewMode.value !== 'kanban') return kanbanColumns.value
+
+  const columns = {
+    pending: [],
+    in_progress: [],
+    completed: [],
+    overdue: []
+  }
+
+  filteredTasks.value.forEach(task => {
+    if (columns[getTaskStatus(task)]) {
+      columns[getTaskStatus(task)].push(task)
+    }
+  })
+
+  return columns
+})
 
 onMounted(() => {
-  fetchTasks()
-  fetchAssignees()
   if (viewMode.value === 'gantt') {
     setTimeout(() => initGanttChart(), 100)
   }
@@ -302,6 +335,10 @@ watch(() => props.statusFilter, (newVal) => {
   statusFilter.value = newVal
 })
 
+watch(() => props.assigneeFilter, (newVal) => {
+  assigneeFilter.value = newVal
+})
+
 watch(() => props.viewMode, (newVal) => {
   viewMode.value = newVal
   if (newVal === 'gantt') {
@@ -309,11 +346,15 @@ watch(() => props.viewMode, (newVal) => {
   }
 })
 
-watch(() => taskStore.taskList, () => {
-  fetchTasks()
-}, { deep: true })
+watch(() => props.showCompleted, () => {
+  // Trigger rebuild when showCompleted changes
+})
 
-async function fetchTasks() {
+watch([statusFilter, assigneeFilter], () => {
+  // No action needed, columnTasks computed property will handle updates
+})
+
+const tasks = computed(() => {
   const allTasks = taskStore.taskList || []
   let list = []
 
@@ -329,26 +370,22 @@ async function fetchTasks() {
     list = allTasks
   }
 
-  tasks.value = list.map(task => {
-    const status = getTaskStatus(task)
+  return list.map((task, index) => {
+    // Return the raw task object directly, avoiding deep cloning or property overwrites that cause reactivity issues
+    // We attach temporary UI properties to a new object that inherits from the task, or just use the task as is if possible
+    // To be safe and fix the recursion, we will use the raw task and compute derived values in the template or separate helper functions
     return {
-      ...task,
-      name: task.name || task.content,
-      title: task.content || task.name,
-      attendeeList: task.attendeeList || task.task_user || [],
-      creatorName: task.creatorName || task.create_user || '',
-      creatorUmId: task.creatorUmId || task.create_user_id || '',
-      deadLine: task.deadLine || task.end_at || '',
-      status,
-      source: task.source,
-      raw: task
+       ...task,
+       uniqueKey: (task.id || 'temp') + '_' + index // Ensure stable unique key
     }
   })
+})
 
-  buildKanbanColumns()
+function fetchTasks() {
+  // No-op, tasks is now a computed property
 }
 
-async function fetchAssignees() {
+const assignees = computed(() => {
   const allTasks = taskStore.taskList || []
   const attendeeSet = new Set()
 
@@ -362,8 +399,8 @@ async function fetchAssignees() {
     })
   })
 
-  assignees.value = Array.from(attendeeSet).map(s => JSON.parse(s))
-}
+  return Array.from(attendeeSet).map(s => JSON.parse(s))
+})
 
 function buildKanbanColumns() {
   const columns = {
@@ -373,9 +410,9 @@ function buildKanbanColumns() {
     overdue: []
   }
 
-  tasks.value.forEach(task => {
-    if (columns[task.status]) {
-      columns[task.status].push(task)
+  filteredTasks.value.forEach(task => {
+    if (columns[getTaskStatus(task)]) {
+      columns[getTaskStatus(task)].push(task)
     }
   })
 
@@ -385,6 +422,9 @@ function buildKanbanColumns() {
 function getTaskStatus(task) {
   if (task.status === '1') {
     return 'completed'
+  }
+  if (task.status === '2') {
+    return 'in_progress'
   }
   if (isOverdue(task.deadLine || task.end_at)) {
     return 'overdue'
@@ -400,16 +440,6 @@ function getStatusText(status) {
     overdue: '已逾期'
   }
   return statusMap[status] || status
-}
-
-function getStatusType(status) {
-  const typeMap = {
-    pending: 'warning',
-    in_progress: 'primary',
-    completed: 'success',
-    overdue: 'danger'
-  }
-  return typeMap[status] || 'info'
 }
 
 function getAttendeeNames(attendeeList) {
@@ -440,7 +470,7 @@ function assigneeChanged(assigneeId) {
   emit('assignee-filter-changed', assigneeId)
 }
 
-function viewTask(task, receive) {
+function viewTask(task) {
   console.log('View task:', task)
   // Open task detail dialog
   selectedTaskId.value = task.id
@@ -456,13 +486,6 @@ function onTaskUpdate(data) {
   fetchTasks()
 }
 
-function openMenu(event, task) {
-  const el = taskRefs.value[`taskMenu_${task.id}`]
-  if (el) {
-    el.handleClick(event)
-  }
-}
-
 function taskItemStyle(task) {
   const style = {}
   if (task.color) {
@@ -473,6 +496,7 @@ function taskItemStyle(task) {
 }
 
 function ownerUser(list) {
+  if (!list || !Array.isArray(list)) return []
   return list.filter(({ status, owner }) => status === 1 || owner === 1).sort((a, b) => {
     return a.id - b.id
   })
@@ -499,11 +523,17 @@ function handleOperationAction(action, task) {
 }
 
 function setImportant(task) {
-  console.log('Set important:', task)
+  task.mark = task.mark === '1' ? '0' : '1'
+  if (task.mark === '1') {
+    ElMessage.success('已标记为重点')
+  } else {
+    ElMessage.success('已取消重点标记')
+  }
 }
 
 function removeTask(task) {
   console.log('Remove task:', task)
+  emit('task-deleted', task.id)
 }
 
 function setReminder(task) {
@@ -526,6 +556,16 @@ function handleTaskDeleted(taskId) {
   fetchTasks()
 }
 
+function getSourceName(source) {
+  const sourceMap = {
+    0: '系统',
+    7: '任务',
+    8: '项目',
+    9: '会议'
+  }
+  return sourceMap[source] || '-'
+}
+
 function initGanttChart() {
   if (!ganttChart.value || typeof echarts === 'undefined') {
     return
@@ -545,7 +585,7 @@ function initGanttChart() {
       name: task.name || task.title,
       value: [times.start, times.end],
       itemStyle: {
-        color: getStatusColor(task.status)
+        color: getStatusColor(getTaskStatus(task))
       }
     }
   })
@@ -610,6 +650,56 @@ function getStatusColor(status) {
     overdue: 'var(--el-color-danger)'
   }
   return colorMap[status] || 'var(--el-color-primary)'
+}
+
+function handleDragStart(task) {
+  draggingTask.value = task
+}
+
+function handleDragEnter(statusKey) {
+  dragOverStatus.value = statusKey
+}
+
+function handleDragLeave() {
+  dragOverStatus.value = null
+}
+
+async function handleDrop(statusKey) {
+  if (!draggingTask.value) {
+    dragOverStatus.value = null
+    return
+  }
+  const targetStatus = statusKey
+  if (draggingTask.value.status === targetStatus) {
+    dragOverStatus.value = null
+    return
+  }
+
+  const statusValue = mapStatusKeyToValue(targetStatus)
+  const taskId = draggingTask.value.id
+
+  draggingTask.value.status = targetStatus
+  buildKanbanColumns()
+  dragOverStatus.value = null
+  draggingTask.value = null
+
+  if (taskId) {
+    try {
+      await taskStore.updateTaskStatus({ taskId, status: statusValue })
+    } catch (error) {
+      fetchTasks()
+    }
+  }
+}
+
+function mapStatusKeyToValue(statusKey) {
+  const map = {
+    pending: '0',
+    in_progress: '2',
+    completed: '1',
+    overdue: '0'
+  }
+  return map[statusKey] || '0'
 }
 </script>
 
@@ -696,6 +786,8 @@ function getStatusColor(status) {
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
+              display: inline-flex;
+              align-items: center;
 
               &:hover {
                 color: $primary-color;
@@ -826,6 +918,12 @@ function getStatusColor(status) {
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid transparent;
+
+        &.drag-over {
+          border-color: $primary-color;
+          box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
+        }
 
         .kanban-column-header {
           padding: 12px 16px;
@@ -879,6 +977,8 @@ function getStatusColor(status) {
             font-weight: 500;
             margin-bottom: 8px;
             color: #303133;
+            display: inline-flex;
+            align-items: center;
           }
 
           .task-info {
@@ -979,6 +1079,11 @@ function getStatusColor(status) {
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .important-star {
+    margin-right: 4px;
+    color: #f7ba2a;
   }
 }
 

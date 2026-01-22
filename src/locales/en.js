@@ -66,7 +66,7 @@ export default {
     inProgressTasks: 'In Progress',
     overdueTasks: 'Overdue',
     pendingTasks: 'Pending',
-    statusAll: 'All Status',
+    statusAll: 'All',
     statusPending: 'Pending',
     statusInProgress: 'In Progress',
     statusCompleted: 'Completed',

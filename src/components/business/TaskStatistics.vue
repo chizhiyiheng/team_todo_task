@@ -3,23 +3,6 @@
     <div class="statistics-header">
       <div class="header-content">
         <h3 style="font-size: 14px;">{{ title }}</h3>
-        <div v-if="showControls" class="statistics-controls">
-          <el-select v-model="statusFilter" :placeholder="$t('task.filterByStatus')" style="width: 120px" @change="filterChanged">
-            <el-option :label="$t('task.statusAll')" value="all" />
-            <el-option :label="$t('task.statusPending')" value="pending" />
-            <el-option :label="$t('task.statusInProgress')" value="in_progress" />
-            <el-option :label="$t('task.statusCompleted')" value="completed" />
-            <el-option :label="$t('task.statusOverdue')" value="overdue" />
-          </el-select>
-          <el-select v-model="viewMode" :placeholder="$t('task.viewMode')" style="width: 120px" @change="viewModeChanged">
-            <el-option :label="$t('task.listView')" value="list" />
-            <el-option :label="$t('task.kanbanView')" value="kanban" />
-            <el-option :label="$t('task.ganttView')" value="gantt" />
-          </el-select>
-          <el-button v-if="showCreateButton" type="primary" :icon="Plus" @click="createNewTask">
-            {{ $t('task.createTask') }}
-          </el-button>
-        </div>
         <div class="statistics-summary">
           <div class="summary-item">
             <div class="summary-value">{{ totalCount }}</div>
@@ -107,11 +90,11 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['filter-changed', 'view-mode-changed', 'create-task'])
+const emit = defineEmits(['filter-changed', 'view-mode-changed'])
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
-const { currentTheme } = useTheme() // 获取当前主题色
+const { currentTheme } = useTheme()
 
 const statusFilter = ref('all')
 const viewMode = ref('list')
@@ -407,24 +390,12 @@ function destroyCharts() {
   }
 }
 
-function filterChanged(status) {
-  emit('filter-changed', status)
-}
-
-function viewModeChanged(mode) {
-  emit('view-mode-changed', mode)
-}
-
 function onTaskListViewModeChanged(mode) {
   viewMode.value = mode
 }
 
 function onTaskListFilterChanged(status) {
   statusFilter.value = status
-}
-
-function createNewTask() {
-  emit('create-task')
 }
 </script>
 
@@ -516,6 +487,14 @@ function createNewTask() {
         .chart-item {
           flex: 1;
           min-width: 300px;
+
+          .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            text-align: center;
+          }
         }
       }
     }

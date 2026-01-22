@@ -66,7 +66,7 @@ export default {
     inProgressTasks: '进行中',
     overdueTasks: '已逾期',
     pendingTasks: '待处理',
-    statusAll: '全部状态',
+    statusAll: '全部',
     statusPending: '待处理',
     statusInProgress: '进行中',
     statusCompleted: '已完成',

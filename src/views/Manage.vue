@@ -12,27 +12,19 @@
         <h3 class="page-title">{{ pageTitle }}</h3>
       </div>
       <div class="header-right">
-        <el-button type="primary" :icon="Plus" @click="handleAddTask">
+        <div class="task-search">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索任务"
+            clearable
+            :prefix-icon="Search"
+            @keyup.enter="handleSearch"
+            @clear="handleSearch"
+          />
+        </div>
+        <el-button type="primary" :icon="Plus" @click="handleAddTask" class="create-task-btn">
           {{ $t('task.createTask') }}
         </el-button>
-        <el-dropdown @command="handleCommand">
-          <div class="user-info">
-            <el-avatar :size="32" :src="userAvatar" />
-            <span class="user-name">{{ userName }}</span>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="settings">
-                <el-icon><Setting /></el-icon>
-                {{ $t('menu.settings') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="logout" divided>
-                <el-icon><SwitchButton /></el-icon>
-                {{ $t('menu.logout') }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </div>
     </div>
 
@@ -64,7 +56,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Menu, Plus, Setting, SwitchButton } from '@element-plus/icons-vue'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useTaskStore } from '@/stores/task'
 import { useTeamStore } from '@/stores/team'
@@ -85,14 +77,12 @@ const { isMobile, isDesktop } = useDevice()
 
 const sidebarVisible = ref(false)
 const isSidebarCollapsed = ref(false)
+const searchKeyword = ref('')
 
 const pageTitle = computed(() => route.meta.title || t('menu.myTasks'))
-const userName = computed(() => userStore.userName)
-const userAvatar = computed(() => userStore.userAvatar)
-
-const executedCount = computed(() => taskStore.taskList.filter(task => task.status === '0').length)
-const assignedCount = computed(() => taskStore.taskList.filter(task => task.status === '1').length)
-const teams = computed(() => teamStore.teamList)
+const executedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '0').length)
+const assignedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '1').length)
+const teams = computed(() => teamStore.teamList || [])
 
 function toggleSidebar() {
   if (isMobile.value) {
@@ -122,13 +112,8 @@ function handleAddTask() {
   console.log('Add task')
 }
 
-function handleCommand(command) {
-  if (command === 'settings') {
-    router.push('/settings')
-  } else if (command === 'logout') {
-    userStore.logout()
-    router.push('/login')
-  }
+function handleSearch() {
+  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000, keyword: searchKeyword.value })
 }
 
 onMounted(() => {
@@ -181,22 +166,23 @@ onUnmounted(() => {
     gap: 12px;
   }
 
-  .user-info {
+  .create-task-btn {
+    background-color: #ff6b35 !important;
+    border-color: #ff6b35 !important;
+
+    &:hover {
+      background-color: #e55a2b !important;
+      border-color: #e55a2b !important;
+    }
+  }
+
+  .task-search {
     display: flex;
     align-items: center;
     gap: 8px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.3s;
 
-    &:hover {
-      background: #f5f7fa;
-    }
-
-    .user-name {
-      font-size: 14px;
-      color: #606266;
+    :deep(.el-input) {
+      width: 220px;
     }
   }
 }

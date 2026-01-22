@@ -209,8 +209,7 @@ async function handleExecutorsConfirm(umIds) {
       const user = props.availableUsers.find(u => u.umId === umId)
       return {
         umId: umId,
-        name: user?.name || '',
-        status: 0
+        name: user?.name || ''
       }
     })
     

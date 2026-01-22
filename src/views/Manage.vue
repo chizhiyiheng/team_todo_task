@@ -49,6 +49,13 @@
         <router-view />
       </div>
     </div>
+
+    <!-- Create Task Dialog -->
+    <CreateTaskDialog
+      v-model="showCreateTask"
+      task-type="personal"
+      @task-created="handleTaskCreated"
+    />
   </div>
 </template>
 
@@ -63,6 +70,7 @@ import { useTeamStore } from '@/stores/team'
 import { useAppStore } from '@/stores/app'
 import { useDevice } from '@/utils/device'
 import Sidebar from '@/components/layout/Sidebar.vue'
+import CreateTaskDialog from '@/components/business/CreateTaskDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -78,6 +86,7 @@ const { isMobile, isDesktop } = useDevice()
 const sidebarVisible = ref(false)
 const isSidebarCollapsed = ref(false)
 const searchKeyword = ref('')
+const showCreateTask = ref(false)
 
 const pageTitle = computed(() => route.meta.title || t('menu.myTasks'))
 const executedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '0').length)
@@ -109,7 +118,14 @@ function handleCreateSpace() {
 }
 
 function handleAddTask() {
-  console.log('Add task')
+  showCreateTask.value = true
+}
+
+function handleTaskCreated(taskId) {
+  console.log('Task created:', taskId)
+  // Refresh task list and statistics
+  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskStatistics()
 }
 
 function handleSearch() {

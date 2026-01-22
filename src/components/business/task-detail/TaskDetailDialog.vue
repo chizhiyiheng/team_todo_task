@@ -168,7 +168,8 @@ const props = defineProps({
   },
   taskId: {
     type: String,
-    required: true
+    required: false,
+    default: ''
   }
 })
 
@@ -202,7 +203,7 @@ const activeTab = ref('progress')
 
 // Watch for dialog open
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && props.taskId) {
+  if (newVal && props.taskId && props.taskId.trim()) {
     loadTaskDetail() // Initial load
   }
 })

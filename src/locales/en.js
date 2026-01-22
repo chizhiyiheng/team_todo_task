@@ -121,7 +121,22 @@ export default {
     uploadLimitExceeded: 'Upload file limit exceeded',
     fileProcessFailed: 'File {name} processing failed',
     progressUpdateSuccess: 'Progress updated successfully',
-    progressUpdateFailed: 'Progress update failed'
+    progressUpdateFailed: 'Progress update failed',
+    titlePlaceholder: 'Please enter task title',
+    selectDeadline: 'Select deadline',
+    selectAssignee: 'Please select assignee',
+    visibility: 'Task Visibility',
+    visibilityPrivate: 'Private',
+    visibilityPublic: 'Public',
+    markAsImportant: 'Mark as important task',
+    titleRequired: 'Please enter task title',
+    titleLength: 'Task title length should be between 1-100 characters',
+    assigneeRequired: 'Please select at least one assignee',
+    clickToAddAssignee: 'Click + to add assignee',
+    createSuccess: 'Task created successfully',
+    createFailed: 'Task creation failed',
+    createTo: 'Create To',
+    selectProject: 'Select Project'
   },
   ai: {
     title: 'AI Dynamic Analysis',

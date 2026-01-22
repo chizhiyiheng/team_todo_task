@@ -18,7 +18,13 @@ export function useTaskActions(taskDetail, emit, t) {
    * Generic method to update a field
    */
   async function updateField(field, value) {
-    if (!taskDetail.value) return
+    if (!taskDetail.value) return false
+
+    // Store old value for potential rollback
+    const oldValue = taskDetail.value[field]
+    
+    // Optimistically update the UI
+    taskDetail.value[field] = value
 
     try {
       const response = await todoApi.updateTodo({
@@ -30,15 +36,21 @@ export function useTaskActions(taskDetail, emit, t) {
       })
       
       if (response.code === '200') {
-        taskDetail.value[field] = value
         ElMessage.success(t('task.updateSuccess'))
         emit('task-updated', taskDetail.value)
+        return true
       } else {
+        // Rollback on failure
+        taskDetail.value[field] = oldValue
         ElMessage.error(response.message || t('task.operationFailed'))
+        return false
       }
     } catch (error) {
+      // Rollback on error
+      taskDetail.value[field] = oldValue
       ElMessage.error(t('task.operationFailed'))
       console.error('Update field error:', error)
+      return false
     }
   }
 

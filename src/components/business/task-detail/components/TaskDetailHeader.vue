@@ -13,7 +13,7 @@
 
     <!-- Title (Editable) -->
     <div class="title-section" v-if="!editingTitle">
-      <h3 class="task-title" @click="$emit('start-edit-title')">
+      <h3 class="task-title" @click="startEditTitle">
         {{ taskDetail?.title || '' }}
         <el-icon class="edit-icon"><Edit /></el-icon>
       </h3>
@@ -23,18 +23,13 @@
     <div class="title-editing" v-else>
       <el-input
         ref="titleInputRef"
-        :model-value="editTitleValue"
-        @update:model-value="$emit('update:edit-title-value', $event)"
-        @keyup.enter="$emit('save-title')"
-        @keyup.esc="$emit('cancel-edit-title')"
+        v-model="editTitleValue"
+        @blur="saveTitle"
+        @keyup.enter="saveTitle"
+        @keydown.esc="handleEscKey"
         placeholder="请输入任务标题"
+        class="title-input"
       />
-      <el-icon class="action-icon confirm" @click="$emit('save-title')">
-        <Check />
-      </el-icon>
-      <el-icon class="action-icon cancel" @click="$emit('cancel-edit-title')">
-        <Close />
-      </el-icon>
     </div>
 
     <!-- Close Button -->
@@ -49,48 +44,104 @@
  * TaskDetailHeader Component
  * 
  * Header section of the task detail dialog with title editing and important marking.
+ * Manages its own editing state and validation internally.
  * 
  * @component
  * @props {Object} taskDetail - The task detail object
- * @props {boolean} editingTitle - Whether title is being edited
- * @props {string} editTitleValue - The current value of title input
  * 
  * @emits toggle-important - Emitted when important icon is clicked
- * @emits start-edit-title - Emitted when title is clicked to start editing
- * @emits save-title - Emitted when title save is triggered
- * @emits cancel-edit-title - Emitted when title editing is cancelled
+ * @emits update-field - Emitted when a field needs to be updated with (fieldName, value)
  * @emits close - Emitted when close button is clicked
- * @emits update:edit-title-value - Emitted when title input value changes
  */
 
+import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { StarFilled, Star, Edit, Check, Close } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { StarFilled, Star, Edit, Close } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   taskDetail: {
     type: Object,
     default: null
-  },
-  editingTitle: {
-    type: Boolean,
-    default: false
-  },
-  editTitleValue: {
-    type: String,
-    default: ''
   }
 })
 
-defineEmits([
+const emit = defineEmits([
   'toggle-important',
-  'start-edit-title',
-  'save-title',
-  'cancel-edit-title',
-  'close',
-  'update:edit-title-value'
+  'update-field',
+  'close'
 ])
+
+// Local editing state
+const editingTitle = ref(false)
+const editTitleValue = ref('')
+const titleInputRef = ref(null)
+
+/**
+ * Start editing title
+ */
+function startEditTitle() {
+  if (!props.taskDetail) return
+  
+  editingTitle.value = true
+  editTitleValue.value = props.taskDetail.title
+  
+  nextTick(() => {
+    // Element Plus input ref needs to access the input element
+    const inputEl = titleInputRef.value?.input || titleInputRef.value?.$el?.querySelector('input')
+    if (inputEl) {
+      inputEl.focus()
+    }
+  })
+}
+
+/**
+ * Save title changes
+ */
+async function saveTitle() {
+  if (!props.taskDetail) return
+  
+  const trimmedValue = editTitleValue.value.trim()
+  
+  // Validate
+  if (trimmedValue === '') {
+    ElMessage.warning(t('task.titleCannotBeEmpty'))
+    editTitleValue.value = props.taskDetail.title
+    editingTitle.value = false
+    return
+  }
+  
+  // Check if changed
+  if (trimmedValue === props.taskDetail.title) {
+    editingTitle.value = false
+    return
+  }
+  
+  // Exit editing mode immediately for better UX
+  editingTitle.value = false
+  
+  // Update field (optimistic update handled in parent)
+  emit('update-field', 'title', trimmedValue)
+}
+
+/**
+ * Handle ESC key press
+ */
+function handleEscKey(event) {
+  event.preventDefault()
+  event.stopPropagation()
+  cancelEditTitle()
+}
+
+/**
+ * Cancel title editing
+ */
+function cancelEditTitle() {
+  editTitleValue.value = props.taskDetail.title
+  editingTitle.value = false
+}
 </script>
 
 <style scoped lang="scss">
@@ -132,6 +183,8 @@ defineEmits([
       align-items: center;
       gap: 8px;
       word-break: break-word;
+      line-height: 32px;
+      min-height: 32px;
 
       .edit-icon {
         font-size: 16px;
@@ -150,33 +203,22 @@ defineEmits([
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
 
-    .el-input {
+    .title-input {
       flex: 1;
-    }
 
-    .action-icon {
-      font-size: 20px;
-      cursor: pointer;
-      transition: all 0.3s;
-
-      &.confirm {
-        color: #67c23a;
-
-        &:hover {
-          color: #85ce61;
-          transform: scale(1.1);
-        }
+      :deep(.el-input__wrapper) {
+        padding: 0 11px;
+        box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
       }
 
-      &.cancel {
-        color: #f56c6c;
-
-        &:hover {
-          color: #f78989;
-          transform: scale(1.1);
-        }
+      :deep(.el-input__inner) {
+        font-size: 18px;
+        font-weight: 600;
+        color: #303133;
+        line-height: 32px;
+        height: 32px;
+        padding: 0;
       }
     }
   }
@@ -202,10 +244,22 @@ defineEmits([
 
     .task-title {
       font-size: 16px;
+      line-height: 28px;
+      min-height: 28px;
     }
 
     .important-icon {
       font-size: 20px;
+    }
+
+    .title-editing {
+      .title-input {
+        :deep(.el-input__inner) {
+          font-size: 16px;
+          line-height: 28px;
+          height: 28px;
+        }
+      }
     }
   }
 }

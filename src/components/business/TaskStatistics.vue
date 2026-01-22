@@ -74,6 +74,7 @@ import { useI18n } from 'vue-i18n'
 import { useTaskStore } from '@/stores/task'
 import * as echarts from 'echarts'
 import TaskList from './TaskList.vue'
+import { useTheme } from '@/hooks/useTheme' // 导入 useTheme
 
 const props = defineProps({
   title: {
@@ -110,6 +111,7 @@ const emit = defineEmits(['filter-changed', 'view-mode-changed', 'create-task'])
 
 const { t } = useI18n()
 const taskStore = useTaskStore()
+const { currentTheme } = useTheme() // 获取当前主题色
 
 const statusFilter = ref('all')
 const viewMode = ref('list')
@@ -371,19 +373,23 @@ function updateCharts() {
       series: [
         {
           name: t('task.statusPending'),
-          data: pendingData
+          data: pendingData,
+          itemStyle: { color: getComputedStyle(document.documentElement).getPropertyValue('--el-color-warning') || '#ff9800' }
         },
         {
           name: t('task.statusInProgress'),
-          data: inProgressData
+          data: inProgressData,
+          itemStyle: { color: currentTheme.value }
         },
         {
           name: t('task.statusCompleted'),
-          data: completedData
+          data: completedData,
+          itemStyle: { color: getComputedStyle(document.documentElement).getPropertyValue('--el-color-success') || '#4caf50' }
         },
         {
           name: t('task.statusOverdue'),
-          data: overdueData
+          data: overdueData,
+          itemStyle: { color: getComputedStyle(document.documentElement).getPropertyValue('--el-color-danger') || '#f44336' }
         }
       ]
     })
@@ -482,15 +488,15 @@ function createNewTask() {
           line-height: 1.2;
 
           &.completed {
-            color: #67c23a;
+            color: $success-color;
           }
 
           &.in-progress {
-            color: #409eff;
+            color: $primary-color;
           }
 
           &.overdue {
-            color: #f56c6c;
+            color: $danger-color;
           }
         }
       }

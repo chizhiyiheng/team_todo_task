@@ -116,7 +116,6 @@ function createNewSpace() {
 </script>
 
 <style scoped lang="scss">
-@import "@/styles/variables.scss";
 
 .task-sidebar {
   width: 200px;
@@ -174,7 +173,7 @@ function createNewSpace() {
     transition: all 0.3s;
 
     &:hover {
-      color: #1890ff;
+      color: $primary-color;
     }
   }
 }
@@ -215,13 +214,13 @@ function createNewSpace() {
       background: #f0f0f0;
 
       .el-icon {
-        color: #1890ff;
+        color: $primary-color;
       }
     }
 
     &.active {
-      background: #e6f7ff;
-      color: #1890ff;
+      background: var(--el-color-primary-light-9);
+      color: $primary-color;
 
       &::before {
         content: '';
@@ -230,16 +229,16 @@ function createNewSpace() {
         top: 0;
         bottom: 0;
         width: 3px;
-        background: #1890ff;
+        background: $primary-color;
         border-radius: 0 2px 2px 0;
       }
 
       .el-icon {
-        color: #1890ff;
+        color: $primary-color;
       }
 
       .team-name {
-        color: #1890ff;
+        color: $primary-color;
       }
     }
   }
@@ -250,7 +249,7 @@ function createNewSpace() {
   flex-shrink: 0;
 
   :deep(.el-badge__content) {
-    background-color: #1890ff;
+    background-color: $primary-color;
     border: none;
   }
 }
@@ -270,8 +269,8 @@ function createNewSpace() {
     transition: all 0.3s;
 
     &:hover {
-      border-color: #1890ff;
-      color: #1890ff;
+      border-color: $primary-color;
+      color: $primary-color;
       background: #fff;
     }
 

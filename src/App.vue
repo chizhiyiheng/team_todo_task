@@ -8,9 +8,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useDevice } from '@/utils/device'
+import { useExternalTheme } from '@/hooks/useExternalTheme'
 
 const appStore = useAppStore()
 const { isMobile } = useDevice()
+const { initExternalTheme } = useExternalTheme()
 
 function handleResize() {
   const mobile = window.innerWidth < 768
@@ -21,6 +23,8 @@ onMounted(() => {
   appStore.loadSettings()
   handleResize()
   window.addEventListener('resize', handleResize)
+  // 初始化外部主题监听
+  initExternalTheme()
 })
 
 onUnmounted(() => {

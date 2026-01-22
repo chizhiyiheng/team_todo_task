@@ -98,7 +98,7 @@ const handleCommand = (command) => {
     transition: all 0.3s;
 
     &.completed {
-      color: #67c23a;
+      color: $success-color;
     }
   }
 
@@ -111,7 +111,7 @@ const handleCommand = (command) => {
     box-sizing: border-box;
 
     &:hover {
-      border-color: #1890ff;
+      border-color: $primary-color;
     }
   }
 }
@@ -128,15 +128,15 @@ const handleCommand = (command) => {
   }
   
   &.in-progress {
-    background-color: #e6a23c;
+    background-color: $warning-color;
   }
   
   &.done {
-    background-color: #67c23a;
+    background-color: $success-color;
   }
   
   &.cancelled {
-    background-color: #909399;
+    background-color: $info-color;
   }
 }
 </style>

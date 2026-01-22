@@ -118,6 +118,14 @@
       @view-mode-changed="handleViewModeChange"
       @filter-changed="handleFilterChange"
     />
+
+    <!-- Task Detail Dialog -->
+    <TaskDetailDialog
+      v-model="showTaskDetail"
+      :task-id="selectedTaskId"
+      @task-updated="handleTaskUpdated"
+      @task-deleted="handleTaskDeleted"
+    />
   </div>
 </template>
 
@@ -132,6 +140,7 @@ import TaskStatistics from '@/components/business/TaskStatistics.vue'
 import TaskList from '@/components/business/TaskList.vue'
 import TaskMenu from '@/components/business/TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
+import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -139,6 +148,10 @@ const taskStore = useTaskStore()
 
 const statusFilter = ref('all')
 const viewMode = ref('list')
+
+// Task detail dialog state
+const showTaskDetail = ref(false)
+const selectedTaskId = ref(null)
 
 const activeTab = computed(() => route.query.tab || 'executed')
 const statisticsTitle = computed(() => {
@@ -234,10 +247,43 @@ function getSourceName(source) {
 
 function viewTask(task) {
   console.log('View task:', task)
+  // Open task detail dialog
+  selectedTaskId.value = task.id
+  showTaskDetail.value = true
 }
 
 function editTask(task) {
   console.log('Edit task:', task)
+  // Open task detail dialog in edit mode
+  selectedTaskId.value = task.id
+  showTaskDetail.value = true
+}
+
+function handleTaskUpdated(updatedTask) {
+  console.log('Task updated in dialog:', updatedTask)
+  // Refresh the task list to show updated data
+  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskStatistics()
+}
+
+function handleTaskDeleted(taskId) {
+  console.log('Task deleted in dialog:', taskId)
+  // Refresh the task list to remove deleted task
+  taskStore.fetchTaskList({ todoStatus: '2', pageNum: 1, pageSize: 10000 })
+  taskStore.fetchTaskStatistics()
+}
+
+function handleIconClick(action, task) {
+  console.log('Icon click:', action, task)
+  if (action === 'edit-task') {
+    editTask(task)
+  } else if (action === 'mark-important') {
+    // Handle mark important
+  } else if (action === 'delete-task') {
+    // Handle delete
+  } else if (action === 'set-reminder') {
+    // Handle reminder
+  }
 }
 
 onMounted(() => {
@@ -261,14 +307,13 @@ watch(activeTab, () => {
 
 <style scoped lang="scss">
 // 模拟变量
-$primary-color: #3b82f6;
 $primary-title-color: #1f2937;
 $primary-desc-color: #909399;
-$flow-status-start-color: #FF7070;
+$flow-status-start-color: $danger-color;
 $flow-status-progress-color: #fc984b;
 $flow-status-test-color: #8b5cf6;
-$flow-status-end-color: #0bc037;
-$flow-status-cancel-color: #909399;
+$flow-status-end-color: $success-color;
+$flow-status-cancel-color: $info-color;
 
 .my-tasks-page {
   height: 100%;
@@ -388,6 +433,10 @@ $flow-status-cancel-color: #909399;
           display: flex;
           align-items: center;
           flex-wrap: wrap;
+
+          &:hover {
+            color: $primary-color;
+          }
 
           .flow-item-status {
              font-size: 12px;

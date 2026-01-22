@@ -7,6 +7,22 @@ export const todoApi = {
 
   updateTodoStatus(todoId, status) {
     return request.post('/api/todo/update', { todoId, status })
+  },
+
+  updateTodo(data) {
+    return request.post('/api/todo/update', data)
+  },
+
+  getTodoDetail(todoId) {
+    return request.post('/api/todo/detail', { id: todoId })
+  },
+
+  addTodo(data) {
+    return request.post('/api/todo/add', data)
+  },
+
+  deleteTodo(todoId) {
+    return request.post('/api/todo/delete', { id: todoId })
   }
 }
 

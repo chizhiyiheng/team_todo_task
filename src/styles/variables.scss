@@ -1,9 +1,13 @@
+// 引用 Element Plus 的 CSS 变量
+// 这样我们在 SCSS 中使用 $primary-color 时，实际上是指向了 var(--el-color-primary)
+// 当 JS 修改了 --el-color-primary，所有使用这个变量的地方都会自动更新
+
 // 颜色变量
-$primary-color: #409eff;
-$success-color: #67c23a;
-$warning-color: #e6a23c;
-$danger-color: #f56c6c;
-$info-color: #909399;
+$primary-color: var(--el-color-primary);
+$success-color: var(--el-color-success);
+$warning-color: var(--el-color-warning);
+$danger-color: var(--el-color-danger);
+$info-color: var(--el-color-info);
 
 // 文字颜色
 $text-primary: #303133;

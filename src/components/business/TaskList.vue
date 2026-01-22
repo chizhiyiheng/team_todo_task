@@ -175,6 +175,14 @@
     <div v-else class="task-gantt-view">
       <div ref="ganttChart" style="height: 500px;"></div>
     </div>
+
+    <!-- Task Detail Dialog -->
+    <TaskDetailDialog
+      v-model="showTaskDetail"
+      :task-id="selectedTaskId"
+      @task-updated="handleTaskUpdated"
+      @task-deleted="handleTaskDeleted"
+    />
   </div>
 </template>
 
@@ -186,6 +194,7 @@ import * as echarts from 'echarts'
 import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
+import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
 
 const props = defineProps({
   viewMode: {
@@ -233,6 +242,10 @@ const taskRefs = ref({})
 
 const ganttChart = ref(null)
 const ganttChartInstance = ref(null)
+
+// Task detail dialog state
+const showTaskDetail = ref(false)
+const selectedTaskId = ref(null)
 
 const statusList = ['pending', 'in_progress', 'completed', 'overdue']
 
@@ -429,6 +442,9 @@ function assigneeChanged(assigneeId) {
 
 function viewTask(task, receive) {
   console.log('View task:', task)
+  // Open task detail dialog
+  selectedTaskId.value = task.id
+  showTaskDetail.value = true
 }
 
 function editTask(task) {
@@ -496,6 +512,18 @@ function setReminder(task) {
 
 function getSublist(task) {
   console.log('Get sublist:', task)
+}
+
+function handleTaskUpdated(updatedTask) {
+  console.log('Task updated in dialog:', updatedTask)
+  // Refresh the task list to show updated data
+  fetchTasks()
+}
+
+function handleTaskDeleted(taskId) {
+  console.log('Task deleted in dialog:', taskId)
+  // Refresh the task list to remove deleted task
+  fetchTasks()
 }
 
 function initGanttChart() {
@@ -576,12 +604,12 @@ function getTimeObj(taskData) {
 
 function getStatusColor(status) {
   const colorMap = {
-    pending: '#ff9800',
-    in_progress: '#2196f3',
-    completed: '#4caf50',
-    overdue: '#f44336'
+    pending: 'var(--el-color-warning)',
+    in_progress: 'var(--el-color-primary)',
+    completed: 'var(--el-color-success)',
+    overdue: 'var(--el-color-danger)'
   }
-  return colorMap[status] || '#058ce4'
+  return colorMap[status] || 'var(--el-color-primary)'
 }
 </script>
 
@@ -670,7 +698,7 @@ function getStatusColor(status) {
               white-space: nowrap;
 
               &:hover {
-                color: #1890ff;
+                color: $primary-color;
               }
             }
 
@@ -754,14 +782,14 @@ function getStatusColor(status) {
 
               &.today {
                 font-weight: 500;
-                background-color: #ff9900;
-                border-color: #ff9900;
+                background-color: $warning-color;
+                border-color: $warning-color;
               }
 
               &.overdue {
                 font-weight: 600;
-                background-color: #ed4014;
-                border-color: #ed4014;
+                background-color: $danger-color;
+                border-color: $danger-color;
               }
 
               .taskfont {
@@ -865,7 +893,7 @@ function getStatusColor(status) {
 
             .task-deadline {
               &.overdue {
-                color: #f56c6c;
+                color: $danger-color;
                 font-weight: 600;
               }
             }

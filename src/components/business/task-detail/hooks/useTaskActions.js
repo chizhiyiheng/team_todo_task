@@ -6,6 +6,7 @@
  * @param {Ref<Object>} taskDetail - The task detail object
  * @param {Function} emit - Vue emit function
  * @param {Function} t - i18n translation function
+ * @param {Function} refreshTask - Function to refresh task detail
  * @returns {Object} Action methods
  */
 
@@ -13,7 +14,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { todoApi } from '@/api/index.js'
 import dayjs from 'dayjs'
 
-export function useTaskActions(taskDetail, emit, t) {
+export function useTaskActions(taskDetail, emit, t, refreshTask) {
   /**
    * Generic method to update a field
    */
@@ -22,7 +23,7 @@ export function useTaskActions(taskDetail, emit, t) {
 
     // Store old value for potential rollback
     const oldValue = taskDetail.value[field]
-    
+
     // Optimistically update the UI
     taskDetail.value[field] = value
 
@@ -34,7 +35,7 @@ export function useTaskActions(taskDetail, emit, t) {
         title: taskDetail.value.title,
         [field]: value
       })
-      
+
       if (response.code === '200') {
         ElMessage.success(t('task.updateSuccess'))
         emit('task-updated', taskDetail.value)
@@ -67,10 +68,10 @@ export function useTaskActions(taskDetail, emit, t) {
     taskDetail.value.isTop = newIsTop
 
     try {
-      const response = newIsTop === 1 
+      const response = newIsTop === 1
         ? await todoApi.markImportant(taskDetail.value.id)
         : await todoApi.unmarkImportant(taskDetail.value.id)
-      
+
       if (response.code === '200') {
         ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelMarkImportantSuccess'))
         emit('task-updated', taskDetail.value)
@@ -102,7 +103,7 @@ export function useTaskActions(taskDetail, emit, t) {
         todoStatus: 1,
         finishTime: dayjs().format('YYYY-MM-DD HH:mm:ss')
       })
-      
+
       if (response.code === '200') {
         taskDetail.value.status = 1
         taskDetail.value.finishTime = dayjs().format('YYYY-MM-DD HH:mm:ss')
@@ -133,7 +134,7 @@ export function useTaskActions(taskDetail, emit, t) {
           type: 'warning'
         }
       )
-      
+
       const response = await todoApi.deleteTodo(taskDetail.value.id)
       if (response.code === '200') {
         ElMessage.success(t('task.deleteSuccess'))
@@ -166,7 +167,7 @@ export function useTaskActions(taskDetail, emit, t) {
         parentTodoId: taskDetail.value.id,
         status: 0
       })
-      
+
       if (response.code === '200') {
         ElMessage.success(t('task.addSubTaskSuccess'))
         emit('task-updated', taskDetail.value)
@@ -198,7 +199,7 @@ export function useTaskActions(taskDetail, emit, t) {
         title: taskDetail.value.title,
         todoStatus: isFinished ? 1 : 0
       })
-      
+
       if (response.code === '200') {
         ElMessage.success(t('task.updateSuccess'))
         emit('task-updated', taskDetail.value)
@@ -214,12 +215,52 @@ export function useTaskActions(taskDetail, emit, t) {
     }
   }
 
+  /**
+   * Cancel task
+   */
+  async function cancelTask() {
+    if (!taskDetail.value) return
+
+    try {
+      await ElMessageBox.confirm(
+        t('task.cancelConfirm'),
+        t('task.confirmCancel'),
+        {
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+          type: 'warning'
+        }
+      )
+
+      const response = await todoApi.cancelTodo(taskDetail.value.id)
+
+      if (response.code === '200') {
+        ElMessage.success(t('task.cancelSuccess'))
+        // 触发父组件更新
+        emit('task-updated', taskDetail.value)
+
+        // 刷新详情
+        if (refreshTask) {
+          await refreshTask(true)
+        }
+      } else {
+        ElMessage.error(response.message || t('task.operationFailed'))
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error(t('task.operationFailed'))
+        console.error('Cancel task error:', error)
+      }
+    }
+  }
+
   return {
     updateField,
     toggleImportant,
     markAsComplete,
     deleteTask,
     addSubTask,
-    toggleSubTask
+    toggleSubTask,
+    cancelTask
   }
 }

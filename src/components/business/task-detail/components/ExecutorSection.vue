@@ -122,6 +122,12 @@ function getStatusOptions(currentStatus) {
     )
   }
   
+  if (currentStatus === TASK_STATUS.CANCELLED) {
+    return TASK_STATUS_OPTIONS.filter(option => 
+      option.value === TASK_STATUS.CANCELLED
+    )
+  }
+  
   return TASK_STATUS_OPTIONS.filter(option => 
     option.value !== TASK_STATUS.OVERDUE && 
     option.value !== TASK_STATUS.TO_RECEIVE && 
@@ -133,6 +139,9 @@ function getStatusOptions(currentStatus) {
 function getDisabledStatusValues(currentStatus) {
   if (currentStatus === TASK_STATUS.OVERDUE) {
     return [TASK_STATUS.OVERDUE]
+  }
+  if (currentStatus === TASK_STATUS.CANCELLED) {
+    return [TASK_STATUS.CANCELLED]
   }
   return []
 }

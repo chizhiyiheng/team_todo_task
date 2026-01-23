@@ -40,32 +40,24 @@ export function useExecutorActions(taskDetail, emit, t, refreshTask) {
         taskDetail.value.todoUsers[executorIndex].status = status
 
         try {
-            // 调用更新接口
-            const response = await todoApi.updateTodo({
-                id: taskDetail.value.id,
-                umId: taskDetail.value.umId,
-                name: taskDetail.value.name,
-                title: taskDetail.value.title,
-                todoUsers: taskDetail.value.todoUsers.map(user => ({
-                    umId: user.umId,
-                    name: user.name,
-                    status: user.status
-                }))
-            })
+            // 调用单独的更新执行人状态接口
+            const response = await todoApi.updateExecutorStatus(
+                taskDetail.value.id,
+                umId,
+                status
+            )
 
             if (response.code === '200') {
                 ElMessage.success(t('task.updateSuccess'))
-                emit('task-updated', taskDetail.value)
+                // 不需要 emit entire task-updated，因为我们只更新了状态，且后面会刷新
+                // emit('task-updated', taskDetail.value) 
 
-                // 如果状态从已完成变为其他状态，或从其他状态变为已完成，则静默刷新
-                const wasCompleted = oldStatus === TASK_STATUS.COMPLETED
-                const isCompleted = status === TASK_STATUS.COMPLETED
+                // 成功后总是刷新任务详情，以确保数据一致性
+                // 优化：仅当涉及到已完成状态变更时才刷新（已完成->其他 或 其他->已完成）
+                const isStatusChangedInvolvingCompleted = oldStatus === TASK_STATUS.COMPLETED || status === TASK_STATUS.COMPLETED
 
-                if (wasCompleted !== isCompleted) {
-                    // 静默刷新任务详情
-                    if (refreshTask) {
-                        await refreshTask(true) // true 表示静默刷新
-                    }
+                if (refreshTask && isStatusChangedInvolvingCompleted) {
+                    await refreshTask(true) // true 表示静默刷新
                 }
 
                 return true

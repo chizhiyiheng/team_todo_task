@@ -95,23 +95,22 @@
     <!-- Footer Actions -->
     <template #footer v-if="taskDetail && !isLoading">
       <div class="dialog-footer">
-        <el-button
+        <!-- <el-button
           :type="taskDetail.isTop === 1 ? 'warning' : 'default'"
           :icon="taskDetail.isTop === 1 ? 'StarFilled' : 'Star'"
           @click="toggleImportant"
           plain
         >
           {{ taskDetail.isTop === 1 ? t('task.cancelImportant') : t('task.markImportant') }}
-        </el-button>
-        
+        </el-button> -->
+
         <el-button
           v-if="taskDetail.status !== TASK_STATUS.COMPLETED && taskDetail.status !== TASK_STATUS.CANCELLED"
-          type="success"
-          icon="CircleCheck"
-          @click="markAsComplete"
+          type="info"
+          @click="cancelTask"
           plain
         >
-          {{ t('task.markComplete') }}
+          {{ t('task.cancelTask') }}
         </el-button>
         
         <el-button
@@ -196,10 +195,14 @@ const taskIdRef = toRef(props, 'taskId')
 const { isLoading, isInitialLoad, taskDetail, loadTaskDetail } = useTaskDetail(taskIdRef, t)
 
 // Use task actions hook
-const { updateField, toggleImportant, markAsComplete, deleteTask, addSubTask, toggleSubTask } = useTaskActions(
+const { updateField, toggleImportant, markAsComplete, deleteTask, addSubTask, toggleSubTask, cancelTask } = useTaskActions(
   taskDetail,
   emit,
-  t
+  t,
+  // 传递刷新函数，包装一下以适配 useTaskActions 的调用方式 (参数可能是布尔值)
+  async (isSilent) => {
+    await loadTaskDetail(true, isSilent)
+  }
 )
 
 // Use available users hook

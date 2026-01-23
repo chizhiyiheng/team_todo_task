@@ -7,7 +7,7 @@
     :close-on-click-modal="false"
     :close-on-press-escape="true"
     class="task-detail-dialog"
-    width="700px"
+    width="750px"
     :fullscreen="isMobile"
     top="5vh"
   >
@@ -31,8 +31,14 @@
       <!-- Basic Information Section -->
       <BasicInfoSection
         :task-detail="taskDetail"
-        :available-users="availableUsers"
         @update-field="updateField"
+      />
+      
+      <!-- Executor Section -->
+      <ExecutorSection
+        :task-detail="taskDetail"
+        :available-users="availableUsers"
+        @executor-updated="handleExecutorUpdated"
       />
       
       <!-- Description Section -->
@@ -148,9 +154,11 @@
 
 import { watch, computed, toRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useUserStore } from '@/stores/user'
 import { TASK_STATUS } from '@/constants/taskEnums'
 import TaskDetailHeader from './components/TaskDetailHeader.vue'
 import BasicInfoSection from './components/BasicInfoSection.vue'
+import ExecutorSection from './components/ExecutorSection.vue'
 import DescriptionSection from './components/DescriptionSection.vue'
 import AttachmentSection from './components/AttachmentSection.vue'
 import ProgressSection from './components/ProgressSection.vue'
@@ -162,6 +170,7 @@ import { useAvailableUsers } from './hooks/useAvailableUsers'
 
 // Composables
 const { t } = useI18n()
+const userStore = useUserStore()
 
 // Props definition
 const props = defineProps({
@@ -224,7 +233,7 @@ async function handleAddSubTask(content) {
   const success = await addSubTask(content)
   if (success) {
     // Reload task detail to get updated subtask list
-    await loadTaskDetail(true) // Pass true for refresh
+    await loadTaskDetail(true, false) // Pass true for refresh, false for non-silent
   }
 }
 
@@ -235,7 +244,7 @@ async function handleToggleSubTask(subTaskId, isFinished) {
   const success = await toggleSubTask(subTaskId, isFinished)
   if (success) {
     // Reload task detail to get updated subtask list
-    await loadTaskDetail(true) // Pass true for refresh
+    await loadTaskDetail(true, false) // Pass true for refresh, false for non-silent
   }
 }
 
@@ -252,7 +261,21 @@ function handleOpenSubTask(subTaskId) {
  * Reload task detail to get updated attachment list
  */
 async function handleProgressUpdated() {
-  await loadTaskDetail(true) // Pass true for refresh
+  await loadTaskDetail(true, false) // Pass true for refresh, false for non-silent
+}
+
+/**
+ * Handle executor updated (with silent refresh)
+ */
+async function handleExecutorUpdated(isSilent) {
+  await loadTaskDetail(true, isSilent) // isSilent = true for silent refresh
+}
+
+/**
+ * Handle task updated from executor section
+ */
+function handleTaskUpdated() {
+  emit('task-updated', taskDetail.value)
 }
 
 /**
@@ -262,7 +285,7 @@ function handleSubTaskDialogClose() {
   showSubTaskDialog.value = false
   openedSubTaskId.value = null
   // Reload parent task to get updated data
-  loadTaskDetail(true) // Pass true for refresh
+  loadTaskDetail(true, false) // Pass true for refresh, false for non-silent
 }
 </script>
 

@@ -3,38 +3,6 @@
     <h4 class="section-title">{{ t('task.basicInfo') }}</h4>
     
     <div class="info-grid">
-      <!-- 执行人选择 - 单独一行 -->
-      <div class="info-item full-width">
-        <label class="info-label">{{ t('task.assignee') }}</label>
-        <div class="info-value executors-container">
-          <div class="user-list">
-            <el-tooltip
-              v-for="user in displayExecutors"
-              :key="user.umId"
-              :content="`${user.name} (${user.umId})`"
-              placement="top"
-            >
-              <div class="user-item">
-                <el-avatar :size="28" class="user-avatar">
-                  {{ user.name.charAt(0) }}
-                </el-avatar>
-                <span class="user-name">{{ user.name }}</span>
-              </div>
-            </el-tooltip>
-            
-            <el-button
-              class="add-user-btn"
-              circle
-              size="small"
-              :loading="isUpdating"
-              @click="showUserSelector = true"
-            >
-              <el-icon><Plus /></el-icon>
-            </el-button>
-          </div>
-        </div>
-      </div>
-
       <!-- 创建人展示（只读） -->
       <div class="info-item">
         <label class="info-label">{{ t('task.creator') }}</label>
@@ -51,6 +19,16 @@
         </div>
       </div>
 
+      <!-- 任务状态展示（只读） -->
+      <div class="info-item">
+        <label class="info-label">{{ t('task.status') }}</label>
+        <div class="info-value status-wrapper">
+          <el-tag :type="getStatusType(taskDetail?.status)" class="status-tag">
+            {{ getStatusLabel(taskDetail?.status) }}
+          </el-tag>
+        </div>
+      </div>
+
       <!-- 截止时间选择 -->
       <div class="info-item">
         <label class="info-label">{{ t('task.deadline') }}</label>
@@ -62,23 +40,9 @@
           format="YYYY-MM-DD HH:mm:ss"
           value-format="YYYY-MM-DD HH:mm:ss"
           class="info-value date-picker"
-          :disabled="isUpdating"
+          :disabled="isUpdating || !canEdit"
           style="width: 100%"
           :clearable="false"
-        />
-      </div>
-
-      <!-- 状态选择 -->
-      <div class="info-item">
-        <label class="info-label">{{ t('task.status') }}</label>
-        <TagSelect
-          :model-value="taskDetail?.status"
-          @update:model-value="handleStatusChange"
-          :options="filteredStatusOptions"
-          :disabled-values="disabledStatusValues"
-          placeholder="选择状态"
-          :loading="isUpdating"
-          class="info-value-tag"
         />
       </div>
 
@@ -91,26 +55,19 @@
           :options="priorityOptions"
           placeholder="选择优先级"
           :loading="isUpdating"
+          :disabled="!canEdit"
           class="info-value-tag"
         />
       </div>
 
-      <!-- 来源展示（只读） - 单独一行 -->
-      <div class="info-item full-width">
+      <!-- 来源展示（只读） -->
+      <div class="info-item">
         <label class="info-label">{{ t('task.source') }}</label>
         <div class="info-value readonly">
           {{ getSourceText(taskDetail?.source) }}
         </div>
       </div>
     </div>
-
-    <!-- 选人组件 -->
-    <UserSelector
-      v-model="showUserSelector"
-      :users="availableUsers"
-      :selected-users="selectedExecutors"
-      @confirm="handleExecutorsConfirm"
-    />
   </div>
 </template>
 
@@ -128,29 +85,24 @@
  * 
  * @component
  * @props {Object} taskDetail - The task detail object
- * @props {Array} availableUsers - List of available users for executor selection
  * 
  * @emits update-field - Emitted when a field needs to be updated
  */
 
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Plus } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { TASK_PRIORITY_OPTIONS, getStatusType, getStatusLabel } from '@/constants/taskEnums'
 import TagSelect from '@/components/common/TagSelect.vue'
-import UserSelector from '@/components/common/UserSelector.vue'
-import { TASK_STATUS_OPTIONS, TASK_PRIORITY_OPTIONS, TASK_STATUS } from '@/constants/taskEnums'
 
 const { t } = useI18n()
+const userStore = useUserStore()
 
 // Props
 const props = defineProps({
   taskDetail: {
     type: Object,
     default: null
-  },
-  availableUsers: {
-    type: Array,
-    default: () => []
   }
 })
 
@@ -159,39 +111,16 @@ const emit = defineEmits(['update-field'])
 
 // State
 const isUpdating = ref(false)
-const showUserSelector = ref(false)
 const tempDeadline = ref(null)
 
-// Status and Priority options from enums
-const statusOptions = TASK_STATUS_OPTIONS
+// Priority options from enums
 const priorityOptions = TASK_PRIORITY_OPTIONS
 
-// Filtered status options based on current status
-// If status is OVERDUE (4), only allow COMPLETED (2) or CANCELLED (5)
-// But keep OVERDUE in options for display purpose (read-only)
-// TO_RECEIVE (0) is excluded from detail edit page (pending decision)
-const filteredStatusOptions = computed(() => {
-  if (props.taskDetail?.status === TASK_STATUS.OVERDUE) {
-    // Include OVERDUE for display, but user can only select COMPLETED or CANCELLED
-    return statusOptions.filter(option => 
-      option.value === TASK_STATUS.COMPLETED || 
-      option.value === TASK_STATUS.CANCELLED ||
-      option.value === TASK_STATUS.OVERDUE
-    )
-  }
-  // For other statuses, exclude OVERDUE (system-determined) and TO_RECEIVE (pending)
-  return statusOptions.filter(option => 
-    option.value !== TASK_STATUS.OVERDUE && 
-    option.value !== TASK_STATUS.TO_RECEIVE
-  )
-})
-
-// Disabled status values - OVERDUE cannot be manually selected
-const disabledStatusValues = computed(() => {
-  if (props.taskDetail?.status === TASK_STATUS.OVERDUE) {
-    return [TASK_STATUS.OVERDUE]
-  }
-  return []
+// 判断当前用户是否为分配人（创建人）
+const canEdit = computed(() => {
+  const currentUserUmId = userStore.userInfo?.umId
+  if (!props.taskDetail?.umId || !currentUserUmId) return false
+  return props.taskDetail.umId === currentUserUmId
 })
 
 // Source mapping
@@ -204,20 +133,7 @@ const sourceConfig = {
   '10': 'i平安'
 }
 
-// Computed properties
-const selectedExecutors = computed(() => {
-  if (!props.taskDetail?.todoUsers) return []
-  return props.taskDetail.todoUsers.map(user => user.umId)
-})
 
-const deadlineValue = computed(() => {
-  return props.taskDetail?.deadLine || null
-})
-
-const displayExecutors = computed(() => {
-  if (!props.taskDetail?.todoUsers) return []
-  return props.taskDetail.todoUsers
-})
 
 // Watch for taskDetail changes to update temp deadline
 watch(() => props.taskDetail?.deadLine, (newValue) => {
@@ -230,37 +146,10 @@ function getSourceText(source) {
   return sourceConfig[String(source)] || `未知来源(${source})`
 }
 
-async function handleExecutorsConfirm(umIds) {
-  isUpdating.value = true
-  try {
-    // Convert umIds to todoUsers array
-    const todoUsers = umIds.map(umId => {
-      const user = props.availableUsers.find(u => u.umId === umId)
-      return {
-        umId: umId,
-        name: user?.name || ''
-      }
-    })
-    
-    await emit('update-field', 'todoUsers', todoUsers)
-  } finally {
-    isUpdating.value = false
-  }
-}
-
 async function handleDeadlineChange(value) {
   isUpdating.value = true
   try {
     await emit('update-field', 'deadLine', value)
-  } finally {
-    isUpdating.value = false
-  }
-}
-
-async function handleStatusChange(value) {
-  isUpdating.value = true
-  try {
-    await emit('update-field', 'status', value)
   } finally {
     isUpdating.value = false
   }
@@ -283,7 +172,7 @@ async function handlePriorityChange(value) {
   .info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 24px 40px;
+    gap: 24px;
     align-items: center;
 
     .info-item {
@@ -375,6 +264,21 @@ async function handlePriorityChange(value) {
           :deep(.el-input__wrapper) {
             min-height: 32px;
             width: 100%;
+          }
+        }
+
+        &.status-wrapper {
+          display: flex;
+          align-items: center;
+
+          .status-tag {
+            height: 32px;
+            padding: 0 12px;
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            white-space: nowrap;
+            border: none;
           }
         }
       }

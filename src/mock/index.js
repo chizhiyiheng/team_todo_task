@@ -62,11 +62,11 @@ export const mockApi = {
 
   async getUserList() {
     await delay()
-    
+
     // 从所有待办中提取执行人列表
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const userSet = new Set()
-    
+
     allTasks.forEach(task => {
       const attendees = task.attendeeList || []
       attendees.forEach(attendee => {
@@ -75,7 +75,7 @@ export const mockApi = {
         }
       })
     })
-    
+
     return {
       code: '200',
       message: 'success',
@@ -86,10 +86,10 @@ export const mockApi = {
   async getTodoDetail(params) {
     await delay()
     const todoId = params.id || params
-    
+
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const task = allTasks.find(t => t.id === todoId)
-    
+
     if (!task) {
       return {
         code: '404',
@@ -119,7 +119,7 @@ export const mockApi = {
         source: task.source || 0,
         sourceId: task.sourceId || '',
         attachmentList: task.attachmentList || [],
-        todoUsers: (task.attendeeList || []).map(user => ({
+        todoUsers: (task.todoUsers || []).map(user => ({
           umId: user.umId,
           name: user.name,
           status: user.status || 0
@@ -162,11 +162,11 @@ export const mockApi = {
 
   async deleteTodo(id) {
     await delay()
-    
+
     // 查找待办是否存在
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const task = allTasks.find(t => t.id === id)
-    
+
     if (!task) {
       return {
         code: 'TODO_NOT_FOUND',
@@ -174,7 +174,7 @@ export const mockApi = {
         data: null
       }
     }
-    
+
     // 检查待办状态（只有已完成的待办才能删除）
     if (task.todoStatus !== 2) {
       return {
@@ -183,7 +183,7 @@ export const mockApi = {
         data: null
       }
     }
-    
+
     // 模拟删除成功
     const index = mockTodoList.findIndex(t => t.id === id)
     if (index > -1) {
@@ -194,7 +194,7 @@ export const mockApi = {
         mockTodoListPage2.splice(index2, 1)
       }
     }
-    
+
     return {
       code: '200',
       message: 'success',
@@ -343,7 +343,7 @@ export const mockApi = {
   // 文件上传接口 Mock（模拟第三方文件系统）
   async uploadFile(file) {
     await delay(800) // 模拟上传延迟
-    
+
     // 模拟上传失败的情况（10%概率）
     if (Math.random() < 0.1) {
       return {
@@ -352,11 +352,11 @@ export const mockApi = {
         data: null
       }
     }
-    
+
     // 生成模拟的文件ID和URL
     const fileId = 'FILE_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
     const mockUrl = `https://file-system.example.com/files/${fileId}/${file.name}`
-    
+
     return {
       code: '200',
       message: '上传成功',
@@ -379,7 +379,7 @@ export const mockApi = {
   // 删除文件接口 Mock
   async deleteFile(fileId) {
     await delay(300)
-    
+
     // 模拟删除失败的情况（5%概率）
     if (Math.random() < 0.5) {
       return {
@@ -388,7 +388,7 @@ export const mockApi = {
         data: null
       }
     }
-    
+
     return {
       code: '200',
       message: '删除成功',
@@ -402,9 +402,9 @@ export const mockApi = {
   // 获取待办操作日志接口 Mock
   async getActivityLog(todoId) {
     await delay(400)
-    
+
     const mockLogs = generateMockActivityLogs(todoId)
-    
+
     return {
       code: '200',
       message: 'success',
@@ -415,10 +415,10 @@ export const mockApi = {
   // 标记重要接口 Mock
   async markImportant(id) {
     await delay()
-    
+
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const task = allTasks.find(t => t.id === id)
-    
+
     if (!task) {
       return {
         code: '404',
@@ -426,10 +426,10 @@ export const mockApi = {
         body: null
       }
     }
-    
+
     // 更新 isTop 状态
     task.isTop = 1
-    
+
     return {
       code: '200',
       message: '标记重要成功',
@@ -443,10 +443,10 @@ export const mockApi = {
   // 取消标记重要接口 Mock
   async unmarkImportant(id) {
     await delay()
-    
+
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const task = allTasks.find(t => t.id === id)
-    
+
     if (!task) {
       return {
         code: '404',
@@ -454,10 +454,10 @@ export const mockApi = {
         body: null
       }
     }
-    
+
     // 更新 isTop 状态
     task.isTop = 0
-    
+
     return {
       code: '200',
       message: '取消标记重要成功',

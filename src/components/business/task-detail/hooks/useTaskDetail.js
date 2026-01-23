@@ -20,8 +20,9 @@ export function useTaskDetail(taskId, t) {
   /**
    * Load task detail from API
    * @param {boolean} isRefresh - Whether this is a refresh (not initial load)
+   * @param {boolean} isSilent - Whether this is a silent refresh (no loading indicator)
    */
-  async function loadTaskDetail(isRefresh = false) {
+  async function loadTaskDetail(isRefresh = false, isSilent = false) {
     if (!taskId.value) return
 
     // Only set isInitialLoad to false if this is a refresh
@@ -29,7 +30,11 @@ export function useTaskDetail(taskId, t) {
       isInitialLoad.value = false
     }
 
-    isLoading.value = true
+    // 如果是静默刷新，不显示loading状态
+    if (!isSilent) {
+      isLoading.value = true
+    }
+
     try {
       const response = await todoApi.getTodoDetail(taskId.value)
       if (response.code === '200') {
@@ -43,7 +48,9 @@ export function useTaskDetail(taskId, t) {
       console.error('Load task detail error:', error)
       taskDetail.value = null
     } finally {
-      isLoading.value = false
+      if (!isSilent) {
+        isLoading.value = false
+      }
     }
   }
 

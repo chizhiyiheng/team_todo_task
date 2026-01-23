@@ -11,361 +11,147 @@ const getFutureDate = (daysLater) => {
   return date.toISOString().slice(0, 19).replace('T', ' ')
 }
 
-export const mockTodoList = [
-  // 状态0: 待接收
-  {
-    id: 'TODO_TO_RECEIVE_001',
-    umId: 'LIUQINGHONG264',
-    name: '新项目需求评审',
-    title: '新项目需求评审',
-    source: 7,
-    sourceId: 'project_001',
-    status: 0,
-    todoStatus: 0,
-    deadLine: getFutureDate(5),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(4),
-    updateTime: getRecentDate(1),
-    createTime: getRecentDate(2),
-    startTime: getRecentDate(1),
-    isTop: 0,
-    priority: 2,
-    projectId: 'PROJ001',
-    parentTodoId: '',
-    tag: 0,
-    content: '新项目需求评审',
-    desc: '参加新项目的需求评审会议，评估技术可行性',
-    attendeeList: [
-      { umId: 'USER001', name: '张三', status: 0 },
-      { umId: 'USER002', name: '李四', status: 0 }
-    ],
-    percent: 0,
-    realDeadLine: 1,
-    creatorName: '刘庆红',
-    creatorUmId: 'LIUQINGHONG264'
-  },
+// 生成30条mock数据用于测试分页
+const generateMockTodos = () => {
+  const todos = []
+  const statuses = [
+    { value: 0, name: '待接收' },
+    { value: 1, name: '待处理' },
+    { value: 2, name: '已完成' },
+    { value: 3, name: '进行中' },
+    { value: 4, name: '已逾期' },
+    { value: 5, name: '已取消' }
+  ]
   
-  // 状态1: 待处理
-  {
-    id: 'TODO_PENDING_001',
-    umId: 'LIUQINGHONG264',
-    name: '完成API接口文档',
-    title: '完成API接口文档',
-    source: 8,
-    sourceId: 'project_002',
-    status: 1,
-    todoStatus: 1,
-    deadLine: getFutureDate(7),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(6),
-    updateTime: getRecentDate(3),
-    createTime: getRecentDate(5),
-    startTime: getRecentDate(3),
-    isTop: 1,
-    priority: 3,
-    projectId: 'PROJ002',
-    parentTodoId: '',
-    tag: 1,
-    content: '完成API接口文档',
-    desc: '编写用户管理模块的API接口文档',
-    attendeeList: [
-      { umId: 'USER003', name: '王五', status: 1 }
-    ],
-    percent: 0,
-    realDeadLine: 1,
-    creatorName: '张明',
-    creatorUmId: 'ZHANGMING001'
-  },
-  {
-    id: 'TODO_PENDING_002',
-    umId: 'LIUQINGHONG264',
-    name: '数据库性能优化',
-    title: '数据库性能优化',
-    source: 8,
-    sourceId: 'project_003',
-    status: 1,
-    todoStatus: 1,
-    deadLine: getFutureDate(10),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(9),
-    updateTime: getRecentDate(2),
-    createTime: getRecentDate(4),
-    startTime: getRecentDate(2),
-    isTop: 0,
-    priority: 2,
-    projectId: 'PROJ003',
-    parentTodoId: '',
-    tag: 0,
-    content: '数据库性能优化',
-    desc: '优化慢查询，提升数据库性能',
-    attendeeList: [
-      { umId: 'USER004', name: '赵六', status: 1 }
-    ],
-    percent: 0,
-    realDeadLine: 1,
-    creatorName: '李华',
-    creatorUmId: 'LIHUA002'
-  },
+  const sources = [
+    { value: 0, name: '系统' },
+    { value: 7, name: '任务' },
+    { value: 8, name: '项目' },
+    { value: 9, name: '会议' }
+  ]
   
-  // 状态2: 已完成
-  {
-    id: 'TODO_COMPLETED_001',
-    umId: 'LIUQINGHONG264',
-    name: '完成登录模块开发',
-    title: '完成登录模块开发',
-    source: 7,
-    sourceId: 'project_004',
-    status: 2,
-    todoStatus: 2,
-    deadLine: getRecentDate(5),
-    remindOption: 1,
-    finishTime: getRecentDate(3),
-    remindTime: getRecentDate(6),
-    updateTime: getRecentDate(3),
-    createTime: getRecentDate(10),
-    startTime: getRecentDate(8),
-    isTop: 0,
-    priority: 2,
-    projectId: 'PROJ004',
-    parentTodoId: '',
-    tag: 0,
-    content: '完成登录模块开发',
-    desc: '实现用户登录、注册、找回密码功能',
-    attendeeList: [
-      { umId: 'USER001', name: '张三', status: 1 }
-    ],
-    percent: 100,
-    realDeadLine: 1,
-    creatorName: '刘庆红',
-    creatorUmId: 'LIUQINGHONG264'
-  },
-  {
-    id: 'TODO_COMPLETED_002',
-    umId: 'LIUQINGHONG264',
-    name: '代码审查',
-    title: '代码审查',
-    source: 9,
-    sourceId: 'review_001',
-    status: 2,
-    todoStatus: 2,
-    deadLine: getRecentDate(8),
-    remindOption: 1,
-    finishTime: getRecentDate(7),
-    remindTime: getRecentDate(9),
-    updateTime: getRecentDate(7),
-    createTime: getRecentDate(12),
-    startTime: getRecentDate(10),
-    isTop: 0,
-    priority: 1,
-    projectId: 'PROJ005',
-    parentTodoId: '',
-    tag: 0,
-    content: '代码审查',
-    desc: '审查支付模块的代码质量',
-    attendeeList: [
-      { umId: 'USER002', name: '李四', status: 1 }
-    ],
-    percent: 100,
-    realDeadLine: 1,
-    creatorName: '周强',
-    creatorUmId: 'ZHOUQIANG003'
-  },
+  const users = [
+    { umId: 'LIUQINGHONG264', name: '刘庆红' },
+    { umId: 'USER001', name: '张三' },
+    { umId: 'USER002', name: '李四' },
+    { umId: 'USER003', name: '王五' },
+    { umId: 'USER004', name: '赵六' }
+  ]
   
-  // 状态3: 进行中
-  {
-    id: 'TODO_IN_PROGRESS_001',
-    umId: 'LIUQINGHONG264',
-    name: '开发订单管理功能',
-    title: '开发订单管理功能',
-    source: 8,
-    sourceId: 'project_005',
-    status: 3,
-    todoStatus: 3,
-    deadLine: getFutureDate(12),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(11),
-    updateTime: getRecentDate(1),
-    createTime: getRecentDate(7),
-    startTime: getRecentDate(5),
-    isTop: 1,
-    priority: 3,
-    projectId: 'PROJ006',
-    parentTodoId: '',
-    tag: 1,
-    content: '开发订单管理功能',
-    desc: '实现订单创建、查询、修改、删除功能',
-    attendeeList: [
-      { umId: 'USER003', name: '王五', status: 1 },
-      { umId: 'USER004', name: '赵六', status: 1 }
-    ],
-    percent: 45,
-    realDeadLine: 1,
-    creatorName: '张明',
-    creatorUmId: 'ZHANGMING001'
-  },
-  {
-    id: 'TODO_IN_PROGRESS_002',
-    umId: 'LIUQINGHONG264',
-    name: '前端页面重构',
-    title: '前端页面重构',
-    source: 7,
-    sourceId: 'project_006',
-    status: 3,
-    todoStatus: 3,
-    deadLine: getFutureDate(15),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(14),
-    updateTime: getRecentDate(2),
-    createTime: getRecentDate(10),
-    startTime: getRecentDate(8),
-    isTop: 0,
-    priority: 2,
-    projectId: 'PROJ007',
-    parentTodoId: '',
-    tag: 0,
-    content: '前端页面重构',
-    desc: '使用Vue3重构旧的jQuery页面',
-    attendeeList: [
-      { umId: 'USER001', name: '张三', status: 1 }
-    ],
-    percent: 60,
-    realDeadLine: 1,
-    creatorName: '李华',
-    creatorUmId: 'LIHUA002'
-  },
-  {
-    id: 'TODO_IN_PROGRESS_003',
-    umId: 'LIUQINGHONG264',
-    name: '单元测试编写',
-    title: '单元测试编写',
-    source: 8,
-    sourceId: 'project_007',
-    status: 3,
-    todoStatus: 3,
-    deadLine: getFutureDate(8),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getFutureDate(7),
-    updateTime: getRecentDate(1),
-    createTime: getRecentDate(6),
-    startTime: getRecentDate(4),
-    isTop: 0,
-    priority: 2,
-    projectId: 'PROJ008',
-    parentTodoId: '',
-    tag: 0,
-    content: '单元测试编写',
-    desc: '为核心业务模块编写单元测试',
-    attendeeList: [
-      { umId: 'USER002', name: '李四', status: 1 }
-    ],
-    percent: 30,
-    realDeadLine: 1,
-    creatorName: '吴刚',
-    creatorUmId: 'WUGANG004'
-  },
+  const creators = [
+    { umId: 'LIUQINGHONG264', name: '刘庆红' },
+    { umId: 'ZHANGMING001', name: '张明' },
+    { umId: 'LIHUA002', name: '李华' },
+    { umId: 'WUGANG004', name: '吴刚' },
+    { umId: 'HANMEI008', name: '韩梅' }
+  ]
   
-  // 状态4: 已逾期
-  {
-    id: 'TODO_OVERDUE_001',
-    umId: 'LIUQINGHONG264',
-    name: '修复生产环境Bug',
-    title: '修复生产环境Bug',
-    source: 0,
-    sourceId: 'bug_001',
-    status: 4,
-    todoStatus: 4,
-    deadLine: getRecentDate(3),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getRecentDate(4),
-    updateTime: getRecentDate(2),
-    createTime: getRecentDate(5),
-    startTime: getRecentDate(4),
-    isTop: 1,
-    priority: 3,
-    projectId: 'PROJ009',
-    parentTodoId: '',
-    tag: 1,
-    content: '修复生产环境Bug',
-    desc: '紧急修复用户反馈的支付失败问题',
-    attendeeList: [
-      { umId: 'USER003', name: '王五', status: 1 }
-    ],
-    percent: 20,
-    realDeadLine: 1,
-    creatorName: '韩梅',
-    creatorUmId: 'HANMEI008'
-  },
-  {
-    id: 'TODO_OVERDUE_002',
-    umId: 'LIUQINGHONG264',
-    name: '更新系统文档',
-    title: '更新系统文档',
-    source: 7,
-    sourceId: 'doc_001',
-    status: 4,
-    todoStatus: 4,
-    deadLine: getRecentDate(7),
-    remindOption: 1,
-    finishTime: null,
-    remindTime: getRecentDate(8),
-    updateTime: getRecentDate(6),
-    createTime: getRecentDate(15),
-    startTime: getRecentDate(14),
-    isTop: 0,
-    priority: 1,
-    projectId: 'PROJ010',
-    parentTodoId: '',
-    tag: 0,
-    content: '更新系统文档',
-    desc: '更新系统部署和运维文档',
-    attendeeList: [
-      { umId: 'USER004', name: '赵六', status: 1 }
-    ],
-    percent: 10,
-    realDeadLine: 1,
-    creatorName: '褚卫',
-    creatorUmId: 'CHUWEI006'
-  },
+  const taskNames = [
+    '需求分析与设计', '前端页面开发', '后端API接口开发', '数据库设计与优化',
+    '系统测试与bug修复', '性能优化与部署', '用户培训与文档编写', '项目验收与上线',
+    '代码审查', '单元测试编写', '集成测试', '安全漏洞修复',
+    '系统架构设计', '接口联调测试', '用户手册编写', '性能压测',
+    '代码重构优化', '移动端适配', '数据迁移方案', '监控告警配置',
+    '第三方集成开发', 'CI/CD流程优化', '国际化支持', '容器化部署',
+    '微服务拆分', '日志系统搭建', '缓存优化', '消息队列集成',
+    '权限系统开发', '报表功能开发'
+  ]
   
-  // 状态5: 已取消
-  {
-    id: 'TODO_CANCELLED_001',
-    umId: 'LIUQINGHONG264',
-    name: '旧功能迁移',
-    title: '旧功能迁移',
-    source: 8,
-    sourceId: 'project_008',
-    status: 5,
-    todoStatus: 5,
-    deadLine: getRecentDate(10),
-    remindOption: 0,
-    finishTime: null,
-    remindTime: null,
-    updateTime: getRecentDate(8),
-    createTime: getRecentDate(20),
-    startTime: getRecentDate(18),
-    isTop: 0,
-    priority: 1,
-    projectId: 'PROJ011',
-    parentTodoId: '',
-    tag: 0,
-    content: '旧功能迁移',
-    desc: '将旧系统功能迁移到新平台（已取消）',
-    attendeeList: [
-      { umId: 'USER001', name: '张三', status: 0 }
-    ],
-    percent: 0,
-    realDeadLine: 1,
-    creatorName: '秦明',
-    creatorUmId: 'QINMING009'
+  for (let i = 0; i < 30; i++) {
+    const status = statuses[i % statuses.length]
+    const source = sources[i % sources.length]
+    const creator = creators[i % creators.length]
+    const taskName = taskNames[i]
+    
+    // 根据状态决定时间
+    let deadLine, finishTime, startTime, createTime, updateTime
+    if (status.value === 2) {
+      // 已完成
+      createTime = getRecentDate(15 + i)
+      startTime = getRecentDate(12 + i)
+      updateTime = getRecentDate(5 + i)
+      deadLine = getRecentDate(6 + i)
+      finishTime = getRecentDate(5 + i)
+    } else if (status.value === 4) {
+      // 已逾期
+      createTime = getRecentDate(10 + i)
+      startTime = getRecentDate(8 + i)
+      updateTime = getRecentDate(2 + i)
+      deadLine = getRecentDate(3 + i)
+      finishTime = null
+    } else {
+      // 其他状态
+      createTime = getRecentDate(5 + i)
+      startTime = getRecentDate(3 + i)
+      updateTime = getRecentDate(1 + Math.floor(i / 5))
+      deadLine = getFutureDate(5 + i)
+      finishTime = null
+    }
+    
+    // 确保LIUQINGHONG264在大部分任务的执行人列表中（用于测试"我执行的"tab）
+    const attendeeList = []
+    
+    // 前20个任务包含LIUQINGHONG264作为执行人
+    if (i < 20) {
+      attendeeList.push({
+        umId: 'LIUQINGHONG264',
+        name: '刘庆红',
+        status: 1
+      })
+    }
+    
+    // 随机添加1-2个其他执行人
+    const otherAttendeeCount = (i % 2) + 1
+    for (let j = 0; j < otherAttendeeCount; j++) {
+      const user = users[(i + j + 1) % users.length]
+      if (user.umId !== 'LIUQINGHONG264') {
+        attendeeList.push({
+          umId: user.umId,
+          name: user.name,
+          status: 1
+        })
+      }
+    }
+    
+    todos.push({
+      id: `TODO_${String(i + 1).padStart(3, '0')}`,
+      umId: creator.umId,
+      name: taskName,
+      title: taskName,
+      source: source.value,
+      sourceId: `${source.name}_${String(i + 1).padStart(3, '0')}`,
+      status: status.value,
+      todoStatus: status.value,
+      deadLine,
+      remindOption: i % 2,
+      finishTime,
+      remindTime: deadLine ? new Date(new Date(deadLine).getTime() - 3600000).toISOString().slice(0, 19).replace('T', ' ') : null,
+      updateTime,
+      createTime,
+      startTime,
+      isTop: i % 10 === 0 ? 1 : 0,
+      priority: (i % 3) + 1,
+      projectId: `PROJ${String((i % 10) + 1).padStart(3, '0')}`,
+      parentTodoId: '',
+      tag: i % 10 === 0 ? 1 : 0,
+      content: taskName,
+      desc: `${taskName}的详细描述信息`,
+      attendeeList,
+      percent: status.value === 2 ? 100 : (status.value === 3 ? (i % 8) * 10 + 20 : 0),
+      realDeadLine: 1,
+      creatorName: creator.name,
+      creatorUmId: creator.umId,
+      file_num: i % 5,
+      sub_num: i % 4,
+      sub_complete: Math.floor((i % 4) / 2)
+    })
   }
-]
+  
+  return todos
+}
 
+export const mockTodoList = generateMockTodos()
+
+// 为了兼容性，保留这些导出（虽然不再使用）
 export const mockTodoListPage2 = []
+export const mockTodoListPage3 = []

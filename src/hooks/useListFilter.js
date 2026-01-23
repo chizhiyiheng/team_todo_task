@@ -5,7 +5,7 @@ import { todoApi } from '@/api'
 export function useListFilter(props) {
   const listTasks = ref([])
   const listPage = ref(1)
-  const listPageSize = ref(20)
+  const listPageSize = ref(10)
   const listTotal = ref(0)
   const listLoading = ref(false)
   const selectedAssignees = ref([])
@@ -69,6 +69,17 @@ export function useListFilter(props) {
     fetchListTasks()
   }
 
+  function handlePageChange(page) {
+    listPage.value = page
+    fetchListTasks()
+  }
+
+  function handlePageSizeChange(pageSize) {
+    listPageSize.value = pageSize
+    listPage.value = 1
+    fetchListTasks()
+  }
+
   return {
     listTasks,
     listPage,
@@ -81,6 +92,8 @@ export function useListFilter(props) {
     fetchListTasks,
     fetchAssigneeList,
     handleAssigneeFilterChange,
-    handleStatusFilterChange
+    handleStatusFilterChange,
+    handlePageChange,
+    handlePageSizeChange
   }
 }

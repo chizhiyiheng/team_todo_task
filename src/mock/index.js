@@ -1,4 +1,4 @@
-import { mockTodoList, mockTodoListPage2 } from './todoData'
+import { mockTodoList } from './todoData'
 import { mockTaskStatistics, mockAIAnalysis, mockTeamList, mockTaskDetail } from './taskData'
 import { generateMockActivityLogs } from './activityLogData'
 
@@ -10,7 +10,7 @@ export const mockApi = {
 
     const { page = 1, pageSize = 10, status, queryType, deadLine, finishTime, projectId, parentTodoId } = params
 
-    let allTasks = [...mockTodoList, ...mockTodoListPage2]
+    let allTasks = [...mockTodoList]
 
     // 根据status筛选
     if (status !== undefined && status !== null) {
@@ -64,14 +64,18 @@ export const mockApi = {
     await delay()
 
     // 从所有待办中提取执行人列表
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
-    const userSet = new Set()
+    const allTasks = [...mockTodoList]
+    const userMap = new Map()
 
     allTasks.forEach(task => {
       const attendees = task.attendeeList || []
       attendees.forEach(attendee => {
-        if (attendee.umId) {
-          userSet.add(attendee.umId)
+        if (attendee.umId && !userMap.has(attendee.umId)) {
+          userMap.set(attendee.umId, {
+            id: attendee.umId,
+            umId: attendee.umId,
+            name: attendee.name
+          })
         }
       })
     })
@@ -79,7 +83,7 @@ export const mockApi = {
     return {
       code: '200',
       message: 'success',
-      data: Array.from(userSet)
+      data: Array.from(userMap.values())
     }
   },
 
@@ -87,7 +91,7 @@ export const mockApi = {
     await delay()
     const todoId = params.id || params
 
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === todoId)
 
     if (!task) {
@@ -164,7 +168,7 @@ export const mockApi = {
     await delay()
 
     // 查找待办是否存在
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === id)
 
     if (!task) {
@@ -226,7 +230,7 @@ export const mockApi = {
     await delay()
     
     // 在mock数据中更新任务状态
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === taskId)
     
     if (task) {
@@ -416,7 +420,7 @@ export const mockApi = {
   async markImportant(id) {
     await delay()
 
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === id)
 
     if (!task) {
@@ -444,7 +448,7 @@ export const mockApi = {
   async unmarkImportant(id) {
     await delay()
 
-    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === id)
 
     if (!task) {

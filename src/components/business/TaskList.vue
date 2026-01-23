@@ -106,7 +106,7 @@
               </div>
             </div>
             <div class="el-col row-assigner" style="width: 120px; flex: none">
-              {{ task.name || task.creatorName || '-' }}
+              {{ task.creatorName || '-' }}
             </div>
             <div class="el-col row-time" style="width: 170px; flex: none">
               <span :class="['task-time', { overdue: isOverdue(task.deadLine) }]">
@@ -132,6 +132,20 @@
             </div>
           </div>
         </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="task-list-pagination">
+        <el-pagination
+          v-model:current-page="listPage"
+          v-model:page-size="listPageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="listTotal"
+          :background="true"
+          layout="total, prev, pager, next, sizes, jumper"
+          @size-change="handlePageSizeChange"
+          @current-change="handlePageChange"
+        />
       </div>
     </div>
 
@@ -282,13 +296,19 @@ const viewMode = ref(props.viewMode)
 // 使用列表筛选hook
 const {
   listTasks,
+  listPage,
+  listPageSize,
+  listTotal,
+  listLoading,
   selectedAssignees,
   selectedStatuses,
   assigneeList,
   fetchListTasks,
   fetchAssigneeList,
   handleAssigneeFilterChange,
-  handleStatusFilterChange
+  handleStatusFilterChange,
+  handlePageChange,
+  handlePageSizeChange
 } = useListFilter(props)
 
 // 使用看板hook
@@ -1260,6 +1280,84 @@ $flow-status-cancel-color: $info-color;
                 .taskfont {
                   font-size: 16px;
                 }
+              }
+            }
+          }
+        }
+      }
+      
+      .task-list-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px 0;
+        margin-top: 8px;
+        
+        :deep(.el-pagination) {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          gap: 12px;
+          
+          .el-pagination__total {
+            flex: 1;
+            margin-right: 0;
+            order: -1;
+          }
+          
+          .el-pagination__sizes {
+            order: 999;
+            margin-left: auto;
+            margin-right: 0;
+            
+            .el-select {
+              width: 100px;
+              
+              .el-input {
+                width: 90px;
+              }
+            }
+          }
+          
+          .el-pagination__jump {
+            margin-left: 12px;
+            
+            .el-pagination__goto {
+              margin-right: 0;
+            }
+            
+            .el-pagination__classifier {
+              margin-left: 0;
+            }
+            
+            .el-input {
+              width: 40px;
+              margin: 0 8px;
+              
+              .el-input__wrapper {
+                padding: 1px 8px;
+              }
+            }
+          }
+          
+          .btn-prev,
+          .btn-next {
+            margin: 0 4px;
+          }
+          
+          .el-pager {
+            margin: 0 4px;
+            
+            li {
+              min-width: 32px;
+              height: 32px;
+              line-height: 32px;
+              border-radius: 4px;
+              margin: 0 2px;
+              
+              &.is-active {
+                background-color: #409eff;
+                color: #fff;
               }
             }
           }

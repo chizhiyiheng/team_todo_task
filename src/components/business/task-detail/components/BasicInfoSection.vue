@@ -167,8 +167,9 @@ const statusOptions = TASK_STATUS_OPTIONS
 const priorityOptions = TASK_PRIORITY_OPTIONS
 
 // Filtered status options based on current status
-// If status is OVERDUE (3), only allow COMPLETED (1) or CANCELLED (4)
+// If status is OVERDUE (4), only allow COMPLETED (2) or CANCELLED (5)
 // But keep OVERDUE in options for display purpose (read-only)
+// TO_RECEIVE (0) is excluded from detail edit page (pending decision)
 const filteredStatusOptions = computed(() => {
   if (props.taskDetail?.status === TASK_STATUS.OVERDUE) {
     // Include OVERDUE for display, but user can only select COMPLETED or CANCELLED
@@ -178,8 +179,11 @@ const filteredStatusOptions = computed(() => {
       option.value === TASK_STATUS.OVERDUE
     )
   }
-  // For other statuses, exclude OVERDUE from options (it's system-determined)
-  return statusOptions.filter(option => option.value !== TASK_STATUS.OVERDUE)
+  // For other statuses, exclude OVERDUE (system-determined) and TO_RECEIVE (pending)
+  return statusOptions.filter(option => 
+    option.value !== TASK_STATUS.OVERDUE && 
+    option.value !== TASK_STATUS.TO_RECEIVE
+  )
 })
 
 // Disabled status values - OVERDUE cannot be manually selected

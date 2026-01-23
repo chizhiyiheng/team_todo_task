@@ -99,7 +99,7 @@
         </el-button>
         
         <el-button
-          v-if="taskDetail.status !== 1 && taskDetail.status !== 4"
+          v-if="taskDetail.status !== TASK_STATUS.COMPLETED && taskDetail.status !== TASK_STATUS.CANCELLED"
           type="success"
           icon="CircleCheck"
           @click="markAsComplete"
@@ -109,7 +109,7 @@
         </el-button>
         
         <el-button
-          v-if="taskDetail.status === 1"
+          v-if="taskDetail.status === TASK_STATUS.COMPLETED"
           type="danger"
           icon="Delete"
           @click="deleteTask"
@@ -148,6 +148,7 @@
 
 import { watch, computed, toRef, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { TASK_STATUS } from '@/constants/taskEnums'
 import TaskDetailHeader from './components/TaskDetailHeader.vue'
 import BasicInfoSection from './components/BasicInfoSection.vue'
 import DescriptionSection from './components/DescriptionSection.vue'

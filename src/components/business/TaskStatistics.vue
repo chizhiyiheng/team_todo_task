@@ -401,7 +401,7 @@ function onTaskListFilterChanged(status) {
 
 <style scoped lang="scss">
 .task-statistics {
-  padding: 16px;
+  padding: 6px 16px;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #f0f0f0;
@@ -410,7 +410,7 @@ function onTaskListFilterChanged(status) {
   .statistics-header {
     display: flex;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
 
     .header-content {
       display: flex;

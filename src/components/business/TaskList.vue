@@ -3,18 +3,6 @@
     <div v-if="showHeader" class="task-list-header">
       <h4>任务列表</h4>
       <div class="task-controls">
-        <el-select v-model="statusFilter" placeholder="筛选任务状态" style="width: 120px" @change="filterChanged">
-          <el-option label="全部状态" value="all" />
-          <el-option label="待处理" value="pending" />
-          <el-option label="进行中" value="in_progress" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="已逾期" value="overdue" />
-          <el-option label="已取消" value="cancelled" />
-        </el-select>
-        <el-select v-model="assigneeFilter" placeholder="按执行人筛选" style="width: 120px" @change="assigneeChanged">
-          <el-option label="全部人员" value="all" />
-          <el-option v-for="user in assignees" :key="user.id" :value="user.id" :label="user.name" />
-        </el-select>
         <el-button-group>
           <el-button :class="{ active: viewMode === 'list' }" @click="switchView('list')">
             <el-icon><List /></el-icon>
@@ -33,8 +21,44 @@
       <div class="project-table-head">
         <div class="task-row">
            <div class="el-col" style="flex: 1; padding-left: 32px;">任务名称</div>
-           <div class="el-col" style="width: 120px; flex: none;">负责人</div>
+           <div class="el-col filter-col" style="width: 120px; flex: none;">
+             负责人
+             <el-popover placement="bottom" :width="200" trigger="click">
+               <template #reference>
+                 <el-button link size="small" class="filter-btn">
+                   <el-icon><Filter /></el-icon>
+                 </el-button>
+               </template>
+               <div class="filter-content">
+                 <el-checkbox-group v-model="selectedAssignees" @change="handleAssigneeFilterChange">
+                   <el-checkbox v-for="user in assigneeList" :key="user.id" :label="user.id">
+                     {{ user.name }}
+                   </el-checkbox>
+                 </el-checkbox-group>
+               </div>
+             </el-popover>
+           </div>
            <div class="el-col" style="width: 120px; flex: none;">创建人</div>
+           <div class="el-col filter-col" style="width: 120px; flex: none;">
+             状态
+             <el-popover placement="bottom" :width="200" trigger="click">
+               <template #reference>
+                 <el-button link size="small" class="filter-btn">
+                   <el-icon><Filter /></el-icon>
+                 </el-button>
+               </template>
+               <div class="filter-content">
+                 <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
+                   <el-checkbox :label="0">待接收</el-checkbox>
+                   <el-checkbox :label="1">待处理</el-checkbox>
+                   <el-checkbox :label="2">已完成</el-checkbox>
+                   <el-checkbox :label="3">进行中</el-checkbox>
+                   <el-checkbox :label="4">已逾期</el-checkbox>
+                   <el-checkbox :label="5">已取消</el-checkbox>
+                 </el-checkbox-group>
+               </div>
+             </el-popover>
+           </div>
            <div class="el-col" style="width: 120px; flex: none;">截止时间</div>
            <div class="el-col" style="width: 80px; flex: none;">来源</div>
            <div class="el-col" style="width: 80px; flex: none;">操作</div>
@@ -42,7 +66,7 @@
       </div>
       <div class="project-table-body">
         <div
-          v-for="task in filteredTasks"
+          v-for="task in listTasks"
           :key="task.uniqueKey || task.id"
           class="task-row"
           @click="viewTask(task)"
@@ -58,10 +82,10 @@
                       <span v-if="task.flow_item_name" :class="task.flow_item_status">{{ task.flow_item_name }}</span>
                       <span v-if="task.sub_top === true">子任务</span>
                       <span v-if="task.sub_my && task.sub_my.length > 0">+{{ task.sub_my.length }}</span>
-                      {{ task.name || task.content }}
+                      {{ task.name || task.title || task.content }}
                    </div>
                    <div class="item-icons">
-                      <div v-if="task.desc" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
+                      <div v-if="task.desc || task.content" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
                       <div v-if="task.file_num > 0" class="item-icon"><i class="taskfont">&#xe71c;</i><em>{{ task.file_num }}</em></div>
                       <div v-if="task.msg_num > 0" class="item-icon"><i class="taskfont">&#xe71e;</i><em>{{ task.msg_num }}</em></div>
                       <div v-if="task.sub_num > 0" class="item-icon" @click.stop="getSublist(task)"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
@@ -69,13 +93,16 @@
                 </div>
                 <div class="el-col row-user" style="width: 120px; flex: none;">
                    <div class="user-list">
-                      <el-avatar v-for="(user, keyu) in ownerUser(task.attendeeList || task.task_user).slice(0,3)" :key="keyu" :size="24" :src="user.avatar" class="user-avatar" :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
+                      <el-avatar v-for="(user, keyu) in ownerUser(task.todoUsers || task.attendeeList || task.task_user).slice(0,3)" :key="keyu" :size="24" :src="user.avatar" class="user-avatar" :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
                          {{ user.name ? user.name.substring(0, 1) : 'U' }}
                       </el-avatar>
-                      <el-button v-if="ownerUser(task.attendeeList || task.task_user).length === 0" type="primary" link size="small" @click.stop="viewTask(task, true)">领取</el-button>
+                      <el-button v-if="ownerUser(task.todoUsers || task.attendeeList || task.task_user).length === 0" type="primary" link size="small" @click.stop="viewTask(task, true)">领取</el-button>
                    </div>
                 </div>
-                <div class="el-col row-assigner" style="width: 120px; flex: none;">{{ task.creatorName || task.create_user || '-' }}</div>
+                <div class="el-col row-assigner" style="width: 120px; flex: none;">{{ task.creatorName || task.create_user || task.name || '-' }}</div>
+                <div class="el-col row-status" style="width: 120px; flex: none;">
+                   <el-tag :type="getStatusTagType(task)" size="small">{{ getStatusText(getTaskStatus(task)) }}</el-tag>
+                </div>
                 <div class="el-col row-time" style="width: 120px; flex: none;">
                    <div v-if="getTaskStatus(task) !== 'completed' && (task.deadLine || task.end_at)" :class="['task-time', isToday(task.deadLine || task.end_at) ? 'today' : '', isOverdue(task.deadLine || task.end_at) ? 'overdue' : '']">{{ expiresFormat(task.deadLine || task.end_at) }}</div>
                    <div v-else-if="showCompleteAt && getTaskStatus(task) === 'completed'" :title="task.finishTime || task.complete_at">{{ completeAtFormat(task.finishTime || task.complete_at) }}</div>
@@ -98,72 +125,71 @@
     <div v-else-if="viewMode === 'kanban'" class="task-kanban-view">
       <div class="kanban-columns">
         <div
-          v-for="statusKey in statusList"
+          v-for="statusKey in kanbanStatusList"
           :key="statusKey"
-          :class="['kanban-column', 'status-' + statusKey, { 'drag-over': dragOverStatus === statusKey }]"
-          @dragover.prevent
-          @dragenter="handleDragEnter(statusKey)"
-          @dragleave="handleDragLeave"
-          @drop="handleDrop(statusKey)"
+          :class="['kanban-column', 'status-' + statusKey]"
         >
           <div class="kanban-column-header">
             <h5>{{ getStatusText(statusKey) }}</h5>
-            <el-badge :value="columnTasks[statusKey].length" />
+            <el-badge :value="kanbanColumns[statusKey].total" />
           </div>
-          <div class="kanban-tasks">
-            <div
-              v-for="task in columnTasks[statusKey]"
-              :key="task.uniqueKey || task.id"
-              class="kanban-task"
-              @click="viewTask(task)"
-              draggable="true"
-              @dragstart="handleDragStart(task)"
+          <div 
+            class="kanban-tasks-wrapper"
+            @scroll="handleKanbanScroll($event, statusKey)"
+          >
+            <draggable
+              :list="kanbanColumns[statusKey].list"
+              :group="{ name: 'tasks', pull: true, put: true }"
+              item-key="id"
+              class="kanban-tasks"
+              :animation="200"
+              ghost-class="ghost-card"
+              :move="onDragMove"
+              @change="handleDragChange($event, statusKey)"
             >
-              <div class="task-card">
-                <div class="task-card-priority" v-if="task.p_name" :style="{ backgroundColor: task.p_color }"></div>
-                <div class="task-title">
-                  <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star">
-                    <StarFilled />
-                  </el-icon>
-                  {{ task.name || task.content }}
-                </div>
-                <div class="task-info">
-                  <div class="task-assignee">{{ getAttendeeNames(task.attendeeList || task.task_user) }}</div>
-                  <div class="task-deadline" :class="{ 'overdue': isOverdue(task.deadLine || task.end_at) }">
-                    {{ task.deadLine || task.end_at }}
-                  </div>
-                </div>
-                <div v-if="taskUsers(task).length" class="task-users">
-                  <ul>
-                    <li
-                      v-for="(user, idx) in taskUsers(task)"
-                      :key="idx">
-                      <el-avatar
-                        :size="28"
-                        :src="user.avatar"
-                        :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
-                        {{ user.name ? user.name.substring(0, 1) : 'U' }}
-                      </el-avatar>
-                    </li>
-                  </ul>
-                </div>
-                <div class="task-progress">
-                  <div v-if="task.sub_num > 0" class="task-sub-num">
-                    {{ task.sub_complete }}/{{ task.sub_num }}
-                  </div>
-                  <el-progress :percentage="task.percent || 0" :stroke-width="6" />
-                  <el-tooltip
-                    v-if="task.deadLine || task.end_at"
-                    :class="['task-time', isToday(task.deadLine || task.end_at) ? 'today' : '', isOverdue(task.deadLine || task.end_at) ? 'overdue' : '']"
-                    :disabled="false"
-                    :open-delay="600"
-                    :content="task.deadLine || task.end_at">
-                    <div v-if="task.status !== '1'">
-                      <i class="taskfont">&#xe71d;</i>{{ expiresFormat(task.deadLine || task.end_at) }}
+              <template #item="{ element: task }">
+                <div
+                  class="kanban-task"
+                  @click="viewTask(task)"
+                >
+                  <div class="task-card">
+                    <div class="task-card-priority" v-if="task.p_name" :style="{ backgroundColor: task.p_color }"></div>
+                    <div class="task-title">
+                      <el-icon v-if="(task.mark || task.tag === 1 || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star">
+                        <StarFilled />
+                      </el-icon>
+                      {{ task.title || task.name || task.content }}
                     </div>
-                  </el-tooltip>
+                    <div v-if="taskUsers(task).length" class="task-users">
+                      <ul>
+                        <li
+                          v-for="(user, idx) in taskUsers(task)"
+                          :key="idx">
+                          <el-avatar
+                            :size="28"
+                            :src="user.avatar"
+                            :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
+                            {{ user.name ? user.name.substring(0, 1) : 'U' }}
+                          </el-avatar>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="task-footer">
+                      <el-tag :type="getStatusTagType(task)" size="small">{{ getStatusText(getTaskStatusKey(task)) }}</el-tag>
+                      <div v-if="task.deadLine || task.end_at" class="task-deadline">
+                        <el-icon><Clock /></el-icon>
+                        <span :class="{ 'overdue': isOverdue(task.deadLine || task.end_at) }">
+                          {{ expiresFormat(task.deadLine || task.end_at) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </template>
+            </draggable>
+            <div v-if="kanbanColumns[statusKey].loading" class="kanban-loading">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              加载中...
             </div>
           </div>
         </div>
@@ -171,7 +197,7 @@
     </div>
 
     <div v-else class="task-gantt-view">
-      <div ref="ganttChart" style="height: 500px;"></div>
+      <div ref="ganttChart" style="width: 100%; height: 600px;"></div>
     </div>
 
     <!-- Task Detail Dialog -->
@@ -188,13 +214,16 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
-import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell } from '@element-plus/icons-vue'
+import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
 import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
 import { todoApi } from '@/api'
+import draggable from 'vuedraggable'
+import { useKanban } from '@/hooks/useKanban'
+import { useListFilter } from '@/hooks/useListFilter'
 
 const props = defineProps({
   viewMode: {
@@ -228,10 +257,6 @@ const props = defineProps({
   showHeader: {
     type: Boolean,
     default: true
-  },
-  showCompleted: {
-    type: Boolean,
-    default: false
   }
 })
 
@@ -239,17 +264,28 @@ const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filte
 
 const taskStore = useTaskStore()
 
-const assigneeFilter = ref('all')
-const statusFilter = ref(props.statusFilter)
 const viewMode = ref(props.viewMode)
-const kanbanColumns = ref({
-  pending: [],
-  in_progress: [],
-  completed: [],
-  overdue: []
-})
-const draggingTask = ref(null)
-const dragOverStatus = ref(null)
+
+// 使用列表筛选hook
+const {
+  listTasks,
+  selectedAssignees,
+  selectedStatuses,
+  assigneeList,
+  fetchListTasks,
+  fetchAssigneeList,
+  handleAssigneeFilterChange,
+  handleStatusFilterChange
+} = useListFilter(props)
+
+// 使用看板hook
+const {
+  kanbanStatusList,
+  kanbanColumns,
+  initKanbanData,
+  handleKanbanScroll,
+  handleDragChange
+} = useKanban(props)
 
 const ganttChart = ref(null)
 const ganttChartInstance = ref(null)
@@ -258,8 +294,6 @@ const ganttChartInstance = ref(null)
 const showTaskDetail = ref(false)
 const selectedTaskId = ref(null)
 
-const statusList = ['pending', 'in_progress', 'completed', 'overdue']
-
 const operationMenu = [
   { icon: Star, title: '标记重点', action: 'mark-important' },
   { icon: Edit, title: '编辑', action: 'edit-task' },
@@ -267,61 +301,13 @@ const operationMenu = [
   { icon: Bell, title: '提醒', action: 'set-reminder' }
 ]
 
-const filteredTasks = computed(() => {
-  let filtered = tasks.value
-
-  if (!props.showCompleted) {
-    filtered = filtered.filter(task => task.status !== '1')
-  }
-
-  if (statusFilter.value !== 'all') {
-    if (statusFilter.value === 'completed') {
-      if (!props.showCompleted) {
-        return []
-      }
-      filtered = filtered.filter(task => task.status === '1')
-    } else if (statusFilter.value === 'in_progress') {
-      filtered = filtered.filter(task => task.status === '2')
-    } else if (statusFilter.value === 'pending') {
-      filtered = filtered.filter(task => task.status === '0' && !isOverdue(task.deadLine || task.end_at))
-    } else if (statusFilter.value === 'overdue') {
-      filtered = filtered.filter(task => task.status === '0' && isOverdue(task.deadLine || task.end_at))
-    } else if (statusFilter.value === 'cancelled') {
-      filtered = filtered.filter(task => task.status === '-1')
-    }
-  }
-
-  if (assigneeFilter.value !== 'all') {
-    filtered = filtered.filter(task => {
-      const attendees = task.attendeeList || task.task_user || []
-      return attendees.some(a => a.umId === assigneeFilter.value || a.userid === assigneeFilter.value)
-    })
-  }
-
-  return filtered
-})
-
-const columnTasks = computed(() => {
-  if (viewMode.value !== 'kanban') return kanbanColumns.value
-
-  const columns = {
-    pending: [],
-    in_progress: [],
-    completed: [],
-    overdue: []
-  }
-
-  filteredTasks.value.forEach(task => {
-    if (columns[getTaskStatus(task)]) {
-      columns[getTaskStatus(task)].push(task)
-    }
-  })
-
-  return columns
-})
-
 onMounted(() => {
-  if (viewMode.value === 'gantt') {
+  if (viewMode.value === 'list') {
+    fetchListTasks()
+    fetchAssigneeList()
+  } else if (viewMode.value === 'kanban') {
+    initKanbanData()
+  } else if (viewMode.value === 'gantt') {
     setTimeout(() => initGanttChart(), 100)
   }
 })
@@ -332,109 +318,59 @@ onBeforeUnmount(() => {
   }
 })
 
-watch(() => props.statusFilter, (newVal) => {
-  statusFilter.value = newVal
-})
-
-watch(() => props.assigneeFilter, (newVal) => {
-  assigneeFilter.value = newVal
-})
-
 watch(() => props.viewMode, (newVal) => {
   viewMode.value = newVal
-  if (newVal === 'gantt') {
+  if (newVal === 'list') {
+    fetchListTasks()
+    fetchAssigneeList()
+  } else if (newVal === 'kanban') {
+    initKanbanData()
+  } else if (newVal === 'gantt') {
     nextTick(() => initGanttChart())
   }
 })
 
-watch(() => props.showCompleted, () => {
-  // Trigger rebuild when showCompleted changes
-})
-
-watch([statusFilter, assigneeFilter], () => {
-  // No action needed, columnTasks computed property will handle updates
-})
-
-const tasks = computed(() => {
-  const allTasks = taskStore.taskList || []
-  let list = []
-
-  if (props.taskType === 'my') {
-    if (props.mode === 'assigned') {
-      list = allTasks.filter(task => task.creatorUmId === 'LIUQINGHONG264' || task.create_user_id === 'LIUQINGHONG264')
-    } else {
-      list = allTasks.filter(task => (task.attendeeList && task.attendeeList.length > 0) || (task.task_user && task.task_user.length > 0))
-    }
-  } else if (props.taskType === 'team' && props.teamId) {
-    list = allTasks.filter(task => task.sourceId && task.sourceId.includes(String(props.teamId)))
-  } else {
-    list = allTasks
-  }
-
-  return list.map((task, index) => {
-    // Return the raw task object directly, avoiding deep cloning or property overwrites that cause reactivity issues
-    // We attach temporary UI properties to a new object that inherits from the task, or just use the task as is if possible
-    // To be safe and fix the recursion, we will use the raw task and compute derived values in the template or separate helper functions
-    return {
-       ...task,
-       uniqueKey: (task.id || 'temp') + '_' + index // Ensure stable unique key
-    }
-  })
-})
-
-function fetchTasks() {
-  // No-op, tasks is now a computed property
+function onDragMove(evt) {
+  return true
 }
 
-const assignees = computed(() => {
-  const allTasks = taskStore.taskList || []
-  const attendeeSet = new Set()
+function getTaskStatusKey(task) {
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
+  if (status === 2) return 'completed'
+  if (status === 3) return 'in_progress'
+  if (status === 4) return 'overdue'
+  if (status === 5) return 'cancelled'
+  return 'pending'
+}
 
-  allTasks.forEach(task => {
-    const list = task.attendeeList || task.task_user || []
-    list.forEach(attendee => {
-      attendeeSet.add(JSON.stringify({
-        id: attendee.umId || attendee.userid,
-        name: attendee.name
-      }))
-    })
-  })
-
-  return Array.from(attendeeSet).map(s => JSON.parse(s))
-})
-
-function buildKanbanColumns() {
-  const columns = {
-    pending: [],
-    in_progress: [],
-    completed: [],
-    overdue: []
+function getStatusTagType(task) {
+  const status = getTaskStatusKey(task)
+  const typeMap = {
+    pending: 'warning',
+    in_progress: 'primary',
+    completed: 'success',
+    overdue: 'danger',
+    cancelled: 'info'
   }
-
-  filteredTasks.value.forEach(task => {
-    if (columns[getTaskStatus(task)]) {
-      columns[getTaskStatus(task)].push(task)
-    }
-  })
-
-  kanbanColumns.value = columns
+  return typeMap[status] || ''
 }
 
 function getTaskStatus(task) {
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  // 0-待接收 1-待处理 2-已完成 3-进行中 4-已逾期 5-已取消
-  if (status === 2) {
+  // 根据API文档：0-待处理，1-已完成，2-进行中，3-已逾期，4-已取消
+  if (status === 1) {
     return 'completed'
   }
-  if (status === 3) {
+  if (status === 2) {
     return 'in_progress'
   }
-  if (status === 4 || isOverdue(task.deadLine || task.end_at)) {
+  if (status === 3 || isOverdue(task.deadLine || task.end_at)) {
     return 'overdue'
   }
-  if (status === 5) {
+  if (status === 4) {
     return 'cancelled'
   }
+  // 0-待处理
   return 'pending'
 }
 
@@ -443,7 +379,8 @@ function getStatusText(status) {
     pending: '待处理',
     in_progress: '进行中',
     completed: '已完成',
-    overdue: '已逾期'
+    overdue: '已逾期',
+    cancelled: '已取消'
   }
   return statusMap[status] || status
 }
@@ -454,26 +391,22 @@ function getAttendeeNames(attendeeList) {
 }
 
 function taskUsers(task) {
-  const list = Array.isArray(task.attendeeList) ? task.attendeeList : []
+  const list = Array.isArray(task.todoUsers) ? task.todoUsers : 
+               (Array.isArray(task.attendeeList) ? task.attendeeList : [])
   return list.filter(user => user && (user.status === 1 || user.owner === 1)).slice(0, 3)
 }
 
 function switchView(mode) {
   viewMode.value = mode
   emit('view-mode-changed', mode)
-  if (mode === 'gantt') {
+  if (mode === 'list') {
+    fetchListTasks()
+    fetchAssigneeList()
+  } else if (mode === 'kanban') {
+    initKanbanData()
+  } else if (mode === 'gantt') {
     nextTick(() => initGanttChart())
   }
-}
-
-function filterChanged(status) {
-  statusFilter.value = status
-  emit('filter-changed', status)
-}
-
-function assigneeChanged(assigneeId) {
-  assigneeFilter.value = assigneeId
-  emit('assignee-filter-changed', assigneeId)
 }
 
 function viewTask(task) {
@@ -540,8 +473,9 @@ function setImportant(task) {
 function removeTask(task) {
   console.log('Remove task:', task)
   
-  // 检查待办状态 - 只有已完成(status=2)的待办才能删除
-  if (task.todoStatus !== 2 && task.status !== '2' && task.status !== 2) {
+  // 检查待办状态 - 只有已完成(status=1)的待办才能删除
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
+  if (status !== 1) {
     ElMessage.warning('只有已完成的待办才能删除')
     return
   }
@@ -562,7 +496,7 @@ function removeTask(task) {
         ElMessage.success('任务删除成功')
         emit('task-deleted', task.id)
         // 刷新任务列表
-        await taskStore.fetchTasks()
+        await taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
       } else {
         ElMessage.error(result.message || '删除失败')
       }
@@ -606,7 +540,13 @@ function getSourceName(source) {
 }
 
 function initGanttChart() {
-  if (!ganttChart.value || typeof echarts === 'undefined') {
+  if (!ganttChart.value) {
+    console.warn('Gantt chart element not found')
+    return
+  }
+  
+  if (typeof echarts === 'undefined') {
+    console.error('ECharts is not loaded')
     return
   }
 
@@ -616,15 +556,110 @@ function initGanttChart() {
 
   ganttChartInstance.value = echarts.init(ganttChart.value)
 
-  const data = filteredTasks.value.map(task => {
-    const raw = task.raw || {}
-    const times = getTimeObj(raw)
+  let tasks = listTasks.value
+  
+  // 在开发环境下，如果没有数据，使用mock数据
+  if (import.meta.env.DEV && tasks.length === 0) {
+    const now = new Date()
+    const mockTasks = [
+      {
+        id: 'gantt-mock-1',
+        name: '需求分析与设计',
+        content: '需求分析与设计',
+        startTime: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 2
+      },
+      {
+        id: 'gantt-mock-2',
+        name: '前端页面开发',
+        content: '前端页面开发',
+        startTime: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 3
+      },
+      {
+        id: 'gantt-mock-3',
+        name: '后端API接口开发',
+        content: '后端API接口开发',
+        startTime: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 3
+      },
+      {
+        id: 'gantt-mock-4',
+        name: '数据库设计与优化',
+        content: '数据库设计与优化',
+        startTime: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 2
+      },
+      {
+        id: 'gantt-mock-5',
+        name: '系统测试与bug修复',
+        content: '系统测试与bug修复',
+        startTime: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 1
+      },
+      {
+        id: 'gantt-mock-6',
+        name: '性能优化与部署',
+        content: '性能优化与部署',
+        startTime: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 1
+      },
+      {
+        id: 'gantt-mock-7',
+        name: '用户培训与文档编写',
+        content: '用户培训与文档编写',
+        startTime: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 18 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 1
+      },
+      {
+        id: 'gantt-mock-8',
+        name: '项目验收与上线',
+        content: '项目验收与上线',
+        startTime: new Date(now.getTime() + 18 * 24 * 60 * 60 * 1000).getTime(),
+        deadLine: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000).getTime(),
+        todoStatus: 1
+      }
+    ]
+    tasks = mockTasks
+  }
+  
+  if (tasks.length === 0) {
+    // 如果没有数据，显示空状态
+    const option = {
+      title: {
+        text: '甘特图视图',
+        subtext: '暂无任务数据',
+        left: 'center',
+        top: 'center'
+      }
+    }
+    ganttChartInstance.value.setOption(option)
+    return
+  }
+
+  // 准备数据
+  const categories = tasks.map(task => task.content || task.name || task.title || '未命名任务')
+  const data = tasks.map((task, index) => {
+    const times = getTimeObj(task)
     return {
-      id: raw.id || task.id,
-      name: task.name || task.title,
-      value: [times.start, times.end],
+      name: categories[index],
+      value: [
+        index,
+        times.start,
+        times.end,
+        times.end - times.start
+      ],
       itemStyle: {
-        color: getStatusColor(getTaskStatus(task))
+        normal: {
+          color: '#409EFF'  // 使用鲜亮的蓝色，与新建任务按钮一致
+        }
       }
     }
   })
@@ -632,35 +667,127 @@ function initGanttChart() {
   const option = {
     title: {
       text: '甘特图视图',
-      left: 'center'
+      left: 'center',
+      top: 10,
+      textStyle: {
+        fontSize: 16,
+        fontWeight: 'normal'
+      }
     },
     tooltip: {
       formatter: function(params) {
-        return params.name + ': ' + params.value[0] + ' - ' + params.value[1]
+        const startDate = new Date(params.value[1]).toLocaleDateString('zh-CN')
+        const endDate = new Date(params.value[2]).toLocaleDateString('zh-CN')
+        const duration = Math.ceil((params.value[2] - params.value[1]) / (1000 * 60 * 60 * 24))
+        return `${params.name}<br/>开始: ${startDate}<br/>结束: ${endDate}<br/>工期: ${duration}天`
       }
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
+      left: '15%',
+      right: '8%',
+      bottom: '10%',
+      top: 60,
       containLabel: true
     },
     xAxis: {
-      type: 'time'
+      type: 'time',
+      position: 'top',
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: '#E9EDFF'
+        }
+      },
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        formatter: function(value) {
+          const date = new Date(value)
+          return `${date.getMonth() + 1}/${date.getDate()}`
+        },
+        color: '#929ABA'
+      }
     },
     yAxis: {
       type: 'category',
-      data: data.map(item => item.name)
+      data: categories,
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#929ABA',
+        fontSize: 12,
+        width: 100,
+        overflow: 'truncate',
+        ellipsis: '...'
+      },
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: '#E9EDFF'
+        }
+      }
     },
     series: [
       {
-        type: 'bar',
+        type: 'custom',
+        renderItem: function(params, api) {
+          const categoryIndex = api.value(0)
+          const start = api.coord([api.value(1), categoryIndex])
+          const end = api.coord([api.value(2), categoryIndex])
+          const height = api.size([0, 1])[1] * 0.6
+          
+          const rectShape = echarts.graphic.clipRectByRect(
+            {
+              x: start[0],
+              y: start[1] - height / 2,
+              width: end[0] - start[0],
+              height: height
+            },
+            {
+              x: params.coordSys.x,
+              y: params.coordSys.y,
+              width: params.coordSys.width,
+              height: params.coordSys.height
+            }
+          )
+          
+          return (
+            rectShape && {
+              type: 'rect',
+              transition: ['shape'],
+              shape: rectShape,
+              style: api.style()
+            }
+          )
+        },
+        encode: {
+          x: [1, 2],
+          y: 0
+        },
         data: data
       }
     ]
   }
 
   ganttChartInstance.value.setOption(option)
+  
+  // 监听窗口大小变化
+  const resizeHandler = () => {
+    if (ganttChartInstance.value) {
+      ganttChartInstance.value.resize()
+    }
+  }
+  
+  window.removeEventListener('resize', resizeHandler)
+  window.addEventListener('resize', resizeHandler)
 }
 
 function getTimeObj(taskData) {
@@ -672,9 +799,15 @@ function getTimeObj(taskData) {
     }
   }
 
-  let start = taskData.startTime ? new Date(taskData.startTime).getTime() : new Date(taskData.createTime).getTime()
-  let end = taskData.deadLine ? new Date(taskData.deadLine).getTime() : (taskData.end_at ? new Date(taskData.end_at).getTime() : start + 86400000)
+  // 优先使用startTime，其次createTime
+  let start = taskData.startTime ? new Date(taskData.startTime).getTime() : 
+              (taskData.createTime ? new Date(taskData.createTime).getTime() : new Date().getTime())
+  
+  // 优先使用deadLine，其次end_at，最后默认为开始时间+1天
+  let end = taskData.deadLine ? new Date(taskData.deadLine).getTime() : 
+            (taskData.end_at ? new Date(taskData.end_at).getTime() : start + 86400000)
 
+  // 确保结束时间大于开始时间
   return {
     start,
     end: Math.max(end, start + 60000)
@@ -691,54 +824,13 @@ function getStatusColor(status) {
   return colorMap[status] || 'var(--el-color-primary)'
 }
 
-function handleDragStart(task) {
-  draggingTask.value = task
-}
-
-function handleDragEnter(statusKey) {
-  dragOverStatus.value = statusKey
-}
-
-function handleDragLeave() {
-  dragOverStatus.value = null
-}
-
-async function handleDrop(statusKey) {
-  if (!draggingTask.value) {
-    dragOverStatus.value = null
-    return
+function getPriorityColor(priority) {
+  const colorMap = {
+    1: '#909399', // 低
+    2: '#E6A23C', // 中
+    3: '#F56C6C'  // 高
   }
-  const targetStatus = statusKey
-  if (draggingTask.value.status === targetStatus) {
-    dragOverStatus.value = null
-    return
-  }
-
-  const statusValue = mapStatusKeyToValue(targetStatus)
-  const taskId = draggingTask.value.id
-
-  draggingTask.value.status = targetStatus
-  buildKanbanColumns()
-  dragOverStatus.value = null
-  draggingTask.value = null
-
-  if (taskId) {
-    try {
-      await taskStore.updateTaskStatus({ taskId, status: statusValue })
-    } catch (error) {
-      fetchTasks()
-    }
-  }
-}
-
-function mapStatusKeyToValue(statusKey) {
-  const map = {
-    pending: '0',
-    in_progress: '2',
-    completed: '1',
-    overdue: '0'
-  }
-  return map[statusKey] || '0'
+  return colorMap[priority] || '#909399'
 }
 </script>
 
@@ -759,6 +851,27 @@ function mapStatusKeyToValue(statusKey) {
     .task-controls {
       display: flex;
       gap: 12px;
+    }
+  }
+
+  .filter-col {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    
+    .filter-btn {
+      padding: 0 4px;
+      min-width: auto;
+    }
+  }
+
+  .filter-content {
+    max-height: 300px;
+    overflow-y: auto;
+    
+    .el-checkbox {
+      display: block;
+      margin: 8px 0;
     }
   }
 
@@ -947,9 +1060,9 @@ function mapStatusKeyToValue(statusKey) {
   .task-kanban-view {
     .kanban-columns {
       display: flex;
-      gap: 16px;
+      gap: $spacing-lg;
       overflow-x: auto;
-      padding-bottom: 16px;
+      padding-bottom: $spacing-lg;
 
       .kanban-column {
         flex: 1;
@@ -957,49 +1070,56 @@ function mapStatusKeyToValue(statusKey) {
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border: 1px solid transparent;
-
-        &.drag-over {
-          border-color: $primary-color;
-          box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
-        }
 
         .kanban-column-header {
-          padding: 12px 16px;
+          padding: 4px $spacing-lg;
           background: #f8f8f8;
-          border-bottom: 1px solid #eaeaea;
+          border-bottom: 1px solid $border-light;
           border-radius: 8px 8px 0 0;
           display: flex;
           justify-content: space-between;
           align-items: center;
 
           h5 {
-            font-size: 14px;
+            font-size: $font-size-base;
             font-weight: 500;
             margin: 0;
           }
         }
 
+        .kanban-tasks-wrapper {
+          height: calc(100vh - 300px);
+          overflow-y: auto;
+          padding: $spacing-lg;
+        }
+
         .kanban-tasks {
-          padding: 16px;
-          min-height: 100px;
+          min-height: 200px;
+        }
+
+        .kanban-loading {
+          text-align: center;
+          padding: $spacing-md;
+          color: #999;
+          font-size: 14px;
         }
 
         .kanban-task {
-          margin-bottom: 12px;
+          margin-bottom: $spacing-md;
+          cursor: move;
         }
 
         .task-card {
           position: relative;
           background: #fff;
-          border: 1px solid #eaeaea;
+          border: 1px solid $border-light;
           border-radius: 6px;
-          padding: 12px 12px 10px 16px;
+          padding: $spacing-md;
           cursor: pointer;
           transition: all 0.3s;
 
           &:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             transform: translateY(-2px);
           }
 
@@ -1014,34 +1134,53 @@ function mapStatusKeyToValue(statusKey) {
 
           .task-title {
             font-weight: 500;
-            margin-bottom: 8px;
-            color: #303133;
-            display: inline-flex;
+            margin-bottom: $spacing-sm;
+            color: $text-primary;
+            display: flex;
             align-items: center;
+            font-size: $font-size-base;
+            line-height: 1.5;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            .important-star {
+              color: #f7ba2a;
+              margin-right: 4px;
+              flex-shrink: 0;
+            }
+          }
+
+          .task-desc {
+            font-size: $font-size-small;
+            color: $text-secondary;
+            margin-bottom: $spacing-sm;
+            line-height: 1.4;
+            
+            .desc-text {
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
           }
 
           .task-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #666;
+            font-size: $font-size-small;
+            color: $text-regular;
+            margin-bottom: $spacing-sm;
 
             .task-assignee {
               margin-bottom: 4px;
-            }
-
-            .task-deadline {
-              &.overdue {
-                color: $danger-color;
-                font-weight: 600;
-              }
             }
           }
 
           .task-users {
             display: flex;
             align-items: center;
-            margin-top: 10px;
+            margin-bottom: $spacing-sm;
+            overflow: hidden;
 
             ul {
               display: flex;
@@ -1049,10 +1188,13 @@ function mapStatusKeyToValue(statusKey) {
               padding: 0;
               margin: 0;
               list-style: none;
+              flex-wrap: nowrap;
+              overflow: hidden;
 
               li {
                 list-style: none;
                 margin-right: -6px;
+                flex-shrink: 0;
 
                 &:first-child {
                   margin-right: 0;
@@ -1061,53 +1203,36 @@ function mapStatusKeyToValue(statusKey) {
             }
           }
 
-          .task-progress {
-            margin-top: 10px;
+          .task-footer {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: flex-end;
+            margin-top: $spacing-sm;
+            padding-top: $spacing-sm;
+            border-top: 1px solid #f0f0f0;
 
-            .task-sub-num {
-              font-size: 12px;
-              margin-right: 8px;
-              color: #777777;
-            }
-
-            .task-time {
-              flex-shrink: 0;
-              color: #777777;
-              background-color: #EAEDF2;
-              border: 1px solid #EAEDF2;
-              padding: 0 3px;
-              margin-left: 18px;
-              font-size: 12px;
-              border-radius: 3px;
+            .task-deadline {
               display: flex;
               align-items: center;
+              gap: 4px;
+              font-size: 12px;
+              color: #666;
 
-              &.today,
-              &.overdue {
-                color: #ffffff;
+              .el-icon {
+                font-size: 14px;
               }
 
-              &.today {
-                font-weight: 500;
-                background-color: #ff9900;
-                border-color: #ff9900;
-              }
-
-              &.overdue {
+              span.overdue {
+                color: $danger-color;
                 font-weight: 600;
-                background-color: #ed4014;
-                border-color: #ed4014;
-              }
-
-              .taskfont {
-                margin-right: 3px;
-                font-size: 12px;
               }
             }
           }
+        }
+
+        .ghost-card {
+          opacity: 0.5;
+          background: #f0f0f0;
         }
       }
     }

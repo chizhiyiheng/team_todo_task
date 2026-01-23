@@ -224,6 +224,17 @@ export const mockApi = {
 
   async updateTaskStatus(taskId, status) {
     await delay()
+    
+    // 在mock数据中更新任务状态
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === taskId)
+    
+    if (task) {
+      task.status = status
+      task.todoStatus = status
+      task.updateTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    }
+    
     return {
       code: '200',
       message: 'success',

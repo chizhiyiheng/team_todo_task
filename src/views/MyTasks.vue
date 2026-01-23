@@ -44,9 +44,6 @@
           <el-option :label="$t('task.statusOverdue')" value="overdue" />
           <el-option :label="$t('task.statusCancelled')" value="cancelled" />
         </el-select>
-        <el-checkbox v-model="showCompleted" @change="handleShowCompletedChange">
-          显示已完成
-        </el-checkbox>
         <el-button-group>
           <el-button :class="{ active: viewMode === 'list' }" @click="handleViewModeChange('list')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -92,9 +89,6 @@
             <div class="priority-color" :style="{ backgroundColor: getPriorityColor(task) }"></div>
             <div class="el-row">
               <div class="el-col row-name" :class="{ complete: isTaskCompleted(task) }" style="flex: 1">
-                <div class="task-menu-wrapper" @click.stop>
-                   <TaskMenu :task="task" @on-update="handleTaskUpdated"/>
-                </div>
                 <div class="item-title">
                   <el-icon v-if="task.mark === '1' || task.isTop === 1" class="important-star"><StarFilled /></el-icon>
                   {{ task.name || task.content }}
@@ -162,7 +156,6 @@
       :show-header="false"
       task-type="my"
       :mode="activeTab"
-      :show-completed="showCompleted"
       @view-mode-changed="handleViewModeChange"
       @filter-changed="handleFilterChange"
       @task-deleted="handleTaskDeleted"
@@ -188,7 +181,6 @@ import { formatDate, isOverdue } from '@/utils/date'
 import { Edit, Delete, Bell, Star, StarFilled, List, Grid, Calendar } from '@element-plus/icons-vue'
 import TaskStatistics from '@/components/business/TaskStatistics.vue'
 import TaskList from '@/components/business/TaskList.vue'
-import TaskMenu from '@/components/business/TaskMenu.vue'
 import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
 import { todoApi } from '@/api'
 
@@ -202,7 +194,6 @@ const statusFilter = ref('all')
 const viewMode = ref('list')
 const assigneeFilter = ref('all')
 const searchKeyword = ref('')
-const showCompleted = ref(false)
 const assigneeOptions = ref([])
 const assigneeLoading = ref(false)
 
@@ -256,10 +247,6 @@ function handleAssigneeFocus() {
 
 const filteredTasks = computed(() => {
   let tasks = taskStore.taskList || []
-
-  if (!showCompleted.value) {
-    tasks = tasks.filter(task => task.todoStatus !== 2)
-  }
 
   if (statusFilter.value !== 'all') {
     const statusMap = {
@@ -330,10 +317,6 @@ function handleStatusFilterChange(value) {
 
 function handleViewModeChange(mode) {
   viewMode.value = mode
-}
-
-function handleShowCompletedChange(value) {
-  showCompleted.value = value
 }
 
 function handleSearch(keyword) {
@@ -517,6 +500,7 @@ $flow-status-cancel-color: $info-color;
   gap: 16px;
   padding: 6px 8px;
   margin-top: 12px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 
   .toolbar-left {
@@ -591,7 +575,7 @@ $flow-status-cancel-color: $info-color;
           border-right: 0;
         }
         &:first-child {
-          padding-left: 32px;
+          padding-left: 12px;
         }
       }
     }
@@ -645,7 +629,7 @@ $flow-status-cancel-color: $info-color;
       }
 
       .row-name {
-        padding: 12px 12px 12px 34px !important;
+        padding: 12px 12px 12px 12px !important;
         line-height: 24px;
         position: relative;
         
@@ -654,13 +638,6 @@ $flow-status-cancel-color: $info-color;
             color: #aaaaaa;
             text-decoration: line-through;
           }
-        }
-
-        .task-menu-wrapper {
-          position: absolute;
-          left: 8px;
-          top: 50%;
-          transform: translateY(-50%);
         }
 
         .item-title {

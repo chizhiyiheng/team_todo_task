@@ -238,3 +238,330 @@
    - 选择"全部状态"，验证不传 `status` 参数
    - 选择具体状态，验证传递正确的 `status` 值
    - 验证筛选后的列表数据正确
+
+## 最新修复（拖拽组件、样式优化、甘特图）
+
+### 问题1：使用成熟的拖拽组件
+
+**原因**：
+- 原生HTML5拖拽API在不同浏览器中表现不一致
+- 拖拽逻辑复杂，容易出现bug
+- 缺少拖拽动画和视觉反馈
+
+**解决方案**：
+1. **安装 vuedraggable**
+   ```bash
+   npm install sortablejs vuedraggable@next --save
+   ```
+
+2. **重构看板拖拽逻辑** (`src/components/business/TaskList.vue`)
+   - 使用 `<draggable>` 组件替代原生拖拽
+   - 配置拖拽选项：
+     ```javascript
+     :group="{ name: 'tasks', pull: true, put: true }"
+     :animation="200"
+     ghost-class="ghost-card"
+     ```
+   - 使用 `@end` 事件处理拖拽完成
+   - 自动处理跨列拖拽
+
+3. **优化拖拽处理逻辑**
+   ```javascript
+   async function handleDragEnd(evt, targetStatusKey) {
+     // 获取被拖拽的任务
+     const task = columnTasks.value[targetStatusKey][newIndex]
+     // 判断状态是否改变
+     // 调用接口更新状态
+     // 显示成功/失败提示
+   }
+   ```
+
+**效果**：
+- ✅ 拖拽流畅，有动画效果
+- ✅ 支持跨列拖拽
+- ✅ 拖拽时显示半透明效果
+- ✅ 自动更新任务状态
+- ✅ 兼容性好，支持所有现代浏览器
+
+### 问题2：看板样式优化
+
+**原因**：
+- 进度条没有显示
+- 时间显示有黑色阴影（taskfont图标问题）
+- 卡片布局不够清晰
+
+**解决方案**：
+1. **优化进度条显示**
+   ```vue
+   <el-progress 
+     v-if="task.percent !== undefined" 
+     :percentage="task.percent || 0" 
+     :stroke-width="6" 
+     :show-text="false"
+   />
+   ```
+
+2. **优化时间显示**
+   - 移除 taskfont 图标，使用 Element Plus 的 Clock 图标
+   - 简化时间显示逻辑
+   ```vue
+   <div class="task-deadline">
+     <el-icon><Clock /></el-icon>
+     <span :class="{ 'overdue': isOverdue(task.deadLine) }">
+       {{ expiresFormat(task.deadLine) }}
+     </span>
+   </div>
+   ```
+
+3. **优化卡片样式** (遵循开发规范)
+   - 使用 SCSS 变量：`$spacing-md`、`$text-primary`、`$border-light`
+   - 优化间距和布局
+   - 添加优先级颜色条
+   - 改进hover效果
+
+4. **添加拖拽视觉反馈**
+   ```scss
+   .ghost-card {
+     opacity: 0.5;
+     background: #f0f0f0;
+   }
+   ```
+
+**效果**：
+- ✅ 进度条正常显示
+- ✅ 时间显示清晰，无黑色阴影
+- ✅ 卡片布局美观，信息层次分明
+- ✅ 拖拽时有视觉反馈
+
+### 问题3：Mock数据任务标题错误
+
+**原因**：
+- Mock数据中 `name` 字段被错误设置为"刘庆红"
+- 应该是任务标题，而不是人名
+
+**解决方案**：
+修改 `src/mock/todoData.js` 中所有任务的 `name` 字段：
+- ✅ 待接收：新项目需求评审
+- ✅ 待处理：完成API接口文档、数据库性能优化
+- ✅ 已完成：完成登录模块开发、代码审查
+- ✅ 进行中：开发订单管理功能、前端页面重构、单元测试编写
+- ✅ 已逾期：修复生产环境Bug、更新系统文档
+- ✅ 已取消：旧功能迁移
+
+### 问题4：甘特图不显示
+
+**原因**：
+- 图表容器高度不够
+- 网格布局参数不合理
+- 缺少窗口resize监听
+
+**解决方案**：
+1. **增加容器高度**
+   ```vue
+   <div ref="ganttChart" style="width: 100%; height: 600px;"></div>
+   ```
+
+2. **优化图表配置**
+   ```javascript
+   grid: {
+     left: '20%',    // 增加左侧空间
+     right: '5%',
+     bottom: '5%',
+     top: 60,        // 为标题留出空间
+     containLabel: false
+   }
+   ```
+
+3. **优化Y轴标签**
+   ```javascript
+   yAxis: {
+     axisLabel: {
+       width: 120,
+       overflow: 'truncate',
+       ellipsis: '...'
+     }
+   }
+   ```
+
+4. **添加窗口resize监听**
+   ```javascript
+   window.addEventListener('resize', () => {
+     if (ganttChartInstance.value) {
+       ganttChartInstance.value.resize()
+     }
+   })
+   ```
+
+5. **优化柱状图样式**
+   ```javascript
+   series: [{
+     type: 'bar',
+     barWidth: 20  // 设置柱子宽度
+   }]
+   ```
+
+**效果**：
+- ✅ 甘特图正常显示
+- ✅ 任务时间线清晰可见
+- ✅ 任务名称完整显示（过长自动截断）
+- ✅ 响应式布局，窗口大小改变时自动调整
+- ✅ 不同状态的任务用不同颜色区分
+
+## 最新修复（Mock数据和看板拖拽）
+
+### 问题1：Mock数据优化
+
+**原因**：
+- Mock数据中各个状态的任务分布不均匀
+- 日期跨度太大，不利于查看甘特图
+- 缺少各个状态的代表性数据
+
+**解决方案**：
+1. **重新设计mock数据** (`src/mock/todoData.js`)
+   - 添加各个状态的任务：
+     - 状态0（待接收）：1个任务
+     - 状态1（待处理）：2个任务
+     - 状态2（已完成）：2个任务
+     - 状态3（进行中）：3个任务
+     - 状态4（已逾期）：2个任务
+     - 状态5（已取消）：1个任务
+   
+2. **优化日期范围**
+   - 使用 `getRecentDate()` 和 `getFutureDate()` 函数
+   - 所有任务的日期都在最近两个月内
+   - 便于在甘特图中查看任务时间线
+
+3. **完善任务信息**
+   - 每个任务都有完整的字段
+   - 包含执行人、优先级、进度等信息
+   - 便于测试各种功能
+
+### 问题2：看板拖拽不生效
+
+**原因**：
+- `updateTaskStatus` 只更新了 `task.status`，没有更新 `task.todoStatus`
+- Mock数据中的状态没有同步更新
+- 导致拖拽后任务状态判断错误，无法移动到新看板
+
+**解决方案**：
+1. **更新 store 逻辑** (`src/stores/task.js`)
+   ```javascript
+   async function updateTaskStatus({ taskId, status }) {
+     // ...
+     if (task) {
+       // 同时更新 status 和 todoStatus
+       task.status = status
+       task.todoStatus = status
+     }
+     // ...
+   }
+   ```
+
+2. **更新 mock 逻辑** (`src/mock/index.js`)
+   ```javascript
+   async updateTaskStatus(taskId, status) {
+     // 在mock数据中更新任务状态
+     const task = allTasks.find(t => t.id === taskId)
+     if (task) {
+       task.status = status
+       task.todoStatus = status
+       task.updateTime = new Date().toISOString()
+     }
+     // ...
+   }
+   ```
+
+3. **优化拖拽逻辑** (`src/components/business/TaskList.vue`)
+   - 移除不必要的 `fetchTasks()` 调用
+   - 利用 Vue 的响应式特性，自动更新视图
+   - 只在失败时才刷新列表恢复状态
+   - 提升用户体验，拖拽更流畅
+
+**效果**：
+- ✅ 拖拽任务后立即移动到新看板
+- ✅ 显示"状态更新成功"提示
+- ✅ 任务状态正确更新
+- ✅ 无需刷新页面，响应式更新
+
+## 最新修复（任务状态显示和看板/甘特图）
+
+### 问题1：任务状态显示错误
+
+**原因**：
+- 任务前面的圆圈判断逻辑使用的是旧的状态值 `task.status === '1'`
+- 任务标题的划线样式判断也使用的是旧的状态值
+
+**解决方案**：
+1. **src/components/business/TaskMenu.vue**
+   - 添加 `isCompleted` 计算属性，判断 `todoStatus === 2` 或 `status === 2`
+   - 只有已完成状态才显示勾选图标，其他状态显示空心圆圈
+
+2. **src/views/MyTasks.vue**
+   - 添加 `isTaskCompleted` 方法，判断任务是否已完成
+   - 只有已完成的任务才添加 `complete` 类名（显示划线）
+
+### 问题2：看板模式不显示待处理任务
+
+**原因**：
+- `getTaskStatus` 方法没有正确处理状态 0（待接收）和状态 1（待处理）
+- 这两个状态都应该归类为 `pending`
+
+**解决方案**：
+- 更新 `getTaskStatus` 方法，将状态 0 和 1 都归类为 `pending`
+- 看板模式现在可以正确显示所有待处理的任务
+
+### 问题3：看板模式拖拽功能修复
+
+**原因**：
+- 拖拽后没有调用接口更新状态
+- 状态映射使用的是旧的枚举值
+- 没有处理接口调用失败的情况
+
+**解决方案**：
+1. **更新状态映射** (`mapStatusKeyToValue`)
+   ```javascript
+   const map = {
+     pending: 1,      // 待处理
+     in_progress: 3,  // 进行中
+     completed: 2,    // 已完成
+     overdue: 4       // 已逾期
+   }
+   ```
+
+2. **优化拖拽处理逻辑** (`handleDrop`)
+   - 先判断状态是否相同，相同则不处理
+   - 调用 `taskStore.updateTaskStatus` 接口更新状态
+   - 成功：显示"状态更新成功"提示，刷新任务列表
+   - 失败：显示"状态更新失败"提示，刷新任务列表恢复原状态
+
+### 问题4：甘特图模式不显示
+
+**原因**：
+- 数据获取逻辑有误，使用了不存在的 `task.raw` 属性
+- 没有处理空数据的情况
+- 时间数据获取不完整
+
+**解决方案**：
+1. **修复数据获取** (`initGanttChart`)
+   - 直接使用 `task` 对象，不使用 `task.raw`
+   - 使用 `task.content || task.name || task.title` 获取任务名称
+   - 添加空数据处理，显示"暂无任务数据"
+
+2. **优化时间数据获取** (`getTimeObj`)
+   - 优先使用 `startTime`，其次 `createTime`
+   - 优先使用 `deadLine`，其次 `end_at`
+   - 添加默认值处理，避免数据缺失
+
+3. **改进图表显示**
+   - 调整网格布局，左侧留出更多空间显示任务名称
+   - 优化tooltip显示，格式化日期
+   - 任务名称过长时自动截断
+
+### 问题5：全部状态时过滤已完成任务
+
+**原因**：需要在状态为"全部"时，默认不显示已完成的任务，只有勾选"显示已完成"时才显示。
+
+**解决方案**：
+- 已在 `filteredTasks` 计算属性中实现
+- 当 `showCompleted` 为 false 时，过滤掉 `todoStatus === 2` 的任务
+- 用户勾选"显示已完成"复选框后，才会显示已完成的任务

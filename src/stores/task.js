@@ -95,11 +95,13 @@ export const useTaskStore = defineStore('task', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await api.task.updateTaskStatus(taskId, status)
+      const response = await api.todo.updateTodoStatus(taskId, status)
       if (response.code === '200') {
         const task = taskList.value.find(t => t.id === taskId)
         if (task) {
-          task.status = status
+          // 同时更新 status 和 todoStatus
+          task.status = String(status)
+          task.todoStatus = status
         }
         return response.body
       } else {

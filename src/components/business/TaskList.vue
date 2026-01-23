@@ -31,11 +31,11 @@
               </template>
               <div class="filter-content">
                 <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
-                  <el-checkbox :label="TASK_STATUS.PENDING">{{ t('task.statusPending') }}</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.IN_PROGRESS">{{ t('task.statusInProgress') }}</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.COMPLETED">{{ t('task.statusCompleted') }}</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.OVERDUE">{{ t('task.statusOverdue') }}</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.CANCELLED">{{ t('task.statusCancelled') }}</el-checkbox>
+                  <el-checkbox :value="TASK_STATUS.PENDING">{{ t('task.statusPending') }}</el-checkbox>
+                  <el-checkbox :value="TASK_STATUS.IN_PROGRESS">{{ t('task.statusInProgress') }}</el-checkbox>
+                  <el-checkbox :value="TASK_STATUS.COMPLETED">{{ t('task.statusCompleted') }}</el-checkbox>
+                  <el-checkbox :value="TASK_STATUS.OVERDUE">{{ t('task.statusOverdue') }}</el-checkbox>
+                  <el-checkbox :value="TASK_STATUS.CANCELLED">{{ t('task.statusCancelled') }}</el-checkbox>
                 </el-checkbox-group>
               </div>
             </el-popover>
@@ -53,7 +53,7 @@
                   <el-checkbox 
                     v-for="user in assigneeList" 
                     :key="user.id" 
-                    :label="user.id"
+                    :value="user.id"
                     class="assignee-checkbox"
                   >
                     <span class="assignee-name">{{ user.name }}</span>

@@ -73,6 +73,10 @@ const props = defineProps({
   isCollapsed: {
     type: Boolean,
     default: false
+  },
+  showTeamTasks: {
+    type: Boolean,
+    default: false
   }
 })
 

@@ -75,6 +75,16 @@ export const todoApi = {
   // 取消标记重要
   unmarkImportant(id) {
     return request.post(`/api/todo/unmarkImportant/${id}`)
+  },
+
+  // 根据待办任务id查询待办操作日志列表
+  getOpLogList(todoId) {
+    return request.get(`/api/todo/oplog/getByTodoId/${todoId}`)
+  },
+
+  // 获取操作日志详情
+  getOpLogDetail(id) {
+    return request.get(`/api/todo/oplog/get/${id}`)
   }
 }
 

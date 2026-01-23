@@ -7,12 +7,13 @@
           <el-timeline-item
             v-for="log in activityLogList"
             :key="log.id"
-            :timestamp="formatTime(log.time)"
+            :timestamp="formatTime(log.operationTime)"
             placement="top"
           >
             <div class="log-content">
-              <span class="log-operator">{{ log.operator }}</span>
-              <span class="log-desc">{{ log.desc }}</span>
+              <span class="log-operator">{{ log.userName }}</span>
+              <!-- <span class="log-action">{{ getOperationLabel(log.operationType) }}</span> -->
+              <span class="log-desc">{{ log.remark }}</span>
             </div>
           </el-timeline-item>
         </el-timeline>
@@ -46,6 +47,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { todoApi } from '@/api/index.js'
+import { OPERATION_TYPE_LABELS } from '@/constants/oplogEnums.js'
 
 // Composables
 const { t } = useI18n()
@@ -70,7 +72,7 @@ async function loadActivityLog() {
 
   isLoading.value = true
   try {
-    const response = await todoApi.getActivityLog(props.todoId)
+    const response = await todoApi.getOpLogList(props.todoId)
     if (response.code === '200') {
       activityLogList.value = response.body || []
     } else {
@@ -93,6 +95,15 @@ async function loadActivityLog() {
 function formatTime(time) {
   if (!time) return ''
   return dayjs(time).format('YYYY-MM-DD HH:mm')
+}
+
+/**
+ * Get operation type label
+ * @param {number} type - Operation type code
+ * @returns {string} Operation type label
+ */
+function getOperationLabel(type) {
+  return OPERATION_TYPE_LABELS[type] || ''
 }
 
 // Watch for todoId changes

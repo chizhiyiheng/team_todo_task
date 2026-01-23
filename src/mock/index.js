@@ -68,13 +68,13 @@ export const mockApi = {
     const userMap = new Map()
 
     allTasks.forEach(task => {
-      const attendees = task.todoUsers || []
-      attendees.forEach(attendee => {
-        if (attendee.umId && !userMap.has(attendee.umId)) {
-          userMap.set(attendee.umId, {
-            id: attendee.umId,
-            umId: attendee.umId,
-            name: attendee.name
+      const todoUsers = task.todoUsers || []
+      todoUsers.forEach(user => {
+        if (user.umId && !userMap.has(user.umId)) {
+          userMap.set(user.umId, {
+            id: user.umId,
+            umId: user.umId,
+            name: user.name
           })
         }
       })

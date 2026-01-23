@@ -47,14 +47,14 @@ export function useListFilter(props) {
         queryType: props.taskType === 'my' ? (props.mode === 'assigned' ? 1 : 2) : 0
       }
       
-      // 执行人筛选
+      // 执行人筛选：只在有选择时传递 umList 参数
       if (selectedAssignees.value.length > 0) {
-        params.assigneeIds = selectedAssignees.value
+        params.umList = selectedAssignees.value
       }
       
-      // 状态筛选
+      // 状态筛选：只在有选择时传递 statusList 参数
       if (selectedStatuses.value.length > 0) {
-        params.statuses = selectedStatuses.value
+        params.statusList = selectedStatuses.value
       }
       
       // 团队/项目维度筛选

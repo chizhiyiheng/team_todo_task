@@ -8,13 +8,21 @@ export const mockApi = {
   async getTodoList(params) {
     await delay()
 
-    const { page = 1, pageSize = 10, status, queryType, deadLine, finishTime, projectId, parentTodoId } = params
+    const { page = 1, pageSize = 10, statusList, umList, queryType, deadLine, finishTime, projectId, parentTodoId } = params
 
     let allTasks = [...mockTodoList]
 
-    // 根据status筛选
-    if (status !== undefined && status !== null) {
-      allTasks = allTasks.filter(task => task.todoStatus === parseInt(status))
+    // 根据 statusList 筛选（数组参数）
+    if (statusList && Array.isArray(statusList) && statusList.length > 0) {
+      allTasks = allTasks.filter(task => statusList.includes(task.todoStatus))
+    }
+
+    // 根据 umList 筛选执行人（数组参数）
+    if (umList && Array.isArray(umList) && umList.length > 0) {
+      allTasks = allTasks.filter(task => {
+        const todoUsers = task.todoUsers || []
+        return todoUsers.some(user => umList.includes(user.umId))
+      })
     }
 
     // 根据queryType筛选

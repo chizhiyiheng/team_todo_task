@@ -1,0 +1,378 @@
+** 对话使用中文交流 **
+# Team Do Task Web - AI 助手项目规范
+
+这是一个基于 Vue 3 + Vite + Element Plus 的任务管理系统，支持 PC 和移动端双端访问。
+
+## 核心技术栈
+- Vue 3.5.13 (Composition API + `<script setup>`)
+- Vite 7.3.1
+- Element Plus (PC端) + Vant (移动端)
+- Pinia (状态管理)
+- SCSS (样式预处理)
+- Vue I18n (国际化)
+- Mock 数据 (当前使用)
+
+## 🚨 强制规范
+
+### 1. 样式规范 - 严禁硬编码
+**禁止在代码中直接使用颜色值、间距值、字体大小！** 必须使用 SCSS 变量。
+
+```scss
+// ❌ 错误 - 禁止硬编码
+.button {
+  color: #409eff;
+  padding: 12px;
+  font-size: 14px;
+}
+
+// ✅ 正确 - 使用 SCSS 变量（已全局引入，无需 import）
+.button {
+  color: $primary-color;
+  padding: $spacing-md;
+  font-size: $font-size-base;
+}
+```
+
+**常用 SCSS 变量：**
+- **颜色**: `$primary-color`、`$text-primary`、`$text-regular`、`$text-secondary`、`$border-light`、`$bg-light`
+- **间距**: `$spacing-xs(4px)`、`$spacing-sm(8px)`、`$spacing-md(12px)`、`$spacing-lg(16px)`、`$spacing-xl(20px)`、`$spacing-xxl(24px)`
+- **字体**: `$font-size-small(12px)`、`$font-size-base(14px)`、`$font-size-large(16px)`
+
+变量定义位置：`src/styles/variables.scss`（已在 vite.config.js 中全局引入）
+
+### 2. 国际化规范 - 所有文本必须使用 i18n
+**禁止在代码中直接写中文或英文！** 必须使用 i18n 翻译函数。
+
+```javascript
+// ❌ 错误 - 禁止硬编码文本
+const title = '任务详情'
+
+// ✅ 正确 - 使用 i18n
+const { t } = useI18n()
+const title = t('task.detail')
+```
+
+语言文件位置：`src/locales/zh.js` 和 `src/locales/en.js`
+
+### 3. 枚举值规范 - 禁止魔法数字和魔法字符串
+
+**禁止直接使用数字或字符串表示状态、类型！** 必须定义和使用枚举常量。
+
+```javascript
+// ❌ 错误 - 代码可读性差，难以维护
+if (task.status === 2) { /* 2 代表什么？ */ }
+
+// ✅ 正确 - 定义和使用枚举
+// src/constants/taskEnums.js
+export const TASK_STATUS = {
+  PENDING: 1,      // 待处理
+  COMPLETED: 2,    // 已完成
+  CANCELLED: 5     // 已取消
+}
+
+// 配置数组：用于下拉选择、标签展示
+export const TASK_STATUS_OPTIONS = [
+  { value: TASK_STATUS.COMPLETED, label: '已完成', type: 'success' },
+  // ...
+]
+
+// 工具函数：简化枚举值转换
+export function getStatusLabel(status) {
+  return TASK_STATUS_OPTIONS.find(opt => opt.value === status)?.label || '-'
+}
+
+// 在组件中使用
+import { TASK_STATUS, getStatusLabel } from '@/constants/taskEnums'
+if (task.status === TASK_STATUS.COMPLETED) { /* 清晰易懂 */ }
+```
+
+**枚举文件位置**：`src/constants/` 目录（如 `taskEnums.js`、`userEnums.js`）
+
+### 4. 组件规范
+- **语法**: 必须使用 `<script setup>` 和 Composition API
+- **职责**: 组件功能单一、职责清晰
+- **类型**: Props 和 Emits 必须使用 TypeScript 类型或明确的运行时验证
+
+```vue
+<script setup>
+// ✅ 明确定义 Props 和 Emits
+const props = defineProps({
+  taskId: {
+    type: String,
+    required: true
+  }
+})
+
+const emit = defineEmits(['update', 'delete'])
+</script>
+```
+
+#### 4.1 组件拆分原则
+
+**单一职责原则**: 当组件超过 200 行或承担多个职责时，必须拆分。
+
+**拆分指标**:
+- 组件文件超过 200 行代码
+- 组件包含 3 个以上独立的业务逻辑
+- 某段 UI 在多处重复出现
+- 某段 UI 可能在未来被复用
+
+**拆分示例**:
+```vue
+<!-- ❌ 错误 - 单文件包含过多职责 -->
+<template>
+  <div class="task-detail">
+    <!-- 基本信息 100+ 行 -->
+    <!-- 执行人信息 100+ 行 -->
+    <!-- 时间信息 100+ 行 -->
+    <!-- 附件列表 100+ 线 -->
+  </div>
+</template>
+
+<!-- ✅ 正确 - 拆分成多个子组件 -->
+<template>
+  <div class="task-detail">
+    <BasicInfoSection :task="task" @update="handleUpdate" />
+    <ExecutorSection :task="task" @change="handleExecutorChange" />
+    <TimeSection :task="task" @update="handleTimeUpdate" />
+    <AttachmentList :attachments="task.attachments" @upload="handleUpload" />
+  </div>
+</template>
+```
+
+**组件存放位置**:
+- **业务组件**: `src/components/business/[模块名]/` - 特定业务逻辑的组件
+- **通用组件**: `src/components/common/` - 可跨项目复用的通用 UI 组件
+- **布局组件**: `src/components/layout/` - 页面布局相关组件
+
+#### 4.2 Composables (Hooks) 拆分原则
+
+**提取 Composable 的时机**:
+- 逻辑在多个组件中重复使用
+- 某段逻辑超过 50 行且独立完整
+- 逻辑可以独立测试
+- 逻辑涉及复杂的状态管理或副作用
+
+**Composables 命名**: 必须以 `use` 开头，如 `useTaskFilter`、`usePermission`
+
+**拆分示例**:
+```javascript
+// ❌ 错误 - 在组件中重复编写相同逻辑
+<script setup>
+import { ref, computed } from 'vue'
+
+const tasks = ref([])
+const filterType = ref('all')
+const searchKeyword = ref('')
+
+const filteredTasks = computed(() => {
+  return tasks.value.filter(task => {
+    // 50+ 行的复杂筛选逻辑...
+  })
+})
+</script>
+
+// ✅ 正确 - 提取为 Composable
+// src/composables/useTaskFilter.js
+export function useTaskFilter(tasks) {
+  const filterType = ref('all')
+  const searchKeyword = ref('')
+  
+  const filteredTasks = computed(() => {
+    return tasks.value.filter(task => {
+      // 复杂筛选逻辑...
+    })
+  })
+  
+  return {
+    filterType,
+    searchKeyword,
+    filteredTasks
+  }
+}
+
+// 在组件中使用
+<script setup>
+import { useTaskFilter } from '@/composables/useTaskFilter'
+
+const tasks = ref([])
+const { filterType, searchKeyword, filteredTasks } = useTaskFilter(tasks)
+</script>
+```
+
+**Composables 存放位置**: `src/composables/[功能名].js`
+
+**常见 Composables 类型**:
+- **数据获取**: `useTaskData`、`useTeamData`
+- **业务逻辑**: `useTaskFilter`、`useTaskSort`、`usePermission`
+- **UI 交互**: `useDialog`、`useToast`、`usePagination`
+- **工具函数**: `useDebounce`、`useThrottle`、`useClipboard`
+
+#### 4.3 工具函数拆分
+
+**纯函数提取**: 无状态、可独立测试的函数应提取到 `src/utils/`
+
+```javascript
+// ✅ 提取纯函数
+// src/utils/task.js
+export function calculateProgress(task) {
+  if (!task.subtasks || task.subtasks.length === 0) return 0
+  const completed = task.subtasks.filter(t => t.completed).length
+  return Math.round((completed / task.subtasks.length) * 100)
+}
+
+export function isTaskOverdue(task) {
+  return task.deadline && new Date(task.deadline) < new Date()
+}
+```
+
+**工具函数分类**:
+- `src/utils/date.js` - 日期时间处理
+- `src/utils/format.js` - 数据格式化
+- `src/utils/validation.js` - 数据验证
+- `src/utils/permission.js` - 权限判断
+- `src/utils/task.js` - 任务相关工具函数
+
+### 5. 代码复用检查清单
+
+在编写代码时，主动思考以下问题：
+
+- [ ] 这段 UI 是否会在其他地方使用？ → 考虑提取为**通用组件**
+- [ ] 这段逻辑是否会在其他组件使用？ → 考虑提取为 **Composable**
+- [ ] 这个函数是否是纯函数？ → 考虑提取为**工具函数**
+- [ ] 组件是否超过 200 行？ → 考虑**拆分组件**
+- [ ] 逻辑是否超过 50 行且独立？ → 考虑提取为 **Composable**
+
+### 6. 命名规范
+- **组件文件**: PascalCase（如 `TaskList.vue`、`TaskDetailDialog.vue`）
+- **工具函数**: camelCase（如 `formatDate`、`calculateProgress`）
+- **常量**: UPPER_SNAKE_CASE（如 `TASK_STATUS`、`MAX_FILE_SIZE`）
+- **CSS 类名**: kebab-case（如 `.task-list`、`.task-detail-dialog`）
+- **变量/函数**: camelCase（如 `taskList`、`handleSubmit`）
+
+### 7. 导入顺序
+按以下顺序组织导入语句：
+1. Vue 相关（vue, vue-router, pinia, vue-i18n）
+2. 第三方库（element-plus, vant, dayjs, echarts）
+3. 项目内部模块（`@/` 开头）
+4. 相对路径导入（`./`、`../`）
+5. 样式文件（`.scss`）
+
+```javascript
+// 1. Vue 相关
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+// 2. 第三方库
+import { ElMessage } from 'element-plus'
+import dayjs from 'dayjs'
+
+// 3. 项目内部
+import { useTaskStore } from '@/stores/task'
+import { formatDate } from '@/utils/date'
+
+// 4. 相对路径
+import TaskItem from './TaskItem.vue'
+
+// 5. 样式
+import './styles.scss'
+```
+
+## 新增接口开发流程
+
+当需要新增 API 接口时，必须按顺序修改以下 3 个文件：
+
+### 1. `src/api/index.js` - 定义接口方法
+```javascript
+// 在对应的 API 对象中添加方法
+markImportant(id) {
+  return request.post(`/api/todo/markImportant/${id}`)
+}
+```
+
+### 2. `src/mock/index.js` - 实现 Mock 逻辑
+```javascript
+// 在 mockApi 对象中添加方法
+async markImportant(id) {
+  await delay() // 模拟网络延迟
+  // 实现 mock 逻辑
+  return {
+    code: '200',
+    message: 'success',
+    body: { /* 返回数据 */ }
+  }
+}
+```
+
+### 3. `src/api/request.js` - 添加路由映射
+```javascript
+// 如果是路径参数，在 switch 前添加解析
+const markImportantMatch = url.match(/^\/api\/todo\/markImportant\/(.+)$/)
+if (markImportantMatch) {
+  url = '/api/todo/markImportant'
+  data = { id: markImportantMatch[1] }
+}
+
+// 在 switch 中添加 case
+case '/api/todo/markImportant':
+  result = await this.mockApi.markImportant(data?.id)
+  break
+```
+
+## 项目结构关键路径
+
+```
+src/
+├── api/              # API 接口定义和请求封装
+│   ├── index.js     # 所有 API 方法定义
+│   └── request.js   # 请求拦截器和 Mock 路由
+├── components/
+│   ├── business/    # 业务组件（如 TaskList、TaskDetail）
+│   ├── common/      # 通用组件（如 ResponsiveComponent）
+│   └── layout/      # 布局组件（如 Sidebar）
+├── stores/          # Pinia 状态管理
+│   ├── user.js     # 用户信息、权限
+│   ├── task.js     # 任务数据、操作
+│   ├── team.js     # 团队数据
+│   └── app.js      # 应用配置（设备类型、主题、语言）
+├── views/           # 页面组件
+├── locales/         # 国际化文件
+├── styles/          # 全局样式和 SCSS 变量
+├── utils/           # 工具函数
+└── mock/            # Mock 数据
+```
+
+## 响应式适配
+
+项目支持 PC 和移动端双端：
+- **PC 端**: 使用 Element Plus 组件
+- **移动端**: 使用 Vant 组件
+- 使用 `src/utils/device.js` 检测设备类型
+- Store (`app.js`) 中维护设备类型状态
+
+## 性能优化建议
+
+- **路由懒加载**: 大组件使用动态导入
+  ```javascript
+  const TaskDetail = () => import('@/components/business/TaskDetail.vue')
+  ```
+- **计算属性**: 使用 `computed` 缓存计算结果
+- **模板优化**: 避免在模板中使用复杂表达式，应放在 `computed` 中
+
+## 代码提交前自查清单
+
+- [ ] 无硬编码颜色、间距、字体大小（必须使用 SCSS 变量）
+- [ ] 所有用户可见文本已国际化（使用 `t()` 函数）
+- [ ] 组件支持响应式（PC/移动端适配）
+- [ ] 代码通过 ESLint 检查
+- [ ] Props 和 Emits 已明确定义类型
+- [ ] 导入语句按规范顺序排列
+- [ ] 命名符合规范（文件、变量、函数、CSS 类名）
+
+## AI 助手工作提示
+
+1. **优先查看**: 在修改样式前，先查看 `src/styles/variables.scss` 了解可用变量
+2. **国际化**: 新增文本时，同时在 `zh.js` 和 `en.js` 中添加翻译
+3. **权限检查**: 涉及操作权限时，使用 `src/utils/permission.js` 中的工具函数
+4. **Mock 数据**: 当前使用 Mock 数据，接口开发需同步修改 3 个文件
+5. **组件库**: 根据设备类型选择合适的组件库（Element Plus 或 Vant）

@@ -31,11 +31,11 @@
               </template>
               <div class="filter-content">
                 <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
-                  <el-checkbox :label="1">待处理</el-checkbox>
-                  <el-checkbox :label="3">进行中</el-checkbox>
-                  <el-checkbox :label="2">已完成</el-checkbox>
-                  <el-checkbox :label="4">已逾期</el-checkbox>
-                  <el-checkbox :label="5">已取消</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.PENDING">待处理</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.IN_PROGRESS">进行中</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.COMPLETED">已完成</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.OVERDUE">已逾期</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.CANCELLED">已取消</el-checkbox>
                 </el-checkbox-group>
               </div>
             </el-popover>
@@ -81,11 +81,6 @@
               <div class="item-title">
                 <el-icon v-if="task.mark === '1' || task.isTop === 1" class="important-star"><StarFilled /></el-icon>
                 {{ task.title || task.content || task.name }}
-              </div>
-              <div class="item-icons">
-                <div v-if="task.desc || task.content" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
-                <div v-if="task.file_num > 0" class="item-icon"><i class="taskfont">&#xe71c;</i><em>{{ task.file_num }}</em></div>
-                <div v-if="task.sub_num > 0" class="item-icon"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
               </div>
             </div>
             <div class="el-col row-status" style="width: 120px; flex: none; justify-content: center">
@@ -251,6 +246,7 @@ import { todoApi } from '@/api'
 import draggable from 'vuedraggable'
 import { useKanban } from '@/hooks/useKanban'
 import { useListFilter } from '@/hooks/useListFilter'
+import { TASK_STATUS, getStatusLabel, getStatusType } from '@/constants/taskEnums'
 
 const props = defineProps({
   viewMode: {
@@ -354,34 +350,26 @@ function getPriorityColor(task) {
 }
 
 function getTaskStatusName(task) {
-  const statusMap = {
-    0: '待接收',
-    1: '待处理',
-    2: '已完成',
-    3: '进行中',
-    4: '已逾期',
-    5: '已取消'
-  }
   const status = task.status !== undefined ? task.status : task.todoStatus
-  return statusMap[status] || '-'
+  return getStatusLabel(status)
 }
 
 function getTaskStatusClass(task) {
   const status = task.status !== undefined ? task.status : task.todoStatus
   const classMap = {
-    0: 'start',      // 待接收
-    1: 'start',      // 待处理
-    2: 'end',        // 已完成
-    3: 'progress',   // 进行中
-    4: 'start',      // 已逾期
-    5: 'cancel'      // 已取消
+    [TASK_STATUS.TO_RECEIVE]: 'start',
+    [TASK_STATUS.PENDING]: 'start',
+    [TASK_STATUS.COMPLETED]: 'end',
+    [TASK_STATUS.IN_PROGRESS]: 'progress',
+    [TASK_STATUS.OVERDUE]: 'start',
+    [TASK_STATUS.CANCELLED]: 'cancel'
   }
   return classMap[status] || 'start'
 }
 
 function isTaskCompleted(task) {
   const status = task.status !== undefined ? task.status : task.todoStatus
-  return status === 2 || status === '2'
+  return status === TASK_STATUS.COMPLETED
 }
 
 onMounted(() => {
@@ -419,10 +407,10 @@ function onDragMove(evt) {
 
 function getTaskStatusKey(task) {
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  if (status === 2) return 'completed'
-  if (status === 3) return 'in_progress'
-  if (status === 4) return 'overdue'
-  if (status === 5) return 'cancelled'
+  if (status === TASK_STATUS.COMPLETED) return 'completed'
+  if (status === TASK_STATUS.IN_PROGRESS) return 'in_progress'
+  if (status === TASK_STATUS.OVERDUE) return 'overdue'
+  if (status === TASK_STATUS.CANCELLED) return 'cancelled'
   return 'pending'
 }
 
@@ -440,20 +428,18 @@ function getStatusTagType(task) {
 
 function getTaskStatus(task) {
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  // 根据API文档：0-待处理，1-已完成，2-进行中，3-已逾期，4-已取消
-  if (status === 1) {
+  if (status === TASK_STATUS.COMPLETED) {
     return 'completed'
   }
-  if (status === 2) {
+  if (status === TASK_STATUS.IN_PROGRESS) {
     return 'in_progress'
   }
-  if (status === 3 || isOverdue(task.deadLine || task.end_at)) {
+  if (status === TASK_STATUS.OVERDUE || isOverdue(task.deadLine || task.end_at)) {
     return 'overdue'
   }
-  if (status === 4) {
+  if (status === TASK_STATUS.CANCELLED) {
     return 'cancelled'
   }
-  // 0-待处理
   return 'pending'
 }
 
@@ -555,9 +541,9 @@ function setImportant(task) {
 function removeTask(task) {
   console.log('Remove task:', task)
   
-  // 检查待办状态 - 只有已完成(status=1)的待办才能删除
+  // 检查待办状态 - 只有已完成的待办才能删除
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  if (status !== 1) {
+  if (status !== TASK_STATUS.COMPLETED) {
     ElMessage.warning('只有已完成的待办才能删除')
     return
   }
@@ -1137,29 +1123,6 @@ $flow-status-cancel-color: $info-color;
 
               &:hover {
                 color: $primary-color;
-              }
-            }
-            
-            .item-icons {
-              display: flex;
-              align-items: center;
-              
-              .item-icon {
-                margin-left: 8px;
-                color: #999;
-                display: flex;
-                align-items: center;
-                
-                .taskfont {
-                  font-size: 14px;
-                  font-style: normal;
-                }
-                
-                em {
-                  font-style: normal;
-                  font-size: 12px;
-                  margin-left: 2px;
-                }
               }
             }
           }

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { todoApi } from '@/api'
 
@@ -79,6 +79,12 @@ export function useListFilter(props) {
     listPage.value = 1
     fetchListTasks()
   }
+
+  // 监听mode变化，重新获取数据
+  watch(() => props.mode, () => {
+    listPage.value = 1
+    fetchListTasks()
+  })
 
   return {
     listTasks,

@@ -121,22 +121,37 @@ function handleAddTask() {
   showCreateTask.value = true
 }
 
+/**
+ * 任务创建成功处理
+ * 只刷新统计数据，任务列表由子页面自己刷新
+ * @param {String|Number} taskId - 新创建的任务 ID
+ */
 function handleTaskCreated(taskId) {
-  console.log('Task created:', taskId)
-  // Refresh task list and statistics
-  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
+  console.log('[Manage] Task created:', taskId)
+  // 只刷新统计数据，任务列表由子页面自己管理
   taskStore.fetchTaskStatistics()
 }
 
+/**
+ * 搜索处理
+ * TODO: 实现搜索功能，需要与子页面通信
+ */
 function handleSearch() {
-  taskStore.fetchTaskList({ page: 1, pageSize: 10000, keyword: searchKeyword.value })
+  console.log('[Manage] Search keyword:', searchKeyword.value)
+  // TODO: 通过事件或其他方式通知子页面进行搜索
+  // taskStore.fetchTaskList({ page: 1, pageSize: 10000, keyword: searchKeyword.value })
 }
 
+/**
+ * 组件挂载时
+ * 只设置设备类型和获取团队列表
+ * 任务数据由各个子页面自己管理，避免重复请求
+ */
 onMounted(() => {
+  console.log('[Manage] Component mounted')
   appStore.setDeviceType(isMobile.value)
   if (isDesktop.value) {
-    taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
-    taskStore.fetchTaskStatistics()
+    // 只获取团队列表，任务数据由子页面（MyTasks/TeamTasks）自己获取
     teamStore.fetchTeamList()
   }
 })

@@ -233,6 +233,25 @@
 </template>
 
 <script setup>
+/**
+ * 任务列表组件
+ * 支持三种视图模式：列表视图、看板视图、甘特图视图
+ * 
+ * 功能：
+ * 1. 列表视图：表格形式展示任务，支持筛选、分页
+ * 2. 看板视图：按状态分组的卡片式展示，支持拖拽
+ * 3. 甘特图视图：时间轴形式展示任务进度
+ * 4. 任务操作：标记重要、删除、提醒等
+ * 5. 任务详情：点击任务查看详情弹窗
+ * 
+ * Props:
+ * - viewMode: 视图模式 (list/kanban/gantt)
+ * - taskType: 任务类型 (my/team)
+ * - mode: 查询模式 (executed/assigned)
+ * - teamId: 团队 ID
+ * - showHeader: 是否显示头部
+ */
+
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
@@ -248,6 +267,8 @@ import { useKanban } from '@/hooks/useKanban'
 import { useListFilter } from '@/hooks/useListFilter'
 import { TASK_STATUS, getStatusLabel, getStatusType } from '@/constants/taskEnums'
 import { useI18n } from 'vue-i18n'
+
+// ==================== Props & Emits ====================
 
 const props = defineProps({
   viewMode: {
@@ -286,12 +307,17 @@ const props = defineProps({
 
 const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted'])
 
+// ==================== 基础设置 ====================
+
 const { t } = useI18n()
 const taskStore = useTaskStore()
 
+// 当前视图模式
 const viewMode = ref(props.viewMode)
 
-// Use list filter hook
+// ==================== Hooks ====================
+
+// 使用列表筛选 hook - 管理列表视图的数据和筛选
 const {
   listTasks,
   listPage,
@@ -309,7 +335,7 @@ const {
   handlePageSizeChange
 } = useListFilter(props)
 
-// Use kanban hook
+// 使用看板 hook - 管理看板视图的数据和拖拽
 const {
   kanbanStatusList,
   kanbanColumns,
@@ -318,13 +344,17 @@ const {
   handleDragChange
 } = useKanban(props)
 
-const ganttChart = ref(null)
-const ganttChartInstance = ref(null)
+// ==================== 状态管理 ====================
 
-// Task detail dialog state
-const showTaskDetail = ref(false)
-const selectedTaskId = ref(null)
+// 甘特图相关
+const ganttChart = ref(null)                    // 甘特图 DOM 引用
+const ganttChartInstance = ref(null)            // 甘特图 ECharts 实例
 
+// 任务详情弹窗状态
+const showTaskDetail = ref(false)               // 是否显示任务详情弹窗
+const selectedTaskId = ref(null)                // 当前选中的任务 ID
+
+// 操作菜单配置
 const operationMenu = [
   { icon: Star, title: t('task.markImportant'), action: 'mark-important' },
   { icon: Edit, title: t('task.editAction'), action: 'edit-task' },
@@ -332,8 +362,70 @@ const operationMenu = [
   { icon: Bell, title: t('task.reminderAction'), action: 'set-reminder' }
 ]
 
+// 执行人列表加载状态
 const assigneeLoading = ref(false)
 
+// ==================== 生命周期 ====================
+
+/**
+ * 组件挂载时
+ * 根据当前视图模式获取对应的数据
+ * - 列表视图：获取任务列表和执行人列表
+ * - 看板视图：初始化看板数据
+ * - 甘特图视图：初始化甘特图
+ */
+onMounted(() => {
+  console.log('[TaskList] Component mounted, viewMode:', viewMode.value)
+  // 只在列表视图时获取数据
+  if (viewMode.value === 'list') {
+    fetchListTasks()
+    fetchAssigneeList()
+  } else if (viewMode.value === 'kanban') {
+    initKanbanData()
+  } else if (viewMode.value === 'gantt') {
+    setTimeout(() => initGanttChart(), 100)
+  }
+})
+
+/**
+ * 组件卸载前
+ * 清理甘特图实例
+ */
+onBeforeUnmount(() => {
+  if (ganttChartInstance.value) {
+    ganttChartInstance.value.dispose()
+  }
+})
+
+// ==================== 监听器 ====================
+
+/**
+ * 监听 viewMode prop 变化
+ * 当父组件改变视图模式时，切换到对应的视图并获取数据
+ * 注意：跳过初始化时的触发，避免重复请求
+ */
+watch(() => props.viewMode, (newVal, oldVal) => {
+  console.log('[TaskList] viewMode prop changed:', oldVal, '->', newVal)
+  // 避免初始化时重复调用
+  if (oldVal === undefined) return
+  
+  viewMode.value = newVal
+  if (newVal === 'list') {
+    fetchListTasks()
+    fetchAssigneeList()
+  } else if (newVal === 'kanban') {
+    initKanbanData()
+  } else if (newVal === 'gantt') {
+    nextTick(() => initGanttChart())
+  }
+})
+
+// ==================== 工具方法 ====================
+
+/**
+ * 执行人筛选弹窗显示时的处理
+ * 如果执行人列表为空，则获取执行人列表
+ */
 function handleAssigneePopoverShow() {
   // Fetch assignee list when popover shows
   if (assigneeList.value.length === 0) {
@@ -374,39 +466,21 @@ function isTaskCompleted(task) {
   return status === TASK_STATUS.COMPLETED
 }
 
-onMounted(() => {
-  if (viewMode.value === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (viewMode.value === 'kanban') {
-    initKanbanData()
-  } else if (viewMode.value === 'gantt') {
-    setTimeout(() => initGanttChart(), 100)
-  }
-})
+// ==================== 看板相关方法 ====================
 
-onBeforeUnmount(() => {
-  if (ganttChartInstance.value) {
-    ganttChartInstance.value.dispose()
-  }
-})
-
-watch(() => props.viewMode, (newVal) => {
-  viewMode.value = newVal
-  if (newVal === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (newVal === 'kanban') {
-    initKanbanData()
-  } else if (newVal === 'gantt') {
-    nextTick(() => initGanttChart())
-  }
-})
-
+/**
+ * 拖拽移动判断
+ * @returns {Boolean} 是否允许拖拽
+ */
 function onDragMove(evt) {
   return true
 }
 
+/**
+ * 获取任务状态键值
+ * @param {Object} task - 任务对象
+ * @returns {String} 状态键值 (pending/in_progress/completed/overdue/cancelled)
+ */
 function getTaskStatusKey(task) {
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
   if (status === TASK_STATUS.COMPLETED) return 'completed'
@@ -416,6 +490,11 @@ function getTaskStatusKey(task) {
   return 'pending'
 }
 
+/**
+ * 获取任务状态对应的标签类型
+ * @param {Object} task - 任务对象
+ * @returns {String} Element Plus 标签类型
+ */
 function getStatusTagType(task) {
   const status = getTaskStatusKey(task)
   const typeMap = {
@@ -467,6 +546,12 @@ function taskUsers(task) {
   return list.filter(user => user && (user.status === 1 || user.owner === 1)).slice(0, 3)
 }
 
+// ==================== 视图切换方法 ====================
+
+/**
+ * 切换视图模式
+ * @param {String} mode - 视图模式 (list/kanban/gantt)
+ */
 function switchView(mode) {
   viewMode.value = mode
   emit('view-mode-changed', mode)
@@ -480,12 +565,23 @@ function switchView(mode) {
   }
 }
 
+// ==================== 任务操作方法 ====================
+
+/**
+ * 查看任务详情
+ * @param {Object} task - 任务对象
+ */
 function viewTask(task) {
   // Open task detail dialog
   selectedTaskId.value = task.id
   showTaskDetail.value = true
 }
 
+/**
+ * 编辑任务
+ * @param {Object} task - 任务对象
+ * TODO: 实现编辑功能
+ */
 function editTask(task) {
   console.log('Edit task:', task)
 }
@@ -594,8 +690,12 @@ function removeTask(task) {
       if (result.code === '200') {
         ElMessage.success(t('task.taskDeleteSuccess'))
         emit('task-deleted', task.id)
-        // Refresh task list
-        await taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
+        // Refresh current view's task list
+        if (viewMode.value === 'list') {
+          fetchListTasks()
+        } else if (viewMode.value === 'kanban') {
+          initKanbanData()
+        }
       } else {
         ElMessage.error(result.message || t('task.deleteFailed'))
       }

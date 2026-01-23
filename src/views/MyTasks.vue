@@ -49,6 +49,17 @@
 </template>
 
 <script setup>
+/**
+ * 我的任务页面
+ * 显示当前用户的任务列表，包括"我执行的"和"我分配的"两个标签页
+ * 
+ * 功能：
+ * 1. 任务统计展示（通过 TaskStatistics 组件）
+ * 2. 任务列表展示（通过 TaskList 组件）
+ * 3. 视图模式切换（列表/看板/甘特图）
+ * 4. 标签页切换（我执行的/我分配的）
+ */
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -61,40 +72,91 @@ const route = useRoute()
 const { t } = useI18n()
 const taskStore = useTaskStore()
 
+// ==================== 状态管理 ====================
+
+// 视图模式：list 列表视图, kanban 看板视图, gantt 甘特图视图
 const viewMode = ref('list')
 
-const activeTab = computed(() => route.query.tab || 'executed')
+// 当前激活的标签页：executed 我执行的, assigned 我分配的
+// 从 URL 查询参数中获取，默认为 'executed'
+// 使用 ref 而不是 computed，避免初始化时的 undefined 问题
+const activeTab = ref(route.query.tab || 'executed')
+
+// 统计区域标题
 const statisticsTitle = computed(() => {
   return t('task.taskStatistics')
 })
 
+// ==================== 事件处理 ====================
+
+/**
+ * 视图模式切换处理
+ * @param {String} mode - 新的视图模式 (list/kanban/gantt)
+ */
 function handleViewModeChange(mode) {
   viewMode.value = mode
 }
 
+/**
+ * 创建任务处理
+ * TODO: 实现创建任务功能
+ */
 function handleCreateTask() {
   console.log('Create new task')
 }
 
+/**
+ * 任务删除处理
+ * 当任务被删除后，只刷新统计数据
+ * TaskList 组件会自己处理列表数据的刷新
+ * 
+ * @param {String|Number} taskId - 被删除的任务 ID
+ */
 function handleTaskDeleted(taskId) {
   console.log('Task deleted in dialog:', taskId)
-  // Refresh the task list to remove deleted task
-  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
+  // 只刷新统计数据，TaskList 会处理自己的数据刷新
   taskStore.fetchTaskStatistics()
 }
 
+// ==================== 生命周期 ====================
+
+/**
+ * 组件挂载时
+ * 只获取统计数据，TaskList 组件会自己获取任务列表
+ * 这样避免了重复请求
+ */
 onMounted(() => {
-  console.log('MyTasks onMounted')
-  taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
+  console.log('[MyTasks] Component mounted')
+  // 只获取统计数据，TaskList 组件会自己获取任务列表
   taskStore.fetchTaskStatistics()
 })
 
+// ==================== 监听器 ====================
+
+/**
+ * 监听任务列表长度变化
+ * 用于调试和日志记录
+ */
 watch(() => taskStore.taskList.length, (newLength) => {
-  console.log('Task list updated count:', newLength)
+  console.log('[MyTasks] Task list updated count:', newLength)
 })
 
-watch(activeTab, () => {
-  console.log('Tab changed:', activeTab.value)
+/**
+ * 监听标签页切换
+ * 用于调试和日志记录
+ */
+watch(activeTab, (newTab) => {
+  console.log('[MyTasks] Tab changed to:', newTab)
+})
+
+/**
+ * 监听路由查询参数变化
+ * 当 URL 中的 tab 参数变化时，更新 activeTab
+ */
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && newTab !== activeTab.value) {
+    activeTab.value = newTab
+  }
 })
 </script>
 

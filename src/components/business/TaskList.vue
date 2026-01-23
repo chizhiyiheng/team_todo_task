@@ -421,14 +421,19 @@ function buildKanbanColumns() {
 }
 
 function getTaskStatus(task) {
-  if (task.status === '1') {
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
+  // 0-待接收 1-待处理 2-已完成 3-进行中 4-已逾期 5-已取消
+  if (status === 2) {
     return 'completed'
   }
-  if (task.status === '2') {
+  if (status === 3) {
     return 'in_progress'
   }
-  if (isOverdue(task.deadLine || task.end_at)) {
+  if (status === 4 || isOverdue(task.deadLine || task.end_at)) {
     return 'overdue'
+  }
+  if (status === 5) {
+    return 'cancelled'
   }
   return 'pending'
 }
@@ -535,8 +540,8 @@ function setImportant(task) {
 function removeTask(task) {
   console.log('Remove task:', task)
   
-  // 检查待办状态
-  if (task.todoStatus !== 1 && task.status !== '1') {
+  // 检查待办状态 - 只有已完成(status=2)的待办才能删除
+  if (task.todoStatus !== 2 && task.status !== '2' && task.status !== 2) {
     ElMessage.warning('只有已完成的待办才能删除')
     return
   }

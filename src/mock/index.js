@@ -60,6 +60,29 @@ export const mockApi = {
     }
   },
 
+  async getUserList() {
+    await delay()
+    
+    // 从所有待办中提取执行人列表
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const userSet = new Set()
+    
+    allTasks.forEach(task => {
+      const attendees = task.attendeeList || []
+      attendees.forEach(attendee => {
+        if (attendee.umId) {
+          userSet.add(attendee.umId)
+        }
+      })
+    })
+    
+    return {
+      code: '200',
+      message: 'success',
+      data: Array.from(userSet)
+    }
+  },
+
   async getTodoDetail(params) {
     await delay()
     const todoId = params.id || params
@@ -153,7 +176,7 @@ export const mockApi = {
     }
     
     // 检查待办状态（只有已完成的待办才能删除）
-    if (task.todoStatus !== 1) {
+    if (task.todoStatus !== 2) {
       return {
         code: 'TEAM_TASK_OPERATE_STATUS_INVALID',
         message: '待办状态无效，只有已完成的待办才能删除',

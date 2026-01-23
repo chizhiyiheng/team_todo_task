@@ -19,6 +19,8 @@
         <el-select
           v-model="assigneeFilter"
           style="width: 160px"
+          :loading="assigneeLoading"
+          @focus="handleAssigneeFocus"
         >
           <el-option :label="$t('common.all')" value="all" />
           <el-option
@@ -32,11 +34,13 @@
         <el-select
           v-model="statusFilter"
           style="width: 140px"
+          @change="handleStatusFilterChange"
         >
           <el-option :label="$t('task.statusAll')" value="all" />
+          <el-option label="待接收" value="to_receive" />
           <el-option :label="$t('task.statusPending')" value="pending" />
-          <el-option :label="$t('task.statusInProgress')" value="in_progress" />
           <el-option :label="$t('task.statusCompleted')" value="completed" />
+          <el-option :label="$t('task.statusInProgress')" value="in_progress" />
           <el-option :label="$t('task.statusOverdue')" value="overdue" />
           <el-option :label="$t('task.statusCancelled')" value="cancelled" />
         </el-select>
@@ -87,7 +91,7 @@
           >
             <div class="priority-color" :style="{ backgroundColor: getPriorityColor(task) }"></div>
             <div class="el-row">
-              <div class="el-col row-name" :class="{ complete: task.status === '1' }" style="flex: 1">
+              <div class="el-col row-name" :class="{ complete: isTaskCompleted(task) }" style="flex: 1">
                 <div class="task-menu-wrapper" @click.stop>
                    <TaskMenu :task="task" @on-update="handleTaskUpdated"/>
                 </div>
@@ -199,6 +203,8 @@ const viewMode = ref('list')
 const assigneeFilter = ref('all')
 const searchKeyword = ref('')
 const showCompleted = ref(false)
+const assigneeOptions = ref([])
+const assigneeLoading = ref(false)
 
 // Task detail dialog state
 const showTaskDetail = ref(false)
@@ -209,44 +215,65 @@ const statisticsTitle = computed(() => {
   return t('task.taskStatistics')
 })
 
-const assigneeOptions = computed(() => {
-  const options = []
-  const seen = new Set()
-  ;(taskStore.taskList || []).forEach(task => {
-    const list = task.attendeeList || task.task_user || []
-    list.forEach(attendee => {
-      const id = attendee.umId || attendee.userid
-      if (!id || seen.has(id)) return
-      seen.add(id)
-      options.push({ id, name: attendee.name })
-    })
-  })
-  return options
-})
+// 获取执行人列表
+async function fetchAssigneeList() {
+  assigneeLoading.value = true
+  try {
+    const response = await todoApi.getUserList()
+    if (response.code === '200') {
+      // 根据umId获取用户详细信息
+      const userIds = response.data || []
+      const userMap = new Map()
+      
+      // 从任务列表中提取用户信息
+      ;(taskStore.taskList || []).forEach(task => {
+        const list = task.attendeeList || []
+        list.forEach(attendee => {
+          if (attendee.umId && userIds.includes(attendee.umId)) {
+            userMap.set(attendee.umId, {
+              id: attendee.umId,
+              name: attendee.name
+            })
+          }
+        })
+      })
+      
+      assigneeOptions.value = Array.from(userMap.values())
+    }
+  } catch (error) {
+    console.error('Failed to fetch assignee list:', error)
+  } finally {
+    assigneeLoading.value = false
+  }
+}
 
-// TODO: 执行人列表接口待提供，当前从任务列表中提取
+// 执行人下拉框获得焦点时加载数据
+function handleAssigneeFocus() {
+  if (assigneeOptions.value.length === 0) {
+    fetchAssigneeList()
+  }
+}
 
 const filteredTasks = computed(() => {
   let tasks = taskStore.taskList || []
 
   if (!showCompleted.value) {
-    tasks = tasks.filter(task => task.status !== '1')
+    tasks = tasks.filter(task => task.todoStatus !== 2)
   }
 
   if (statusFilter.value !== 'all') {
-    if (statusFilter.value === 'completed') {
-      if (!showCompleted.value) {
-        return []
-      }
-      tasks = tasks.filter(task => task.status === '1')
-    } else if (statusFilter.value === 'pending') {
-      tasks = tasks.filter(task => task.status === '0' && !isOverdue(task.deadLine))
-    } else if (statusFilter.value === 'in_progress') {
-      tasks = tasks.filter(task => task.status === '2')
-    } else if (statusFilter.value === 'cancelled') {
-      tasks = tasks.filter(task => task.status === '-1')
-    } else if (statusFilter.value === 'overdue') {
-      tasks = tasks.filter(task => task.status === '0' && isOverdue(task.deadLine))
+    const statusMap = {
+      'to_receive': 0,    // 待接收
+      'pending': 1,       // 待处理
+      'completed': 2,     // 已完成
+      'in_progress': 3,   // 进行中
+      'overdue': 4,       // 已逾期
+      'cancelled': 5      // 已取消
+    }
+    
+    const targetStatus = statusMap[statusFilter.value]
+    if (targetStatus !== undefined) {
+      tasks = tasks.filter(task => task.todoStatus === targetStatus)
     }
   }
 
@@ -276,6 +303,29 @@ const filteredTasks = computed(() => {
 
 function handleFilterChange(status) {
   statusFilter.value = status
+}
+
+function handleStatusFilterChange(value) {
+  statusFilter.value = value
+  
+  // 根据状态筛选调用接口
+  const statusMap = {
+    'to_receive': 0,
+    'pending': 1,
+    'completed': 2,
+    'in_progress': 3,
+    'overdue': 4,
+    'cancelled': 5
+  }
+  
+  const params = { page: 1, pageSize: 10000 }
+  
+  // 如果不是全部状态，传递status参数
+  if (value !== 'all') {
+    params.status = statusMap[value]
+  }
+  
+  taskStore.fetchTaskList(params)
 }
 
 function handleViewModeChange(mode) {
@@ -309,17 +359,28 @@ function handleTaskUpdate(data) {
 }
 
 function getTaskStatusName(task) {
-  if (task.status === '1') return t('task.statusCompleted')
-  if (task.status === '2') return t('task.statusInProgress')
-  if (task.status === '-1') return t('task.statusCancelled')
-  return t('task.statusPending')
+  const statusMap = {
+    0: '待接收',
+    1: t('task.statusPending'),
+    2: t('task.statusCompleted'),
+    3: t('task.statusInProgress'),
+    4: t('task.statusOverdue'),
+    5: t('task.statusCancelled')
+  }
+  return statusMap[task.todoStatus] || statusMap[parseInt(task.status)] || '-'
 }
 
 function getTaskStatusClass(task) {
-  if (task.status === '1') return 'end'
-  if (task.status === '2') return 'progress'
-  if (task.status === '-1') return 'cancel'
-  return 'start'
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
+  const classMap = {
+    0: 'start',      // 待接收
+    1: 'start',      // 待处理
+    2: 'end',        // 已完成
+    3: 'progress',   // 进行中
+    4: 'start',      // 已逾期
+    5: 'cancel'      // 已取消
+  }
+  return classMap[status] || 'start'
 }
 
 function getSourceName(source) {
@@ -348,8 +409,8 @@ function editTask(task) {
 
 function deleteTask(task) {
   console.log('Delete task:', task)
-  // 检查待办状态
-  if (task.todoStatus !== 1 && task.status !== '1') {
+  // 检查待办状态 - 只有已完成的待办才能删除
+  if (task.todoStatus !== 2 && task.status !== '2') {
     ElMessage.warning('只有已完成的待办才能删除')
     return
   }
@@ -411,6 +472,10 @@ function handleIconClick(action, task) {
   } else if (action === 'set-reminder') {
     // Handle reminder
   }
+}
+
+function isTaskCompleted(task) {
+  return task.todoStatus === 2 || task.status === '2' || task.status === 2
 }
 
 onMounted(() => {

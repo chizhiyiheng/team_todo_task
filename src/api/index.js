@@ -5,6 +5,10 @@ export const todoApi = {
     return request.post('/api/todo/list', params)
   },
 
+  getUserList() {
+    return request.get('/api/todo/user/list')
+  },
+
   updateTodoStatus(todoId, status) {
     return request.post('/api/todo/update', { todoId, status })
   },

@@ -53,6 +53,9 @@ class ApiService {
         case '/api/todo/list':
           result = await this.mockApi.getTodoList(params || data)
           break
+        case '/api/todo/user/list':
+          result = await this.mockApi.getUserList()
+          break
         case '/api/todo/add':
           result = await this.mockApi.addTodo(data)
           break

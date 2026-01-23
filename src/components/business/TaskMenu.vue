@@ -7,7 +7,7 @@
             <el-icon class="is-loading"><Loading /></el-icon>
           </div>
           <template v-else>
-            <el-icon v-if="task.status === '1'" class="completed">
+            <el-icon v-if="isCompleted" class="completed">
               <CircleCheckFilled />
             </el-icon>
             <div v-else class="uncomplete-circle"></div>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { CircleCheckFilled, Loading } from '@element-plus/icons-vue'
 import { useTaskStore } from '@/stores/task'
 import { useI18n } from 'vue-i18n'
@@ -59,6 +59,11 @@ const emit = defineEmits(['on-update'])
 const { t } = useI18n()
 const taskStore = useTaskStore()
 const loading = ref(false)
+
+// 判断任务是否已完成 (status=2 或 todoStatus=2)
+const isCompleted = computed(() => {
+  return props.task.todoStatus === 2 || props.task.status === '2' || props.task.status === 2
+})
 
 const handleCommand = (command) => {
   if (loading.value || props.loadStatus || command === props.task.status) {

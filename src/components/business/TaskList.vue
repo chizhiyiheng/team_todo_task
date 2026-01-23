@@ -19,105 +19,118 @@
 
     <div v-if="viewMode === 'list'" class="task-list-view project-table">
       <div class="project-table-head">
-        <div class="task-row">
-           <div class="el-col" style="flex: 1; padding-left: 32px;">任务名称</div>
-           <div class="el-col filter-col" style="width: 120px; flex: none;">
-             负责人
-             <el-popover placement="bottom" :width="200" trigger="click">
-               <template #reference>
-                 <el-button link size="small" class="filter-btn">
-                   <el-icon><Filter /></el-icon>
-                 </el-button>
-               </template>
-               <div class="filter-content">
-                 <el-checkbox-group v-model="selectedAssignees" @change="handleAssigneeFilterChange">
-                   <el-checkbox v-for="user in assigneeList" :key="user.id" :label="user.id">
-                     {{ user.name }}
-                   </el-checkbox>
-                 </el-checkbox-group>
-               </div>
-             </el-popover>
-           </div>
-           <div class="el-col" style="width: 120px; flex: none;">创建人</div>
-           <div class="el-col filter-col" style="width: 120px; flex: none;">
-             状态
-             <el-popover placement="bottom" :width="200" trigger="click">
-               <template #reference>
-                 <el-button link size="small" class="filter-btn">
-                   <el-icon><Filter /></el-icon>
-                 </el-button>
-               </template>
-               <div class="filter-content">
-                 <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
-                   <el-checkbox :label="0">待接收</el-checkbox>
-                   <el-checkbox :label="1">待处理</el-checkbox>
-                   <el-checkbox :label="2">已完成</el-checkbox>
-                   <el-checkbox :label="3">进行中</el-checkbox>
-                   <el-checkbox :label="4">已逾期</el-checkbox>
-                   <el-checkbox :label="5">已取消</el-checkbox>
-                 </el-checkbox-group>
-               </div>
-             </el-popover>
-           </div>
-           <div class="el-col" style="width: 120px; flex: none;">截止时间</div>
-           <div class="el-col" style="width: 80px; flex: none;">来源</div>
-           <div class="el-col" style="width: 80px; flex: none;">操作</div>
+        <div class="task-row el-row">
+          <div class="el-col" style="flex: 1">标题</div>
+          <div class="el-col filter-col" style="width: 120px; flex: none; justify-content: center">
+            状态
+            <el-popover placement="bottom" :width="140" trigger="click">
+              <template #reference>
+                <el-button link size="small" class="filter-btn">
+                  <el-icon><Filter /></el-icon>
+                </el-button>
+              </template>
+              <div class="filter-content">
+                <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
+                  <el-checkbox :label="1">待处理</el-checkbox>
+                  <el-checkbox :label="3">进行中</el-checkbox>
+                  <el-checkbox :label="2">已完成</el-checkbox>
+                  <el-checkbox :label="4">已逾期</el-checkbox>
+                  <el-checkbox :label="5">已取消</el-checkbox>
+                </el-checkbox-group>
+              </div>
+            </el-popover>
+          </div>
+          <div class="el-col filter-col" style="width: 120px; flex: none">
+            执行人
+            <el-popover placement="bottom" :width="150" trigger="click" @show="handleAssigneePopoverShow">
+              <template #reference>
+                <el-button link size="small" class="filter-btn">
+                  <el-icon><Filter /></el-icon>
+                </el-button>
+              </template>
+              <div class="filter-content" v-loading="assigneeLoading">
+                <el-checkbox-group v-model="selectedAssignees" @change="handleAssigneeFilterChange">
+                  <el-checkbox 
+                    v-for="user in assigneeList" 
+                    :key="user.id" 
+                    :label="user.id"
+                    class="assignee-checkbox"
+                  >
+                    <span class="assignee-name">{{ user.name }}</span>
+                  </el-checkbox>
+                </el-checkbox-group>
+              </div>
+            </el-popover>
+          </div>
+          <div class="el-col" style="width: 120px; flex: none">分配人</div>
+          <div class="el-col" style="width: 170px; flex: none">截止时间</div>
+          <div class="el-col" style="width: 100px; flex: none">来源</div>
+          <div class="el-col" style="width: 160px; flex: none">操作</div>
         </div>
       </div>
       <div class="project-table-body">
         <div
           v-for="task in listTasks"
-          :key="task.uniqueKey || task.id"
+          :key="task.id"
           class="task-row"
           @click="viewTask(task)"
         >
-            <em v-if="task.p_name" class="priority-color" :style="{backgroundColor:task.p_color}"></em>
-            <div class="el-row">
-                <div class="el-col row-name" :class="[getTaskStatus(task) === 'completed' ? 'complete' : '']" style="flex: 1;">
-                   <div class="task-menu-wrapper" @click.stop>
-                      <TaskMenu :task="task.raw || task" @on-update="onTaskUpdate"/>
-                   </div>
-                   <div class="item-title">
-                      <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star"><StarFilled /></el-icon>
-                      <span v-if="task.flow_item_name" :class="task.flow_item_status">{{ task.flow_item_name }}</span>
-                      <span v-if="task.sub_top === true">子任务</span>
-                      <span v-if="task.sub_my && task.sub_my.length > 0">+{{ task.sub_my.length }}</span>
-                      {{ task.name || task.title || task.content }}
-                   </div>
-                   <div class="item-icons">
-                      <div v-if="task.desc || task.content" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
-                      <div v-if="task.file_num > 0" class="item-icon"><i class="taskfont">&#xe71c;</i><em>{{ task.file_num }}</em></div>
-                      <div v-if="task.msg_num > 0" class="item-icon"><i class="taskfont">&#xe71e;</i><em>{{ task.msg_num }}</em></div>
-                      <div v-if="task.sub_num > 0" class="item-icon" @click.stop="getSublist(task)"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
-                   </div>
-                </div>
-                <div class="el-col row-user" style="width: 120px; flex: none;">
-                   <div class="user-list">
-                      <el-avatar v-for="(user, keyu) in ownerUser(task.todoUsers || task.attendeeList || task.task_user).slice(0,3)" :key="keyu" :size="24" :src="user.avatar" class="user-avatar" :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
-                         {{ user.name ? user.name.substring(0, 1) : 'U' }}
-                      </el-avatar>
-                      <el-button v-if="ownerUser(task.todoUsers || task.attendeeList || task.task_user).length === 0" type="primary" link size="small" @click.stop="viewTask(task, true)">领取</el-button>
-                   </div>
-                </div>
-                <div class="el-col row-assigner" style="width: 120px; flex: none;">{{ task.creatorName || task.create_user || task.name || '-' }}</div>
-                <div class="el-col row-status" style="width: 120px; flex: none;">
-                   <el-tag :type="getStatusTagType(task)" size="small">{{ getStatusText(getTaskStatus(task)) }}</el-tag>
-                </div>
-                <div class="el-col row-time" style="width: 120px; flex: none;">
-                   <div v-if="getTaskStatus(task) !== 'completed' && (task.deadLine || task.end_at)" :class="['task-time', isToday(task.deadLine || task.end_at) ? 'today' : '', isOverdue(task.deadLine || task.end_at) ? 'overdue' : '']">{{ expiresFormat(task.deadLine || task.end_at) }}</div>
-                   <div v-else-if="showCompleteAt && getTaskStatus(task) === 'completed'" :title="task.finishTime || task.complete_at">{{ completeAtFormat(task.finishTime || task.complete_at) }}</div>
-                </div>
-                <div class="el-col row-source" style="width: 80px; flex: none;">{{ getSourceName(task.source) }}</div>
-                <div class="el-col row-operation" style="width: 80px; flex: none;">
-                   <div class="operation-icons">
-                      <div class="op-icon" :class="{ active: (task.mark || (task.isTop === 1 ? '1' : '0')) === '1' }" @click.stop="handleOperationAction('mark-important', task)">
-                         <el-icon v-if="(task.mark || (task.isTop === 1 ? '1' : '0')) === '1'"><StarFilled /></el-icon>
-                         <el-icon v-else><Star /></el-icon>
-                      </div>
-                      <TableAction :menu="operationMenu" align="right" @action="handleOperationAction($event, task)" />
-                   </div>
-                </div>
+          <div class="priority-color" :style="{ backgroundColor: getPriorityColor(task) }"></div>
+          <div class="el-row">
+            <div class="el-col row-name" :class="{ complete: isTaskCompleted(task) }" style="flex: 1">
+              <div class="item-title">
+                <el-icon v-if="task.mark === '1' || task.isTop === 1" class="important-star"><StarFilled /></el-icon>
+                {{ task.title || task.content || task.name }}
+              </div>
+              <div class="item-icons">
+                <div v-if="task.desc || task.content" class="item-icon"><i class="taskfont">&#xe71a;</i></div>
+                <div v-if="task.file_num > 0" class="item-icon"><i class="taskfont">&#xe71c;</i><em>{{ task.file_num }}</em></div>
+                <div v-if="task.sub_num > 0" class="item-icon"><i class="taskfont">&#xe71f;</i><em>{{ task.sub_complete }}/{{ task.sub_num }}</em></div>
+              </div>
             </div>
+            <div class="el-col row-status" style="width: 120px; flex: none; justify-content: center">
+              <span class="flow-item-status" :class="getTaskStatusClass(task)">{{ getTaskStatusName(task) }}</span>
+            </div>
+            <div class="el-col row-user" style="width: 120px; flex: none">
+              <div class="user-list">
+                <el-avatar
+                  v-for="user in getAttendeeList(task).slice(0, 3)"
+                  :key="user.umId || user.userid"
+                  :size="24"
+                  :src="user.avatar"
+                  class="user-avatar"
+                >
+                  {{ user.name ? user.name.substring(0, 1) : 'U' }}
+                </el-avatar>
+                <span v-if="getAttendeeList(task).length > 3" class="more-users">...</span>
+              </div>
+            </div>
+            <div class="el-col row-assigner" style="width: 120px; flex: none">
+              {{ task.name || task.creatorName || '-' }}
+            </div>
+            <div class="el-col row-time" style="width: 170px; flex: none">
+              <span :class="['task-time', { overdue: isOverdue(task.deadLine) }]">
+                {{ task.deadLine ? formatDate(task.deadLine) : '-' }}
+              </span>
+            </div>
+            <div class="el-col row-source" style="width: 100px; flex: none">
+              {{ getSourceName(task.source) }}
+            </div>
+            <div class="el-col row-operation" style="width: 160px; flex: none">
+              <div class="operation-icons">
+                <div class="op-icon" :class="{ active: task.mark === '1' }" @click.stop="handleOperationAction('mark-important', task)">
+                  <el-icon v-if="task.mark === '1'"><StarFilled /></el-icon>
+                  <el-icon v-else><Star /></el-icon>
+                </div>
+                <div class="op-icon" @click.stop="handleOperationAction('set-reminder', task)">
+                  <el-icon><Bell /></el-icon>
+                </div>
+                <div class="op-icon" @click.stop="handleOperationAction('delete-task', task)">
+                  <el-icon><Delete /></el-icon>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -216,7 +229,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
 import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
-import { isOverdue, isToday, expiresFormat, completeAtFormat } from '@/utils/date'
+import { isOverdue, isToday, expiresFormat, completeAtFormat, formatDate } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
 import TableAction from '@/components/common/TableAction.vue'
 import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
@@ -300,6 +313,56 @@ const operationMenu = [
   { icon: Delete, title: '删除', action: 'delete-task' },
   { icon: Bell, title: '提醒', action: 'set-reminder' }
 ]
+
+const assigneeLoading = ref(false)
+
+function handleAssigneePopoverShow() {
+  // Fetch assignee list when popover shows
+  if (assigneeList.value.length === 0) {
+    fetchAssigneeList()
+  }
+}
+
+function getAttendeeList(task) {
+  return task.todoUsers || task.attendeeList || []
+}
+
+function getPriorityColor(task) {
+  const colors = ['#ed4014', '#ff9900', '#19be6b', '#2db7f5']
+  if (!task.id) return colors[0]
+  return colors[task.id.charCodeAt(0) % 4] || '#2db7f5'
+}
+
+function getTaskStatusName(task) {
+  const statusMap = {
+    0: '待接收',
+    1: '待处理',
+    2: '已完成',
+    3: '进行中',
+    4: '已逾期',
+    5: '已取消'
+  }
+  const status = task.status !== undefined ? task.status : task.todoStatus
+  return statusMap[status] || '-'
+}
+
+function getTaskStatusClass(task) {
+  const status = task.status !== undefined ? task.status : task.todoStatus
+  const classMap = {
+    0: 'start',      // 待接收
+    1: 'start',      // 待处理
+    2: 'end',        // 已完成
+    3: 'progress',   // 进行中
+    4: 'start',      // 已逾期
+    5: 'cancel'      // 已取消
+  }
+  return classMap[status] || 'start'
+}
+
+function isTaskCompleted(task) {
+  const status = task.status !== undefined ? task.status : task.todoStatus
+  return status === 2 || status === '2'
+}
 
 onMounted(() => {
   if (viewMode.value === 'list') {
@@ -410,7 +473,6 @@ function switchView(mode) {
 }
 
 function viewTask(task) {
-  console.log('View task:', task)
   // Open task detail dialog
   selectedTaskId.value = task.id
   showTaskDetail.value = true
@@ -823,18 +885,18 @@ function getStatusColor(status) {
   }
   return colorMap[status] || 'var(--el-color-primary)'
 }
-
-function getPriorityColor(priority) {
-  const colorMap = {
-    1: '#909399', // 低
-    2: '#E6A23C', // 中
-    3: '#F56C6C'  // 高
-  }
-  return colorMap[priority] || '#909399'
-}
 </script>
 
 <style scoped lang="scss">
+// 模拟变量
+$primary-title-color: #1f2937;
+$primary-desc-color: #909399;
+$flow-status-start-color: $danger-color;
+$flow-status-progress-color: #fc984b;
+$flow-status-test-color: #8b5cf6;
+$flow-status-end-color: $success-color;
+$flow-status-cancel-color: $info-color;
+
 .task-list {
   .task-list-header {
     display: flex;
@@ -866,99 +928,213 @@ function getPriorityColor(priority) {
   }
 
   .filter-content {
+    padding: 8px 0;
     max-height: 300px;
     overflow-y: auto;
     
-    .el-checkbox {
-      display: block;
-      margin: 8px 0;
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+    
+    .el-checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      
+      .el-checkbox {
+        margin: 0;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        
+        &:hover {
+          background-color: #f5f7fa;
+        }
+        
+        :deep(.el-checkbox__label) {
+          font-size: 13px;
+          color: #606266;
+        }
+        
+        :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+          color: #409eff;
+        }
+      }
+      
+      .assignee-checkbox {
+        :deep(.el-checkbox__label) {
+          width: 100%;
+          overflow: hidden;
+        }
+        
+        .assignee-name {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 130px;
+        }
+      }
     }
   }
 
   .task-list-view {
-    .task-rows {
-      .task-item {
-        margin-bottom: 8px;
-        border-radius: 4px;
-        overflow: hidden;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s;
+    &.project-table {
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
 
-        &:hover {
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      .project-table-head {
+        margin-bottom: 4px;
+        border: 1px solid #F4F4F5;
+        border-radius: 5px;
+        overflow: hidden;
+        
+        .task-row {
+          background-color: #ffffff;
+          
+          > .el-col {
+            padding: 8px 12px;
+            color: #888888;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            border-right: 1px solid #F4F4F5;
+            
+            &:last-child {
+              border-right: 0;
+            }
+            
+            &:first-child {
+              padding-left: 12px;
+            }
+            
+            &.filter-col {
+              position: relative;
+              
+              .filter-btn {
+                padding: 0;
+                margin-left: 4px;
+                color: #909399;
+                
+                &:hover {
+                  color: #409eff;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .project-table-body {
+        border: 1px solid #F4F4F5;
+        border-top: 0;
+        border-radius: 5px;
+        
+        &::-webkit-scrollbar {
+          display: none;
         }
 
         .task-row {
-          display: flex;
-          align-items: center;
-          padding: 12px 16px;
-          background: #fff;
-          border-bottom: 1px solid #eaeaea;
+          background-color: #ffffff;
+          border-bottom: 1px solid #F4F4F5;
           position: relative;
+          cursor: pointer;
+          transition: box-shadow 0.3s;
+          
+          &:hover {
+            box-shadow: 0 0 10px #e6ecfa;
+            z-index: 1;
+          }
 
           .priority-color {
             position: absolute;
-            left: 0;
             top: 0;
-            bottom: 0;
+            left: 0;
+            bottom: -1px;
             width: 3px;
+            z-index: 2;
+          }
+
+          > .el-row {
+            > .el-col {
+              display: flex;
+              align-items: center;
+              padding: 10px 12px;
+              border-right: 1px solid #F4F4F5;
+              min-height: 48px;
+
+              &:first-child {
+                padding-left: 32px;
+              }
+              
+              &:last-child {
+                border-right: 0;
+              }
+            }
           }
 
           .row-name {
-            flex: 0 0 33.33%;
-            display: flex;
-            align-items: center;
-            padding-right: 16px;
-
+            padding: 12px 12px 12px 12px !important;
+            line-height: 24px;
+            position: relative;
+            
             &.complete {
               .item-title {
-                color: #999;
+                color: #aaaaaa;
                 text-decoration: line-through;
-              }
-            }
-
-            .sub-icon {
-              color: #999;
-              font-size: 16px;
-              margin-right: 4px;
-              cursor: pointer;
-              transition: transform 0.3s;
-
-              &.active {
-                transform: rotate(90deg);
               }
             }
 
             .item-title {
               flex: 1;
+              padding: 0 8px;
+              word-break: break-all;
               font-size: 14px;
-              color: #333;
-              cursor: pointer;
-              margin-left: 4px;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              display: inline-flex;
+              display: flex;
               align-items: center;
+              flex-wrap: wrap;
+
+              .important-star {
+                color: #f7ba2a;
+                margin-right: 4px;
+              }
 
               &:hover {
                 color: $primary-color;
               }
             }
-
+            
             .item-icons {
               display: flex;
               align-items: center;
-              margin-left: 8px;
-
+              
               .item-icon {
+                margin-left: 8px;
+                color: #999;
                 display: flex;
                 align-items: center;
-                margin-right: 8px;
-                color: #999;
-                font-size: 14px;
-                cursor: pointer;
-
+                
+                .taskfont {
+                  font-size: 14px;
+                  font-style: normal;
+                }
+                
                 em {
                   font-style: normal;
                   font-size: 12px;
@@ -968,89 +1144,124 @@ function getPriorityColor(priority) {
             }
           }
 
-          .row-user {
-            flex: 0 0 16.66%;
+          .row-status {
             display: flex;
             align-items: center;
-
-            ul {
+            justify-content: center;
+            
+            .flow-item-status {
+              font-size: 12px;
+              height: 20px;
+              line-height: 18px;
+              padding: 0 4px;
+              border-radius: 3px;
+              border: 1px solid transparent;
+              display: inline-block;
+              
+              &.start {
+                background-color: rgba($flow-status-start-color, 0.1);
+                border-color: rgba($flow-status-start-color, 0.1);
+                color: $flow-status-start-color;
+              }
+              
+              &.progress {
+                background-color: rgba($flow-status-progress-color, 0.1);
+                border-color: rgba($flow-status-progress-color, 0.1);
+                color: $flow-status-progress-color;
+              }
+              
+              &.end {
+                background-color: rgba($flow-status-end-color, 0.1);
+                border-color: rgba($flow-status-end-color, 0.1);
+                color: $flow-status-end-color;
+              }
+              
+              &.cancel {
+                background-color: rgba($flow-status-cancel-color, 0.1);
+                border-color: rgba($flow-status-cancel-color, 0.1);
+                color: $flow-status-cancel-color;
+              }
+            }
+          }
+          
+          .row-user {
+            .user-list {
               display: flex;
               align-items: center;
-              padding: 0;
-              margin: 0;
-              list-style: none;
-
-              li {
-                margin-right: -6px;
-
+              
+              .user-avatar {
+                border: 2px solid #fff;
+                margin-left: -8px;
+                
                 &:first-child {
-                  margin-right: 0;
+                  margin-left: 0;
                 }
               }
-
-              .no-owner {
-                margin-right: 0;
+              
+              .more-users {
+                margin-left: 4px;
+                color: #909399;
+                font-size: 14px;
               }
             }
           }
-
+          
           .row-assigner {
-            flex: 0 0 16.66%;
-            padding-right: 16px;
-
-            .assigner-name {
-              font-size: 14px;
-              color: #666;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
+            font-size: 13px;
+            color: $primary-title-color;
           }
-
+          
           .row-time {
-            flex: 0 0 16.66%;
-
             .task-time {
-              font-size: 12px;
               color: #777777;
               background-color: #EAEDF2;
               border: 1px solid #EAEDF2;
-              padding: 0 3px;
+              padding: 0 4px;
+              font-size: 12px;
               border-radius: 3px;
-              display: inline-block;
-
-              &.today,
+              
               &.overdue {
                 color: #ffffff;
-              }
-
-              &.today {
-                font-weight: 500;
-                background-color: $warning-color;
-                border-color: $warning-color;
-              }
-
-              &.overdue {
-                font-weight: 600;
-                background-color: $danger-color;
-                border-color: $danger-color;
-              }
-
-              .taskfont {
-                margin-right: 3px;
-                font-size: 12px;
+                background-color: #ed4014;
+                border-color: #ed4014;
               }
             }
           }
-
+          
           .row-source {
-            flex: 0 0 8.33%;
+            font-size: 13px;
+            color: $primary-desc-color;
           }
-
+          
           .row-operation {
-            flex: 0 0 8.33%;
-            display: flex;
-            justify-content: flex-end;
+            .operation-icons {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              height: 100%;
+              
+              .op-icon {
+                cursor: pointer;
+                color: #999;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                transition: color 0.3s;
+                
+                &:hover {
+                  color: $primary-color;
+                }
+                
+                &.active {
+                  color: #ff9900;
+                }
+                
+                .taskfont {
+                  font-size: 16px;
+                }
+              }
+            }
           }
         }
       }
@@ -1160,6 +1371,7 @@ function getPriorityColor(priority) {
             .desc-text {
               display: -webkit-box;
               -webkit-line-clamp: 2;
+              line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
               text-overflow: ellipsis;
@@ -1249,6 +1461,22 @@ function getPriorityColor(priority) {
     margin-right: 4px;
     color: #f7ba2a;
   }
+}
+
+@font-face {
+  font-family: 'taskfont';
+  src: url('@/assets/fonts/taskfont.woff2') format('woff2'),
+       url('@/assets/fonts/taskfont.woff') format('woff'),
+       url('@/assets/fonts/taskfont.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.taskfont {
+  font-family: "taskfont" !important;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @media (max-width: 768px) {

@@ -401,7 +401,7 @@ function onTaskListFilterChanged(status) {
 
 <style scoped lang="scss">
 .task-statistics {
-  padding: 6px 16px;
+  padding: 8px 16px;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #f0f0f0;

@@ -85,7 +85,8 @@ export const mockApi = {
 
   async getTodoDetail(params) {
     await delay()
-    const todoId = params.id || params
+    // 支持多种参数格式：直接传字符串ID 或 对象 {id: xxx}
+    const todoId = typeof params === 'string' ? params : (params.id || params.todoId)
     
     const allTasks = [...mockTodoList, ...mockTodoListPage2]
     const task = allTasks.find(t => t.id === todoId)

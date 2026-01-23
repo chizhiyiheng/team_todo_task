@@ -227,7 +227,7 @@ onUnmounted(() => {
 .main-view {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 10px;
 }
 
 @media (max-width: 768px) {

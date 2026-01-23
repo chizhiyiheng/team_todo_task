@@ -15,35 +15,6 @@
       <div class="toolbar-left">
       </div>
       <div class="toolbar-right">
-        <div class="filter-label">执行人:</div>
-        <el-select
-          v-model="assigneeFilter"
-          style="width: 160px"
-          :loading="assigneeLoading"
-          @focus="handleAssigneeFocus"
-        >
-          <el-option :label="$t('common.all')" value="all" />
-          <el-option
-            v-for="user in assigneeOptions"
-            :key="user.id"
-            :value="user.id"
-            :label="user.name"
-          />
-        </el-select>
-        <div class="filter-label">状态:</div>
-        <el-select
-          v-model="statusFilter"
-          style="width: 140px"
-          @change="handleStatusFilterChange"
-        >
-          <el-option :label="$t('task.statusAll')" value="all" />
-          <el-option label="待接收" value="to_receive" />
-          <el-option :label="$t('task.statusPending')" value="pending" />
-          <el-option :label="$t('task.statusCompleted')" value="completed" />
-          <el-option :label="$t('task.statusInProgress')" value="in_progress" />
-          <el-option :label="$t('task.statusOverdue')" value="overdue" />
-          <el-option :label="$t('task.statusCancelled')" value="cancelled" />
-        </el-select>
         <el-button-group>
           <el-button :class="{ active: viewMode === 'list' }" @click="handleViewModeChange('list')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -71,10 +42,49 @@
         <div class="project-table-head">
           <div class="task-row el-row">
             <div class="el-col" style="flex: 1">标题</div>
-            <div class="el-col" style="width: 120px; flex: none; justify-content: center">状态</div>
-            <div class="el-col" style="width: 120px; flex: none">执行人</div>
-            <div class="el-col" style="width: 120px; flex: none">创建人</div>
-            <div class="el-col" style="width: 170px; flex: none">时间</div>
+            <div class="el-col filter-col" style="width: 120px; flex: none; justify-content: center">
+              状态
+              <el-popover placement="bottom" :width="140" trigger="click">
+                <template #reference>
+                  <el-button link size="small" class="filter-btn">
+                    <el-icon><Filter /></el-icon>
+                  </el-button>
+                </template>
+                <div class="filter-content">
+                  <el-checkbox-group v-model="selectedStatusesInList" @change="handleStatusFilterInList">
+                    <el-checkbox :label="1">待处理</el-checkbox>
+                    <el-checkbox :label="3">进行中</el-checkbox>
+                    <el-checkbox :label="2">已完成</el-checkbox>
+                    <el-checkbox :label="4">已逾期</el-checkbox>
+                    <el-checkbox :label="5">已取消</el-checkbox>
+                  </el-checkbox-group>
+                </div>
+              </el-popover>
+            </div>
+            <div class="el-col filter-col" style="width: 120px; flex: none">
+              执行人
+              <el-popover placement="bottom" :width="150" trigger="click" @show="handleAssigneePopoverShow">
+                <template #reference>
+                  <el-button link size="small" class="filter-btn">
+                    <el-icon><Filter /></el-icon>
+                  </el-button>
+                </template>
+                <div class="filter-content" v-loading="assigneeLoading">
+                  <el-checkbox-group v-model="selectedAssigneesInList" @change="handleAssigneeFilterInList">
+                    <el-checkbox 
+                      v-for="user in assigneeOptions" 
+                      :key="user.id" 
+                      :label="user.id"
+                      class="assignee-checkbox"
+                    >
+                      <span class="assignee-name">{{ user.name }}</span>
+                    </el-checkbox>
+                  </el-checkbox-group>
+                </div>
+              </el-popover>
+            </div>
+            <div class="el-col" style="width: 120px; flex: none">分配人</div>
+            <div class="el-col" style="width: 170px; flex: none">截止时间</div>
             <div class="el-col" style="width: 100px; flex: none">来源</div>
             <div class="el-col" style="width: 160px; flex: none">操作</div>
           </div>
@@ -132,9 +142,6 @@
                      <el-icon v-if="task.mark === '1'"><StarFilled /></el-icon>
                      <el-icon v-else><Star /></el-icon>
                    </div>
-                   <div class="op-icon" @click.stop="handleIconClick('edit-task', task)">
-                     <el-icon><Edit /></el-icon>
-                   </div>
                    <div class="op-icon" @click.stop="handleIconClick('set-reminder', task)">
                      <el-icon><Bell /></el-icon>
                    </div>
@@ -178,7 +185,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
 import { formatDate, isOverdue } from '@/utils/date'
-import { Edit, Delete, Bell, Star, StarFilled, List, Grid, Calendar } from '@element-plus/icons-vue'
+import { Edit, Delete, Bell, Star, StarFilled, List, Grid, Calendar, Filter } from '@element-plus/icons-vue'
 import TaskStatistics from '@/components/business/TaskStatistics.vue'
 import TaskList from '@/components/business/TaskList.vue'
 import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
@@ -196,6 +203,8 @@ const assigneeFilter = ref('all')
 const searchKeyword = ref('')
 const assigneeOptions = ref([])
 const assigneeLoading = ref(false)
+const selectedStatusesInList = ref([]) // 列表模式的状态多选
+const selectedAssigneesInList = ref([]) // 列表模式的执行人多选
 
 // Task detail dialog state
 const showTaskDetail = ref(false)
@@ -236,6 +245,34 @@ async function fetchAssigneeList() {
   } finally {
     assigneeLoading.value = false
   }
+}
+
+// 执行人下拉框显示时加载数据
+function handleAssigneePopoverShow() {
+  if (assigneeOptions.value.length === 0) {
+    fetchAssigneeList()
+  }
+}
+
+// 执行人筛选处理
+function handleAssigneeFilterInList(selectedAssignees) {
+  // 列表模式的执行人过滤 - 调用API接口
+  const params = { 
+    page: 1, 
+    pageSize: 10000
+  }
+  
+  if (selectedAssignees.length > 0) {
+    // 传递选中的执行人ID
+    params.assignees = selectedAssignees.join(',')
+  }
+  
+  // 如果同时有状态筛选，也要传递
+  if (selectedStatusesInList.value.length > 0) {
+    params.statuses = selectedStatusesInList.value.join(',')
+  }
+  
+  taskStore.fetchTaskList(params)
 }
 
 // 执行人下拉框获得焦点时加载数据
@@ -310,6 +347,25 @@ function handleStatusFilterChange(value) {
   // 如果不是全部状态，传递status参数
   if (value !== 'all') {
     params.status = statusMap[value]
+  }
+  
+  taskStore.fetchTaskList(params)
+}
+
+function handleStatusFilterInList(selectedStatuses) {
+  // 列表模式的状态过滤 - 调用API接口
+  const params = { 
+    page: 1, 
+    pageSize: 10000
+  }
+  
+  if (selectedStatuses.length > 0) {
+    params.statuses = selectedStatuses.join(',')
+  }
+  
+  // 如果同时有执行人筛选，也要传递
+  if (selectedAssigneesInList.value.length > 0) {
+    params.assignees = selectedAssigneesInList.value.join(',')
   }
   
   taskStore.fetchTaskList(params)
@@ -551,12 +607,12 @@ $flow-status-cancel-color: $info-color;
 }
 
 .project-table {
-  margin-top: 18px;
+  margin-top: 2px;
   display: flex;
   flex-direction: column;
 
   .project-table-head {
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     border: 1px solid #F4F4F5;
     border-radius: 5px;
     overflow: hidden;
@@ -576,6 +632,85 @@ $flow-status-cancel-color: $info-color;
         }
         &:first-child {
           padding-left: 12px;
+        }
+        
+        &.filter-col {
+          position: relative;
+          
+          .filter-btn {
+            padding: 0;
+            margin-left: 4px;
+            color: #909399;
+            
+            &:hover {
+              color: #409eff;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .filter-content {
+    padding: 8px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+    
+    .el-checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      
+      .el-checkbox {
+        margin: 0;
+        padding: 6px 12px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        
+        &:hover {
+          background-color: #f5f7fa;
+        }
+        
+        :deep(.el-checkbox__label) {
+          font-size: 13px;
+          color: #606266;
+        }
+        
+        :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+          color: #409eff;
+        }
+      }
+      
+      .assignee-checkbox {
+        :deep(.el-checkbox__label) {
+          width: 100%;
+          overflow: hidden;
+        }
+        
+        .assignee-name {
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 130px;
         }
       }
     }

@@ -17,6 +17,10 @@ export const todoApi = {
     return request.post('/api/todo/update', data)
   },
 
+  updateExecutorStatus(todoId, todoUserUmId, status) {
+    return request.post('/api/todo/user/updateStatus', { todoId, todoUserUmId, status })
+  },
+
   getTodoDetail(todoId) {
     return request.post('/api/todo/detail', { id: todoId })
   },
@@ -27,6 +31,10 @@ export const todoApi = {
 
   deleteTodo(id) {
     return request.delete(`/api/todo/delete/${id}`)
+  },
+
+  cancelTodo(todoId) {
+    return request.post('/api/todo/cancel', { todoId })
   },
 
   // TODO: 待补充进展详情接口

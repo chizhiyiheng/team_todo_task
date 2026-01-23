@@ -48,7 +48,7 @@ class ApiService {
         url = '/api/todo/unmarkImportant'
         data = { id: unmarkImportantMatch[1] }
       }
-      
+
       switch (url) {
         case '/api/todo/list':
           result = await this.mockApi.getTodoList(params || data)
@@ -61,6 +61,12 @@ class ApiService {
           break
         case '/api/todo/update':
           result = await this.mockApi.updateTodo(data)
+          break
+        case '/api/todo/user/updateStatus':
+          result = await this.mockApi.updateExecutorStatus(data.todoId, data.todoUserUmId, data.status)
+          break
+        case '/api/todo/cancel':
+          result = await this.mockApi.cancelTodo(data.todoId)
           break
         case '/api/todo/detail':
           result = await this.mockApi.getTodoDetail(data || params)

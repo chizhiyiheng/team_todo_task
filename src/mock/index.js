@@ -228,23 +228,100 @@ export const mockApi = {
 
   async updateTaskStatus(taskId, status) {
     await delay()
-    
+
     // 在mock数据中更新任务状态
     const allTasks = [...mockTodoList]
     const task = allTasks.find(t => t.id === taskId)
-    
+
     if (task) {
       task.status = status
       task.todoStatus = status
       task.updateTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
     }
-    
+
     return {
       code: '200',
       message: 'success',
       body: {
         id: taskId,
         status
+      }
+    }
+  },
+
+  async updateExecutorStatus(todoId, todoUserUmId, status) {
+    await delay()
+
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === todoId)
+
+    if (!task) {
+      return {
+        code: '404',
+        message: '任务不存在',
+        body: null
+      }
+    }
+
+    const executor = task.todoUsers.find(u => u.umId === todoUserUmId)
+    if (!executor) {
+      return {
+        code: '404',
+        message: '执行人不存在',
+        body: null
+      }
+    }
+
+    executor.status = status
+    task.updateTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+    return {
+      code: '200',
+      message: '更新状态成功',
+      body: null
+    }
+  },
+
+  async cancelTodo(todoId) {
+    await delay()
+
+    const allTasks = [...mockTodoList, ...mockTodoListPage2]
+    const task = allTasks.find(t => t.id === todoId)
+
+    if (!task) {
+      return {
+        code: '404',
+        message: '待办不存在',
+        body: null
+      }
+    }
+
+    if (task.status === 2) { // 2: Completed
+      return {
+        code: '400',
+        message: '已完成的任务无法取消',
+        body: null
+      }
+    }
+
+    // 更新任务状态为已取消 (5)
+    task.status = 5
+    task.todoStatus = 5 // 同步更新 todoStatus
+    task.updateTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+    // 将所有执行人的状态也更新为已取消 (5)
+    if (task.todoUsers && task.todoUsers.length > 0) {
+      task.todoUsers.forEach(user => {
+        user.status = 5
+      })
+    }
+
+    return {
+      code: '200',
+      message: '取消成功',
+      body: {
+        id: todoId,
+        status: 5
       }
     }
   },

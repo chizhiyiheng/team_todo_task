@@ -128,6 +128,13 @@ export default {
     submitSuccess: 'Submit successful',
     progressHistory: 'Progress History',
     noProgressHistory: 'No progress history',
+    myProgress: 'My Progress',
+    executorProgress: '{name}\'s Progress',
+    progressLog: 'Progress Log',
+    progressTimeline: 'Progress Timeline',
+    progressAttachments: 'Progress Attachments',
+    viewProgressLog: 'View Log',
+    noProgressAttachments: 'No attachments',
     noSubTasks: 'No sub tasks',
     addSubTask: 'Add Sub Task',
     addSubTaskSuccess: 'Sub task created successfully',
@@ -168,7 +175,10 @@ export default {
     createSuccess: 'Task created successfully',
     createFailed: 'Task creation failed',
     createTo: 'Create To',
-    selectProject: 'Select Project'
+    selectProject: 'Select Project',
+    idMissing: 'Task ID missing',
+    upload: 'Upload',
+    uploadSuccess: 'Upload successful'
   },
   ai: {
     title: 'AI Dynamic Analysis',

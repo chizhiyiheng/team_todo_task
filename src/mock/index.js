@@ -349,51 +349,98 @@ export const mockApi = {
     }
   },
 
-  // TODO: 进展详情接口 - 待后端联调确认数据结构
-  async getProgressDetail(todoId) {
+  // 进展列表接口 - 按执行人分组返回
+  async getProgressList(todoId) {
     await delay()
+
+    // 从 mockTodoList 获取任务信息
+    const task = mockTodoList.find(t => t.id === todoId)
+    const currentUserUmId = 'LIUQINGHONG264'  // 模拟当前用户
+    const isAssigner = task?.creatorUmId === currentUserUmId
+
+    // 根据任务的执行人列表生成进展数据
+    const todoUsers = task?.todoUsers || task?.attendeeList || []
+
+    const progressList = todoUsers.map((user, index) => {
+      // 生成历史记录，每条记录包含 attachmentList
+      const historyList = [
+
+        {
+          progressPercent: 20 + (index * 15) % 80,
+          progressDesc: '已完成需求分析和设计文档，正在进行开发',
+          umId: user.umId,
+          name: user.name,
+          submitTime: '2024-01-20 14:30:00',
+          attachmentList: [
+            {
+              fileId: `FILE_${user.umId}_H2_001`,
+              fileName: '需求文档.pdf',
+              fileSize: 2048576,
+              fileType: 'application/pdf',
+              filePath: 'https://example.com/files/requirement.pdf',
+              uploadTime: '2024-01-20 10:00:00'
+            },
+            {
+              fileId: `FILE_${user.umId}_H2_002`,
+              fileName: '设计图.png',
+              fileSize: 512000,
+              fileType: 'image/png',
+              filePath: 'https://example.com/files/design.png',
+              uploadTime: '2024-01-20 11:30:00'
+            }
+          ]
+        },
+        {
+          progressPercent: 10 + (index * 10) % 50,
+          progressDesc: '开始任务，进行需求分析',
+          umId: user.umId,
+          name: user.name,
+          submitTime: '2024-01-18 09:00:00',
+          attachmentList: [
+            {
+              fileId: `FILE_${user.umId}_H1_001`,
+              fileName: '需求分析.docx',
+              fileSize: 1024000,
+              fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              filePath: 'https://example.com/files/analysis.docx',
+              uploadTime: '2024-01-18 09:00:00'
+            }
+          ]
+        },
+      ]
+
+      // 从 historyList 中聚合所有附件
+      const allAttachments = historyList.reduce((acc, item) => {
+        return acc.concat(item.attachmentList || [])
+      }, [])
+
+      // 获取最新一条记录的信息作为外层数据
+      const latestProgress = historyList[historyList.length - 1]
+
+      return {
+        umId: user.umId,
+        name: user.name,
+        progressPercent: latestProgress.progressPercent,
+        progressDesc: latestProgress.progressDesc,
+        submitTime: latestProgress.submitTime,
+        isCurrentUser: user.umId === currentUserUmId,
+        historyList: historyList,
+        attachmentList: allAttachments  // 从 historyList 拼装的总附件列表
+      }
+    })
+
+    // 如果不是分配人，只返回当前用户的进展
+    const filteredList = isAssigner
+      ? progressList
+      : progressList.filter(p => p.isCurrentUser)
+
     return {
       code: '200',
       message: 'success',
       data: {
         todoId: todoId,
-        progressPercent: 45,  // 进度百分比
-        progressDesc: '已完成需求分析和设计文档，正在进行开发',  // 进度描述
-        updateTime: '2024-01-20 14:30:00',  // 最后更新时间
-        updateUser: '张三',  // 更新人
-        attachmentList: [
-          {
-            fileName: '需求文档.pdf',
-            fileSize: 2048576,
-            fileType: 'application/pdf',
-            filePath: 'https://example.com/files/requirement.pdf',
-            uploadTime: '2024-01-20 10:00:00'
-          },
-          {
-            fileName: '设计图.png',
-            fileSize: 512000,
-            fileType: 'image/png',
-            filePath: 'https://example.com/files/design.png',
-            uploadTime: '2024-01-20 11:30:00'
-          }
-        ],
-        // 进展历史记录（可选，用于未来扩展）
-        historyList: [
-          {
-            id: 'PROGRESS_1',
-            progressPercent: 20,
-            progressDesc: '完成需求分析',
-            updateTime: '2024-01-18 09:00:00',
-            updateUser: '张三'
-          },
-          {
-            id: 'PROGRESS_2',
-            progressPercent: 45,
-            progressDesc: '已完成需求分析和设计文档，正在进行开发',
-            updateTime: '2024-01-20 14:30:00',
-            updateUser: '张三'
-          }
-        ]
+        isAssigner: isAssigner,  // 是否为分配人
+        progressList: filteredList
       }
     }
   },

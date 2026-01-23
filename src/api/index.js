@@ -37,9 +37,9 @@ export const todoApi = {
     return request.post('/api/todo/cancel', { todoId })
   },
 
-  // TODO: 待补充进展详情接口
-  getProgressDetail(todoId) {
-    return request.post('/api/todo/progress/detail', { todoId })
+  // 获取进展列表（按执行人分组）
+  getProgressList(todoId) {
+    return request.get(`/api/todo/progress/list/${todoId}`)
   },
 
   submitProgress(data) {
@@ -50,7 +50,7 @@ export const todoApi = {
   uploadFile(file) {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post('/api/file/upload', formData, {
+    return request.post('/api/todo/attachment/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

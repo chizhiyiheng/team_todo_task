@@ -375,14 +375,7 @@ function isTaskCompleted(task) {
 }
 
 onMounted(() => {
-  if (viewMode.value === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (viewMode.value === 'kanban') {
-    initKanbanData()
-  } else if (viewMode.value === 'gantt') {
-    setTimeout(() => initGanttChart(), 100)
-  }
+  refreshCurrentView()
 })
 
 onBeforeUnmount(() => {
@@ -393,14 +386,7 @@ onBeforeUnmount(() => {
 
 watch(() => props.viewMode, (newVal) => {
   viewMode.value = newVal
-  if (newVal === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (newVal === 'kanban') {
-    initKanbanData()
-  } else if (newVal === 'gantt') {
-    nextTick(() => initGanttChart())
-  }
+  refreshCurrentView()
 })
 
 function onDragMove(evt) {
@@ -467,17 +453,24 @@ function taskUsers(task) {
   return list.filter(user => user && (user.status === 1 || user.owner === 1)).slice(0, 3)
 }
 
+function refreshCurrentView() {
+  if (viewMode.value === 'list') {
+    fetchListTasks()
+    // 列表模式下也尝试获取执行人列表，以防万一
+    if (assigneeList.value.length === 0) {
+      fetchAssigneeList()
+    }
+  } else if (viewMode.value === 'kanban') {
+    initKanbanData()
+  } else if (viewMode.value === 'gantt') {
+    nextTick(() => initGanttChart())
+  }
+}
+
 function switchView(mode) {
   viewMode.value = mode
   emit('view-mode-changed', mode)
-  if (mode === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (mode === 'kanban') {
-    initKanbanData()
-  } else if (mode === 'gantt') {
-    nextTick(() => initGanttChart())
-  }
+  refreshCurrentView()
 }
 
 function viewTask(task) {
@@ -492,7 +485,7 @@ function editTask(task) {
 
 function onTaskUpdate(data) {
   console.log('Task updated:', data)
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function taskItemStyle(task) {
@@ -616,13 +609,13 @@ function setReminder(task) {
 function handleTaskUpdated(updatedTask) {
   console.log('Task updated in dialog:', updatedTask)
   // Refresh the task list to show updated data
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function handleTaskDeleted(taskId) {
   console.log('Task deleted in dialog:', taskId)
   // Refresh the task list to remove deleted task
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function getSourceName(source) {

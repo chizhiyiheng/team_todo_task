@@ -50,6 +50,7 @@
       <!-- Attachment Section -->
       <AttachmentSection
         :attachment-list="taskDetail.attachmentList || []"
+        @update-field="updateField"
       />
       
       <!-- Tabs Section: Progress, Activity Log -->
@@ -58,7 +59,6 @@
           <el-tab-pane :label="t('task.progress')" name="progress">
             <ProgressSection
               :todo-id="taskDetail.id"
-              @progress-updated="handleProgressUpdated"
             />
           </el-tab-pane>
           
@@ -259,13 +259,7 @@ function handleOpenSubTask(subTaskId) {
   showSubTaskDialog.value = true
 }
 
-/**
- * Handle progress updated with attachments
- * Reload task detail to get updated attachment list
- */
-async function handleProgressUpdated() {
-  await loadTaskDetail(true, false) // Pass true for refresh, false for non-silent
-}
+
 
 /**
  * Handle executor updated (with silent refresh)

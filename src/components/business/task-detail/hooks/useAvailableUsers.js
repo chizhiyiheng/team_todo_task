@@ -4,7 +4,7 @@
  * Manages available users for executor selection.
  * Since there's no dedicated user API, we extract users from:
  * 1. Current task's todoUsers
- * 2. Task store's task list (attendeeList)
+ * 2. Task store's task list (todoUsers)
  * 3. Hardcoded common users as fallback
  * 
  * @returns {Object} Available users state and methods
@@ -45,8 +45,8 @@ export function useAvailableUsers() {
     // Extract users from task store
     if (taskStore.taskList && taskStore.taskList.length > 0) {
       taskStore.taskList.forEach(task => {
-        const attendees = task.attendeeList || []
-        attendees.forEach(user => {
+        const todoUsers = task.todoUsers || []
+        todoUsers.forEach(user => {
           if (user.umId && user.name) {
             userMap.set(user.umId, {
               umId: user.umId,

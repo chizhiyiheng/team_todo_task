@@ -22,14 +22,14 @@ const generateMockTodos = () => {
     { value: 4, name: '已逾期' },
     { value: 5, name: '已取消' }
   ]
-  
+
   const sources = [
     { value: 0, name: '系统' },
     { value: 7, name: '任务' },
     { value: 8, name: '项目' },
     { value: 9, name: '会议' }
   ]
-  
+
   const users = [
     { umId: 'LIUQINGHONG264', name: '刘庆红' },
     { umId: 'USER001', name: '张三' },
@@ -37,7 +37,7 @@ const generateMockTodos = () => {
     { umId: 'USER003', name: '王五' },
     { umId: 'USER004', name: '赵六' }
   ]
-  
+
   const creators = [
     { umId: 'LIUQINGHONG264', name: '刘庆红' },
     { umId: 'ZHANGMING001', name: '张明' },
@@ -45,7 +45,7 @@ const generateMockTodos = () => {
     { umId: 'WUGANG004', name: '吴刚' },
     { umId: 'HANMEI008', name: '韩梅' }
   ]
-  
+
   const taskNames = [
     '需求分析与设计', '前端页面开发', '后端API接口开发', '数据库设计与优化',
     '系统测试与bug修复', '性能优化与部署', '用户培训与文档编写', '项目验收与上线',
@@ -56,13 +56,44 @@ const generateMockTodos = () => {
     '微服务拆分', '日志系统搭建', '缓存优化', '消息队列集成',
     '权限系统开发', '报表功能开发'
   ]
-  
+
+  // Mock附件模板
+  const mockAttachmentTemplates = [
+    { fileName: '需求文档.pdf', fileType: 'application/pdf', fileSize: 2048576 },
+    { fileName: '设计稿.png', fileType: 'image/png', fileSize: 512000 },
+    { fileName: '接口文档.docx', fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', fileSize: 1024000 },
+    { fileName: '测试报告.xlsx', fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fileSize: 768000 },
+    { fileName: '会议记录.pdf', fileType: 'application/pdf', fileSize: 256000 },
+    { fileName: '架构图.jpg', fileType: 'image/jpeg', fileSize: 1536000 },
+    { fileName: '演示PPT.pptx', fileType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', fileSize: 3072000 },
+    { fileName: '源代码.zip', fileType: 'application/zip', fileSize: 5120000 },
+    { fileName: '操作手册.pdf', fileType: 'application/pdf', fileSize: 1280000 },
+    { fileName: '流程图.png', fileType: 'image/png', fileSize: 384000 }
+  ]
+
+  // 生成随机附件列表
+  const generateAttachments = (todoId, count) => {
+    const attachments = []
+    for (let i = 0; i < count; i++) {
+      const template = mockAttachmentTemplates[(todoId.charCodeAt(todoId.length - 1) + i) % mockAttachmentTemplates.length]
+      attachments.push({
+        fileId: `FILE_${todoId}_${String(i + 1).padStart(3, '0')}`,
+        fileName: template.fileName,
+        fileType: template.fileType,
+        fileSize: template.fileSize,
+        filePath: `https://example.com/files/${todoId}/${template.fileName}`,
+        uploadTime: getRecentDate(i + 1)
+      })
+    }
+    return attachments
+  }
+
   for (let i = 0; i < 30; i++) {
     const status = statuses[i % statuses.length]
     const source = sources[i % sources.length]
     const creator = creators[i % creators.length]
     const taskName = taskNames[i]
-    
+
     // 根据状态决定时间
     let deadLine, finishTime, startTime, createTime, updateTime
     if (status.value === 2) {
@@ -87,34 +118,38 @@ const generateMockTodos = () => {
       deadLine = getFutureDate(5 + i)
       finishTime = null
     }
-    
+
     // 确保LIUQINGHONG264在大部分任务的执行人列表中（用于测试"我执行的"tab）
-    const attendeeList = []
-    
+    const todoUsers = []
+
     // 前20个任务包含LIUQINGHONG264作为执行人
     if (i < 20) {
-      attendeeList.push({
+      todoUsers.push({
         umId: 'LIUQINGHONG264',
         name: '刘庆红',
         status: 1
       })
     }
-    
+
     // 随机添加1-2个其他执行人
     const otherAttendeeCount = (i % 2) + 1
     for (let j = 0; j < otherAttendeeCount; j++) {
       const user = users[(i + j + 1) % users.length]
       if (user.umId !== 'LIUQINGHONG264') {
-        attendeeList.push({
+        todoUsers.push({
           umId: user.umId,
           name: user.name,
           status: 1
         })
       }
     }
-    
+
+    const todoId = `TODO_${String(i + 1).padStart(3, '0')}`
+    const attachmentCount = (i % 4) + 1  // 1-4个附件，确保每个任务都有附件
+    const attachmentList = generateAttachments(todoId, attachmentCount)
+
     todos.push({
-      id: `TODO_${String(i + 1).padStart(3, '0')}`,
+      id: todoId,
       umId: creator.umId,
       name: taskName,
       title: taskName,
@@ -136,17 +171,18 @@ const generateMockTodos = () => {
       tag: i % 10 === 0 ? 1 : 0,
       content: taskName,
       desc: `${taskName}的详细描述信息`,
-      attendeeList,
+      todoUsers,
+      attachmentList,
       percent: status.value === 2 ? 100 : (status.value === 3 ? (i % 8) * 10 + 20 : 0),
       realDeadLine: 1,
       creatorName: creator.name,
       creatorUmId: creator.umId,
-      file_num: i % 5,
+      file_num: attachmentCount,
       sub_num: i % 4,
       sub_complete: Math.floor((i % 4) / 2)
     })
   }
-  
+
   return todos
 }
 

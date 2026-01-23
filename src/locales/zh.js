@@ -128,6 +128,13 @@ export default {
     submitSuccess: '提交成功',
     progressHistory: '历史进展',
     noProgressHistory: '暂无进展记录',
+    myProgress: '我的进展',
+    executorProgress: '{name} 的进展',
+    progressLog: '进展日志',
+    progressTimeline: '进展时间线',
+    progressAttachments: '进展附件',
+    viewProgressLog: '查看日志',
+    noProgressAttachments: '暂无附件',
     noSubTasks: '暂无子任务',
     addSubTask: '新增子任务',
     addSubTaskSuccess: '子任务创建成功',
@@ -168,7 +175,10 @@ export default {
     createSuccess: '任务创建成功',
     createFailed: '任务创建失败',
     createTo: '创建至',
-    selectProject: '选择项目'
+    selectProject: '选择项目',
+    idMissing: '任务ID丢失',
+    upload: '上传',
+    uploadSuccess: '上传成功'
   },
   ai: {
     title: 'AI动态分析',

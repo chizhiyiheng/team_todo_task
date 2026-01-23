@@ -88,10 +88,10 @@
      const allTasks = [...mockTodoList, ...mockTodoListPage2]
      const userSet = new Set()
      allTasks.forEach(task => {
-       const attendees = task.attendeeList || []
-       attendees.forEach(attendee => {
-         if (attendee.umId) {
-           userSet.add(attendee.umId)
+       const todoUsers = task.todoUsers || []
+       todoUsers.forEach(user => {
+         if (user.umId) {
+           userSet.add(user.umId)
          }
        })
      })

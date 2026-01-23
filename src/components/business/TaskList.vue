@@ -368,26 +368,6 @@ const assigneeLoading = ref(false)
 // ==================== 生命周期 ====================
 
 /**
- * 组件挂载时
- * 根据当前视图模式获取对应的数据
- * - 列表视图：获取任务列表和执行人列表
- * - 看板视图：初始化看板数据
- * - 甘特图视图：初始化甘特图
- */
-onMounted(() => {
-  console.log('[TaskList] Component mounted, viewMode:', viewMode.value)
-  // 只在列表视图时获取数据
-  if (viewMode.value === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
-  } else if (viewMode.value === 'kanban') {
-    initKanbanData()
-  } else if (viewMode.value === 'gantt') {
-    setTimeout(() => initGanttChart(), 100)
-  }
-})
-
-/**
  * 组件卸载前
  * 清理甘特图实例
  */
@@ -433,8 +413,13 @@ function handleAssigneePopoverShow() {
   }
 }
 
+/**
+ * 获取任务的执行人列表
+ * @param {Object} task - 任务对象
+ * @returns {Array} 执行人列表
+ */
 function getAttendeeList(task) {
-  return task.todoUsers || task.attendeeList || []
+  return task.todoUsers || []
 }
 
 function getPriorityColor(task) {
@@ -466,7 +451,28 @@ function isTaskCompleted(task) {
   return status === TASK_STATUS.COMPLETED
 }
 
-// ==================== 看板相关方法 ====================
+/**
+ * 组件挂载时
+ * 根据当前视图模式获取对应的数据
+ * - 列表视图：获取任务列表和执行人列表
+ * - 看板视图：初始化看板数据
+ * - 甘特图视图：初始化甘特图
+ */
+
+onMounted(() => {
+  refreshCurrentView()
+})
+
+onBeforeUnmount(() => {
+  if (ganttChartInstance.value) {
+    ganttChartInstance.value.dispose()
+  }
+})
+
+watch(() => props.viewMode, (newVal) => {
+  viewMode.value = newVal
+  refreshCurrentView()
+})
 
 /**
  * 拖拽移动判断
@@ -535,42 +541,47 @@ function getStatusText(status) {
   return statusMap[status] || status
 }
 
-function getAttendeeNames(attendeeList) {
-  if (!attendeeList || attendeeList.length === 0) return '-'
-  return attendeeList.map(a => a.name).join(', ')
+/**
+ * 获取任务执行人名称列表
+ * @param {Array} todoUsers - 执行人列表
+ * @returns {String} 执行人名称，逗号分隔
+ */
+function getAttendeeNames(todoUsers) {
+  if (!todoUsers || todoUsers.length === 0) return '-'
+  return todoUsers.map(a => a.name).join(', ')
 }
 
+/**
+ * 获取任务的执行人列表（用于看板视图）
+ * 只返回状态为已接收或负责人的执行人
+ * @param {Object} task - 任务对象
+ * @returns {Array} 执行人列表
+ */
 function taskUsers(task) {
-  const list = Array.isArray(task.todoUsers) ? task.todoUsers : 
-               (Array.isArray(task.attendeeList) ? task.attendeeList : [])
+  const list = Array.isArray(task.todoUsers) ? task.todoUsers : []
   return list.filter(user => user && (user.status === 1 || user.owner === 1)).slice(0, 3)
 }
 
-// ==================== 视图切换方法 ====================
-
-/**
- * 切换视图模式
- * @param {String} mode - 视图模式 (list/kanban/gantt)
- */
-function switchView(mode) {
-  viewMode.value = mode
-  emit('view-mode-changed', mode)
-  if (mode === 'list') {
+function refreshCurrentView() {
+  if (viewMode.value === 'list') {
     fetchListTasks()
-    fetchAssigneeList()
-  } else if (mode === 'kanban') {
+    // 列表模式下也尝试获取执行人列表，以防万一
+    if (assigneeList.value.length === 0) {
+      fetchAssigneeList()
+    }
+  } else if (viewMode.value === 'kanban') {
     initKanbanData()
-  } else if (mode === 'gantt') {
+  } else if (viewMode.value === 'gantt') {
     nextTick(() => initGanttChart())
   }
 }
 
-// ==================== 任务操作方法 ====================
+function switchView(mode) {
+  viewMode.value = mode
+  emit('view-mode-changed', mode)
+  refreshCurrentView()
+}
 
-/**
- * 查看任务详情
- * @param {Object} task - 任务对象
- */
 function viewTask(task) {
   // Open task detail dialog
   selectedTaskId.value = task.id
@@ -588,7 +599,7 @@ function editTask(task) {
 
 function onTaskUpdate(data) {
   console.log('Task updated:', data)
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function taskItemStyle(task) {
@@ -716,13 +727,13 @@ function setReminder(task) {
 function handleTaskUpdated(updatedTask) {
   console.log('Task updated in dialog:', updatedTask)
   // Refresh the task list to show updated data
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function handleTaskDeleted(taskId) {
   console.log('Task deleted in dialog:', taskId)
   // Refresh the task list to remove deleted task
-  fetchTasks()
+  refreshCurrentView()
 }
 
 function getSourceName(source) {

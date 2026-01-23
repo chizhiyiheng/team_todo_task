@@ -3,8 +3,11 @@ import { ref, computed } from 'vue'
 import api from '@/api'
 
 export const useUserStore = defineStore('user', () => {
-  const userInfo = ref(null)
-  const userId = ref(null)
+  const userInfo = ref({
+    umId: 'LIUQINGHONG264',
+    name: '刘庆红',
+  })
+  const userId = ref("LIUQINGHONG264")
   const token = ref('')
   const permissions = ref([])
 

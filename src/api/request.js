@@ -49,6 +49,13 @@ class ApiService {
         data = { id: unmarkImportantMatch[1] }
       }
 
+      // 处理进展列表接口
+      const progressListMatch = url.match(/^\/api\/todo\/progress\/list\/(.+)$/)
+      if (progressListMatch) {
+        url = '/api/todo/progress/list'
+        data = { todoId: progressListMatch[1] }
+      }
+
       switch (url) {
         case '/api/todo/list':
           result = await this.mockApi.getTodoList(params || data)
@@ -98,15 +105,15 @@ class ApiService {
         case '/api/task/delete':
           result = await this.mockApi.deleteTask(params?.taskId || data?.taskId)
           break
-        // TODO: 进展相关接口 - 待后端联调
-        case '/api/todo/progress/detail':
-          result = await this.mockApi.getProgressDetail(data?.todoId || params?.todoId)
+        // 进展列表接口（按执行人分组）
+        case '/api/todo/progress/list':
+          result = await this.mockApi.getProgressList(data?.todoId || params?.todoId)
           break
         case '/api/todo/progress/submit':
           result = await this.mockApi.submitProgress(data)
           break
         // 文件上传相关接口
-        case '/api/file/upload':
+        case '/api/todo/attachment/upload':
           result = await this.mockApi.uploadFile(data.get('file'))
           break
         case '/api/file/delete':

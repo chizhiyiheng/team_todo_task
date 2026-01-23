@@ -62,8 +62,8 @@ export const isTaskAssignee = (task) => {
   const userStore = useUserStore()
   const userId = userStore.userId
 
-  if (!task || !task.attendeeList) return false
-  return task.attendeeList.some(a => a.umId === userId)
+  if (!task || !task.todoUsers) return false
+  return task.todoUsers.some(a => a.umId === userId)
 }
 
 export const canEditTask = (task, project) => {

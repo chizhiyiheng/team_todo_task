@@ -1,7 +1,7 @@
 <template>
   <div class="task-list">
     <div v-if="showHeader" class="task-list-header">
-      <h4>任务列表</h4>
+      <h4>{{ t('task.taskList') }}</h4>
       <div class="task-controls">
         <el-button-group>
           <el-button :class="{ active: viewMode === 'list' }" @click="switchView('list')">
@@ -20,9 +20,9 @@
     <div v-if="viewMode === 'list'" class="task-list-view project-table">
       <div class="project-table-head">
         <div class="task-row el-row">
-          <div class="el-col" style="flex: 1">标题</div>
+          <div class="el-col" style="flex: 1">{{ t('task.title') }}</div>
           <div class="el-col filter-col" style="width: 120px; flex: none; justify-content: center">
-            状态
+            {{ t('task.status') }}
             <el-popover placement="bottom" :width="140" trigger="click">
               <template #reference>
                 <el-button link size="small" class="filter-btn">
@@ -31,17 +31,17 @@
               </template>
               <div class="filter-content">
                 <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
-                  <el-checkbox :label="TASK_STATUS.PENDING">待处理</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.IN_PROGRESS">进行中</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.COMPLETED">已完成</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.OVERDUE">已逾期</el-checkbox>
-                  <el-checkbox :label="TASK_STATUS.CANCELLED">已取消</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.PENDING">{{ t('task.statusPending') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.IN_PROGRESS">{{ t('task.statusInProgress') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.COMPLETED">{{ t('task.statusCompleted') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.OVERDUE">{{ t('task.statusOverdue') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.CANCELLED">{{ t('task.statusCancelled') }}</el-checkbox>
                 </el-checkbox-group>
               </div>
             </el-popover>
           </div>
           <div class="el-col filter-col" style="width: 120px; flex: none">
-            执行人
+            {{ t('task.assignee') }}
             <el-popover placement="bottom" :width="150" trigger="click" @show="handleAssigneePopoverShow">
               <template #reference>
                 <el-button link size="small" class="filter-btn">
@@ -62,10 +62,10 @@
               </div>
             </el-popover>
           </div>
-          <div class="el-col" style="width: 120px; flex: none">分配人</div>
-          <div class="el-col" style="width: 170px; flex: none">截止时间</div>
-          <div class="el-col" style="width: 100px; flex: none">来源</div>
-          <div class="el-col" style="width: 160px; flex: none">操作</div>
+          <div class="el-col" style="width: 120px; flex: none">{{ t('task.creator') }}</div>
+          <div class="el-col" style="width: 170px; flex: none">{{ t('task.deadline') }}</div>
+          <div class="el-col" style="width: 100px; flex: none">{{ t('task.source') }}</div>
+          <div class="el-col" style="width: 160px; flex: none">{{ t('task.actions') }}</div>
         </div>
       </div>
       <div class="project-table-body">
@@ -211,7 +211,7 @@
             </draggable>
             <div v-if="kanbanColumns[statusKey].loading" class="kanban-loading">
               <el-icon class="is-loading"><Loading /></el-icon>
-              加载中...
+              {{ t('common.loading') }}
             </div>
           </div>
         </div>
@@ -247,6 +247,7 @@ import draggable from 'vuedraggable'
 import { useKanban } from '@/hooks/useKanban'
 import { useListFilter } from '@/hooks/useListFilter'
 import { TASK_STATUS, getStatusLabel, getStatusType } from '@/constants/taskEnums'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   viewMode: {
@@ -285,11 +286,12 @@ const props = defineProps({
 
 const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted'])
 
+const { t } = useI18n()
 const taskStore = useTaskStore()
 
 const viewMode = ref(props.viewMode)
 
-// 使用列表筛选hook
+// Use list filter hook
 const {
   listTasks,
   listPage,
@@ -307,7 +309,7 @@ const {
   handlePageSizeChange
 } = useListFilter(props)
 
-// 使用看板hook
+// Use kanban hook
 const {
   kanbanStatusList,
   kanbanColumns,
@@ -324,10 +326,10 @@ const showTaskDetail = ref(false)
 const selectedTaskId = ref(null)
 
 const operationMenu = [
-  { icon: Star, title: '标记重点', action: 'mark-important' },
-  { icon: Edit, title: '编辑', action: 'edit-task' },
-  { icon: Delete, title: '删除', action: 'delete-task' },
-  { icon: Bell, title: '提醒', action: 'set-reminder' }
+  { icon: Star, title: t('task.markImportant'), action: 'mark-important' },
+  { icon: Edit, title: t('task.editAction'), action: 'edit-task' },
+  { icon: Delete, title: t('task.deleteAction'), action: 'delete-task' },
+  { icon: Bell, title: t('task.reminderAction'), action: 'set-reminder' }
 ]
 
 const assigneeLoading = ref(false)
@@ -445,11 +447,11 @@ function getTaskStatus(task) {
 
 function getStatusText(status) {
   const statusMap = {
-    pending: '待处理',
-    in_progress: '进行中',
-    completed: '已完成',
-    overdue: '已逾期',
-    cancelled: '已取消'
+    pending: t('task.statusPending'),
+    in_progress: t('task.statusInProgress'),
+    completed: t('task.statusCompleted'),
+    overdue: t('task.statusOverdue'),
+    cancelled: t('task.statusCancelled')
   }
   return statusMap[status] || status
 }
@@ -530,59 +532,85 @@ function handleOperationAction(action, task) {
 }
 
 function setImportant(task) {
-  task.mark = task.mark === '1' ? '0' : '1'
-  if (task.mark === '1') {
-    ElMessage.success('已标记为重点')
-  } else {
-    ElMessage.success('已取消重点标记')
-  }
+  if (!task) return
+  
+  const newIsTop = task.mark === '1' ? 0 : 1
+  const oldMark = task.mark
+  
+  // Optimistically update the UI
+  task.mark = newIsTop === 1 ? '1' : '0'
+  
+  // Call API
+  ;(async () => {
+    try {
+      const response = newIsTop === 1 
+        ? await todoApi.markImportant(task.id)
+        : await todoApi.unmarkImportant(task.id)
+      
+      if (response.code === '200') {
+        ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelMarkImportantSuccess'))
+        // Refresh task list to ensure consistency
+        if (viewMode.value === 'list') {
+          fetchListTasks()
+        } else if (viewMode.value === 'kanban') {
+          initKanbanData()
+        }
+      } else {
+        // Rollback on failure
+        task.mark = oldMark
+        ElMessage.error(response.message || t('task.operationFailed'))
+      }
+    } catch (error) {
+      // Rollback on error
+      task.mark = oldMark
+      ElMessage.error(t('task.operationFailed'))
+      console.error('Toggle important error:', error)
+    }
+  })()
 }
 
 function removeTask(task) {
   console.log('Remove task:', task)
   
-  // 检查待办状态 - 只有已完成的待办才能删除
+  // Check task status - only completed tasks can be deleted
   const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
   if (status !== TASK_STATUS.COMPLETED) {
-    ElMessage.warning('只有已完成的待办才能删除')
+    ElMessage.warning(t('task.onlyCompletedCanDelete'))
     return
   }
   
-  // 确认删除
+  // Confirm deletion
   ElMessageBox.confirm(
-    '确定要删除这个待办吗？',
-    '删除确认',
+    t('task.deleteTaskConfirm'),
+    t('task.deleteConfirmTitle'),
     {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+      confirmButtonText: t('common.confirm'),
+      cancelButtonText: t('common.cancel'),
       type: 'warning'
     }
   ).then(async () => {
     try {
       const result = await todoApi.deleteTodo(task.id)
       if (result.code === '200') {
-        ElMessage.success('任务删除成功')
+        ElMessage.success(t('task.taskDeleteSuccess'))
         emit('task-deleted', task.id)
-        // 刷新任务列表
+        // Refresh task list
         await taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
       } else {
-        ElMessage.error(result.message || '删除失败')
+        ElMessage.error(result.message || t('task.deleteFailed'))
       }
     } catch (error) {
       console.error('Delete task error:', error)
-      ElMessage.error('删除失败')
+      ElMessage.error(t('task.deleteFailed'))
     }
   }).catch(() => {
-    // 用户取消删除
+    // User cancelled deletion
   })
 }
 
 function setReminder(task) {
+  // Reminder functionality
   console.log('Set reminder:', task)
-}
-
-function getSublist(task) {
-  console.log('Get sublist:', task)
 }
 
 function handleTaskUpdated(updatedTask) {
@@ -599,10 +627,10 @@ function handleTaskDeleted(taskId) {
 
 function getSourceName(source) {
   const sourceMap = {
-    0: '系统',
-    7: '任务',
-    8: '项目',
-    9: '会议'
+    0: t('task.sourceSystem'),
+    7: t('task.sourceTask'),
+    8: t('task.sourceProject'),
+    9: t('task.sourceMeeting')
   }
   return sourceMap[source] || '-'
 }
@@ -626,70 +654,70 @@ function initGanttChart() {
 
   let tasks = listTasks.value
   
-  // 在开发环境下，如果没有数据，使用mock数据
+  // Use mock data in development environment if no data available
   if (import.meta.env.DEV && tasks.length === 0) {
     const now = new Date()
     const mockTasks = [
       {
         id: 'gantt-mock-1',
-        name: '需求分析与设计',
-        content: '需求分析与设计',
+        name: t('task.ganttMockTask1'),
+        content: t('task.ganttMockTask1'),
         startTime: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 2
       },
       {
         id: 'gantt-mock-2',
-        name: '前端页面开发',
-        content: '前端页面开发',
+        name: t('task.ganttMockTask2'),
+        content: t('task.ganttMockTask2'),
         startTime: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 3
       },
       {
         id: 'gantt-mock-3',
-        name: '后端API接口开发',
-        content: '后端API接口开发',
+        name: t('task.ganttMockTask3'),
+        content: t('task.ganttMockTask3'),
         startTime: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 3
       },
       {
         id: 'gantt-mock-4',
-        name: '数据库设计与优化',
-        content: '数据库设计与优化',
+        name: t('task.ganttMockTask4'),
+        content: t('task.ganttMockTask4'),
         startTime: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 2
       },
       {
         id: 'gantt-mock-5',
-        name: '系统测试与bug修复',
-        content: '系统测试与bug修复',
+        name: t('task.ganttMockTask5'),
+        content: t('task.ganttMockTask5'),
         startTime: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 1
       },
       {
         id: 'gantt-mock-6',
-        name: '性能优化与部署',
-        content: '性能优化与部署',
+        name: t('task.ganttMockTask6'),
+        content: t('task.ganttMockTask6'),
         startTime: new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 1
       },
       {
         id: 'gantt-mock-7',
-        name: '用户培训与文档编写',
-        content: '用户培训与文档编写',
+        name: t('task.ganttMockTask7'),
+        content: t('task.ganttMockTask7'),
         startTime: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 18 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 1
       },
       {
         id: 'gantt-mock-8',
-        name: '项目验收与上线',
-        content: '项目验收与上线',
+        name: t('task.ganttMockTask8'),
+        content: t('task.ganttMockTask8'),
         startTime: new Date(now.getTime() + 18 * 24 * 60 * 60 * 1000).getTime(),
         deadLine: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 1
@@ -699,11 +727,11 @@ function initGanttChart() {
   }
   
   if (tasks.length === 0) {
-    // 如果没有数据，显示空状态
+    // Show empty state if no data
     const option = {
       title: {
-        text: '甘特图视图',
-        subtext: '暂无任务数据',
+        text: t('task.ganttChartTitle'),
+        subtext: t('task.noTaskData'),
         left: 'center',
         top: 'center'
       }
@@ -712,8 +740,8 @@ function initGanttChart() {
     return
   }
 
-  // 准备数据
-  const categories = tasks.map(task => task.content || task.name || task.title || '未命名任务')
+  // Prepare data
+  const categories = tasks.map(task => task.content || task.name || task.title || t('task.title'))
   const data = tasks.map((task, index) => {
     const times = getTimeObj(task)
     return {
@@ -726,7 +754,7 @@ function initGanttChart() {
       ],
       itemStyle: {
         normal: {
-          color: '#409EFF'  // 使用鲜亮的蓝色，与新建任务按钮一致
+          color: '#409EFF'  // Use bright blue color, consistent with create task button
         }
       }
     }
@@ -734,7 +762,7 @@ function initGanttChart() {
 
   const option = {
     title: {
-      text: '甘特图视图',
+      text: t('task.ganttChartTitle'),
       left: 'center',
       top: 10,
       textStyle: {
@@ -747,7 +775,7 @@ function initGanttChart() {
         const startDate = new Date(params.value[1]).toLocaleDateString('zh-CN')
         const endDate = new Date(params.value[2]).toLocaleDateString('zh-CN')
         const duration = Math.ceil((params.value[2] - params.value[1]) / (1000 * 60 * 60 * 24))
-        return `${params.name}<br/>开始: ${startDate}<br/>结束: ${endDate}<br/>工期: ${duration}天`
+        return `${params.name}<br/>${t('task.ganttStart')}: ${startDate}<br/>${t('task.ganttEnd')}: ${endDate}<br/>${t('task.ganttDuration')}: ${duration}${t('task.ganttDays')}`
       }
     },
     grid: {
@@ -847,7 +875,7 @@ function initGanttChart() {
 
   ganttChartInstance.value.setOption(option)
   
-  // 监听窗口大小变化
+  // Listen for window resize
   const resizeHandler = () => {
     if (ganttChartInstance.value) {
       ganttChartInstance.value.resize()
@@ -867,15 +895,15 @@ function getTimeObj(taskData) {
     }
   }
 
-  // 优先使用startTime，其次createTime
+  // Prefer startTime, then createTime
   let start = taskData.startTime ? new Date(taskData.startTime).getTime() : 
               (taskData.createTime ? new Date(taskData.createTime).getTime() : new Date().getTime())
   
-  // 优先使用deadLine，其次end_at，最后默认为开始时间+1天
+  // Prefer deadLine, then end_at, default to start time + 1 day
   let end = taskData.deadLine ? new Date(taskData.deadLine).getTime() : 
             (taskData.end_at ? new Date(taskData.end_at).getTime() : start + 86400000)
 
-  // 确保结束时间大于开始时间
+  // Ensure end time is greater than start time
   return {
     start,
     end: Math.max(end, start + 60000)
@@ -894,7 +922,7 @@ function getStatusColor(status) {
 </script>
 
 <style scoped lang="scss">
-// 模拟变量
+// Style variables
 $primary-title-color: #1f2937;
 $primary-desc-color: #909399;
 $flow-status-start-color: $danger-color;

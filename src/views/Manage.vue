@@ -12,14 +12,26 @@
         <h3 class="page-title">{{ pageTitle }}</h3>
       </div>
       <div class="header-right">
-        <div class="task-search">
+        <div class="task-search" ref="searchContainerRef">
           <el-input
             v-model="searchKeyword"
             placeholder="搜索任务"
             clearable
             :prefix-icon="Search"
-            @keyup.enter="handleSearch"
-            @clear="handleSearch"
+            @input="handleSearchInput"
+            @focus="handleSearchFocus"
+            @blur="handleSearchBlur"
+            @clear="handleSearchClear"
+          />
+          <TaskSearchResults
+            :visible="showSearchResults"
+            :keyword="searchKeyword"
+            :results="searchResults"
+            :loading="searchLoading"
+            :has-more="hasMoreResults"
+            @task-click="handleSearchTaskClick"
+            @load-more="handleLoadMore"
+            @close="closeSearchResults"
           />
         </div>
         <el-button type="primary" :icon="Plus" @click="handleAddTask" class="create-task-btn">
@@ -56,6 +68,13 @@
       task-type="personal"
       @task-created="handleTaskCreated"
     />
+
+    <!-- Task Detail Dialog -->
+    <TaskDetailDialog
+      v-model="showTaskDetail"
+      :task-id="selectedTaskId"
+      @task-updated="handleTaskUpdated"
+    />
   </div>
 </template>
 
@@ -71,6 +90,9 @@ import { useAppStore } from '@/stores/app'
 import { useDevice } from '@/utils/device'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import CreateTaskDialog from '@/components/business/CreateTaskDialog.vue'
+import TaskSearchResults from '@/components/business/TaskSearchResults.vue'
+import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
+import apiService from '@/api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,10 +110,25 @@ const isSidebarCollapsed = ref(false)
 const searchKeyword = ref('')
 const showCreateTask = ref(false)
 
+// 搜索相关状态
+const showSearchResults = ref(false)
+const searchResults = ref([])
+const searchLoading = ref(false)
+const searchPageNum = ref(1)
+const searchPageSize = ref(10)
+const searchTotal = ref(0)
+const searchContainerRef = ref(null)
+const searchDebounceTimer = ref(null)
+
+// 任务详情弹窗
+const showTaskDetail = ref(false)
+const selectedTaskId = ref(null)
+
 const pageTitle = computed(() => route.meta.title || t('menu.myTasks'))
 const executedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '0').length)
 const assignedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '1').length)
 const teams = computed(() => teamStore.teamList || [])
+const hasMoreResults = computed(() => searchResults.value.length < searchTotal.value)
 
 function toggleSidebar() {
   if (isMobile.value) {
@@ -133,13 +170,133 @@ function handleTaskCreated(taskId) {
 }
 
 /**
- * 搜索处理
- * TODO: 实现搜索功能，需要与子页面通信
+ * 搜索输入处理（防抖）
  */
-function handleSearch() {
-  console.log('[Manage] Search keyword:', searchKeyword.value)
-  // TODO: 通过事件或其他方式通知子页面进行搜索
-  // taskStore.fetchTaskList({ page: 1, pageSize: 10000, keyword: searchKeyword.value })
+function handleSearchInput() {
+  // 清除之前的定时器
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value)
+  }
+
+  // 如果输入为空，清空结果
+  if (!searchKeyword.value.trim()) {
+    searchResults.value = []
+    showSearchResults.value = false
+    return
+  }
+
+  // 设置新的定时器
+  searchDebounceTimer.value = setTimeout(() => {
+    performSearch()
+  }, 300)
+}
+
+/**
+ * 搜索框获得焦点
+ */
+function handleSearchFocus() {
+  if (searchKeyword.value.trim() && searchResults.value.length > 0) {
+    showSearchResults.value = true
+  }
+}
+
+/**
+ * 搜索框失去焦点
+ */
+function handleSearchBlur() {
+  // 延迟关闭，以便点击搜索结果
+  setTimeout(() => {
+    showSearchResults.value = false
+  }, 200)
+}
+
+/**
+ * 清空搜索
+ */
+function handleSearchClear() {
+  searchKeyword.value = ''
+  searchResults.value = []
+  showSearchResults.value = false
+  searchPageNum.value = 1
+  searchTotal.value = 0
+}
+
+/**
+ * 执行搜索
+ */
+async function performSearch(isLoadMore = false) {
+  if (!searchKeyword.value.trim()) return
+
+  try {
+    searchLoading.value = true
+
+    // 如果是加载更多，页码+1，否则重置为1
+    if (!isLoadMore) {
+      searchPageNum.value = 1
+      searchResults.value = []
+    } else {
+      searchPageNum.value++
+    }
+
+    const response = await apiService.get('/api/todo/search', {
+      keyword: searchKeyword.value.trim(),
+      pageNum: searchPageNum.value,
+      pageSize: searchPageSize.value
+    })
+
+    if (response.code === '200' && response.data) {
+      const { list, total } = response.data
+      
+      if (isLoadMore) {
+        searchResults.value = [...searchResults.value, ...list]
+      } else {
+        searchResults.value = list
+      }
+      
+      searchTotal.value = total
+      showSearchResults.value = true
+    }
+  } catch (error) {
+    console.error('[Manage] Search error:', error)
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+/**
+ * 加载更多搜索结果
+ */
+function handleLoadMore() {
+  performSearch(true)
+}
+
+/**
+ * 点击搜索结果
+ */
+function handleSearchTaskClick(task) {
+  console.log('[Manage] Search task clicked:', task)
+  selectedTaskId.value = task.id
+  showTaskDetail.value = true
+  closeSearchResults()
+}
+
+/**
+ * 关闭搜索结果
+ */
+function closeSearchResults() {
+  showSearchResults.value = false
+}
+
+/**
+ * 任务详情更新后刷新
+ */
+function handleTaskUpdated() {
+  // 刷新统计数据
+  taskStore.fetchTaskStatistics()
+  // 如果有搜索关键词，重新搜索
+  if (searchKeyword.value.trim()) {
+    performSearch()
+  }
 }
 
 /**
@@ -154,11 +311,29 @@ onMounted(() => {
     // 只获取团队列表，任务数据由子页面（MyTasks/TeamTasks）自己获取
     teamStore.fetchTeamList()
   }
+
+  // 点击外部关闭搜索结果
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   sidebarVisible.value = false
+  document.removeEventListener('click', handleClickOutside)
+  
+  // 清除定时器
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value)
+  }
 })
+
+/**
+ * 点击外部关闭搜索结果
+ */
+function handleClickOutside(event) {
+  if (searchContainerRef.value && !searchContainerRef.value.contains(event.target)) {
+    showSearchResults.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -211,6 +386,7 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
 
     :deep(.el-input) {
       width: 220px;

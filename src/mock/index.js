@@ -602,6 +602,57 @@ export const mockApi = {
         isTop: 0
       }
     }
+  },
+
+  // 搜索待办列表接口 Mock
+  async searchTodoList(params) {
+    await delay(300)
+
+    const { keyword = '', pageNum = 1, pageSize = 10 } = params
+
+    if (!keyword) {
+      return {
+        code: '200',
+        message: 'success',
+        data: {
+          total: 0,
+          list: [],
+          pageNum,
+          pageSize
+        }
+      }
+    }
+
+    // 从所有待办中搜索
+    let allTasks = [...mockTodoList]
+    
+    // 根据关键词过滤（标题或ID匹配）
+    const filteredTasks = allTasks.filter(task => {
+      const title = task.content || task.name || ''
+      const id = task.id || ''
+      return title.toLowerCase().includes(keyword.toLowerCase()) || 
+             id.toLowerCase().includes(keyword.toLowerCase())
+    })
+
+    const total = filteredTasks.length
+    const start = (pageNum - 1) * pageSize
+    const end = start + pageSize
+    const list = filteredTasks.slice(start, end).map(task => ({
+      id: task.id,
+      title: task.content || task.name || '未命名任务',
+      deadLine: task.deadLine || ''
+    }))
+
+    return {
+      code: '200',
+      message: 'success',
+      data: {
+        total,
+        list,
+        pageNum,
+        pageSize
+      }
+    }
   }
 }
 

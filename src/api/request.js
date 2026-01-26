@@ -131,6 +131,10 @@ class ApiService {
         case '/api/todo/unmarkImportant':
           result = await this.mockApi.unmarkImportant(data?.id)
           break
+        // 搜索待办列表接口
+        case '/api/todo/search':
+          result = await this.mockApi.searchTodoList(params || data)
+          break
         default:
           result = { code: '404', message: '接口不存在', body: null }
       }

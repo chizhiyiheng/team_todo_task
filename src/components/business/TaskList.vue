@@ -42,23 +42,49 @@
           </div>
           <div class="el-col filter-col" style="width: 120px; flex: none">
             {{ t('task.assignee') }}
-            <el-popover placement="bottom" :width="150" trigger="click" @show="handleAssigneePopoverShow">
+            <el-popover placement="bottom" :width="240" trigger="click" @show="handleAssigneePopoverShow">
               <template #reference>
                 <el-button link size="small" class="filter-btn">
                   <el-icon><Filter /></el-icon>
                 </el-button>
               </template>
               <div class="filter-content" v-loading="assigneeLoading">
-                <el-checkbox-group v-model="selectedAssignees" @change="handleAssigneeFilterChange">
-                  <el-checkbox 
-                    v-for="user in assigneeList" 
-                    :key="user.id" 
-                    :value="user.id"
-                    class="assignee-checkbox"
+                <!-- 搜索框 -->
+                <div class="filter-search">
+                  <el-input
+                    v-model="assigneeSearchKeyword"
+                    :placeholder="t('task.searchAssignee')"
+                    size="small"
+                    clearable
+                    @clear="handleAssigneeSearchClear"
                   >
-                    <span class="assignee-name">{{ user.name }}</span>
-                  </el-checkbox>
-                </el-checkbox-group>
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
+                </div>
+                <!-- 执行人列表 -->
+                <div class="assignee-list-wrapper">
+                  <el-checkbox-group 
+                    v-model="selectedAssignees" 
+                    @change="handleAssigneeFilterChange"
+                    class="assignee-checkbox-group"
+                  >
+                    <el-checkbox 
+                      v-for="user in filteredAssigneeList" 
+                      :key="user.id" 
+                      :value="user.id"
+                      class="assignee-checkbox"
+                      style="display: block; width: 100%; margin: 0;"
+                    >
+                      <span class="assignee-name">{{ user.name }}</span>
+                    </el-checkbox>
+                  </el-checkbox-group>
+                  <!-- 无结果提示 -->
+                  <div v-if="filteredAssigneeList.length === 0 && assigneeList.length > 0" class="no-result">
+                    {{ t('common.noSearchResult') }}
+                  </div>
+                </div>
               </div>
             </el-popover>
           </div>
@@ -255,7 +281,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useTaskStore } from '@/stores/task'
-import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading } from '@element-plus/icons-vue'
+import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading, Search } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { isOverdue, isToday, expiresFormat, completeAtFormat, formatDate } from '@/utils/date'
 import TaskMenu from './TaskMenu.vue'
@@ -365,6 +391,20 @@ const operationMenu = [
 // 执行人列表加载状态
 const assigneeLoading = ref(false)
 
+// 执行人搜索关键词
+const assigneeSearchKeyword = ref('')
+
+// 过滤后的执行人列表
+const filteredAssigneeList = computed(() => {
+  if (!assigneeSearchKeyword.value) {
+    return assigneeList.value
+  }
+  const keyword = assigneeSearchKeyword.value.toLowerCase().trim()
+  return assigneeList.value.filter(user => 
+    user.name.toLowerCase().includes(keyword)
+  )
+})
+
 // ==================== 生命周期 ====================
 
 /**
@@ -411,6 +451,13 @@ function handleAssigneePopoverShow() {
   if (assigneeList.value.length === 0) {
     fetchAssigneeList()
   }
+}
+
+/**
+ * 清除执行人搜索
+ */
+function handleAssigneeSearchClear() {
+  assigneeSearchKeyword.value = ''
 }
 
 /**
@@ -1073,66 +1120,110 @@ $flow-status-cancel-color: $info-color;
   }
 
   .filter-content {
-    padding: 8px 0;
-    max-height: 300px;
-    overflow-y: auto;
+    padding: 0;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
     
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 3px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 3px;
+    .filter-search {
+      padding: 12px;
+      flex-shrink: 0;
       
-      &:hover {
-        background: #a8a8a8;
+      .el-input {
+        width: 100%;
       }
     }
     
-    .el-checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .assignee-list-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 320px;
+      margin-top: 16px !important;;
+      padding-top: 16px;
       
-      .el-checkbox {
-        margin: 0;
-        padding: 6px 12px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
         
         &:hover {
-          background-color: #f5f7fa;
-        }
-        
-        :deep(.el-checkbox__label) {
-          font-size: 13px;
-          color: #606266;
-        }
-        
-        :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
-          color: #409eff;
+          background: #a8a8a8;
         }
       }
       
-      .assignee-checkbox {
-        :deep(.el-checkbox__label) {
-          width: 100%;
-          overflow: hidden;
-        }
-        
-        .assignee-name {
-          display: block;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          max-width: 130px;
-        }
+      .no-result {
+        padding: 20px 12px;
+        text-align: center;
+        color: #909399;
+        font-size: 13px;
+      }
+    }
+    
+    .assignee-checkbox-group {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0 !important;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+      
+      :deep(.el-checkbox) {
+        display: block !important;
+        width: 100% !important;
+      }
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group .el-checkbox {
+      display: block !important;
+      width: 100% !important;
+      padding: 10px 12px !important;
+      border-radius: 0 !important;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: #f5f7fa;
+      }
+      
+      :deep(.el-checkbox__input) {
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      
+      :deep(.el-checkbox__label) {
+        font-size: 13px;
+        color: #606266;
+        padding-left: 0;
+        vertical-align: middle;
+      }
+      
+      :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+        color: #409eff;
+      }
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group .assignee-checkbox {
+      display: block !important;
+      width: 100% !important;
+      
+      .assignee-name {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 180px;
+        vertical-align: middle;
       }
     }
   }

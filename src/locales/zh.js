@@ -20,7 +20,8 @@ export default {
     today: '今天',
     yesterday: '昨天',
     thisWeek: '本周',
-    thisMonth: '本月'
+    thisMonth: '本月',
+    noSearchResult: '无搜索结果'
   },
   menu: {
     myTasks: '我的任务',
@@ -178,7 +179,8 @@ export default {
     selectProject: '选择项目',
     idMissing: '任务ID丢失',
     upload: '上传',
-    uploadSuccess: '上传成功'
+    uploadSuccess: '上传成功',
+    searchAssignee: '搜索执行人'
   },
   ai: {
     title: 'AI动态分析',

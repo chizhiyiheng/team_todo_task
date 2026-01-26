@@ -20,7 +20,8 @@ export default {
     today: 'Today',
     yesterday: 'Yesterday',
     thisWeek: 'This Week',
-    thisMonth: 'This Month'
+    thisMonth: 'This Month',
+    noSearchResult: 'No search results'
   },
   menu: {
     myTasks: 'My Tasks',
@@ -178,7 +179,8 @@ export default {
     selectProject: 'Select Project',
     idMissing: 'Task ID missing',
     upload: 'Upload',
-    uploadSuccess: 'Upload successful'
+    uploadSuccess: 'Upload successful',
+    searchAssignee: 'Search assignee'
   },
   ai: {
     title: 'AI Dynamic Analysis',

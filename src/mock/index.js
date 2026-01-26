@@ -535,8 +535,8 @@ export const mockApi = {
     }
   },
 
-  // 获取待办操作日志接口 Mock
-  async getActivityLog(todoId) {
+  // 获取待办操作日志列表接口 Mock
+  async getOpLogList(todoId) {
     await delay(400)
 
     const mockLogs = generateMockActivityLogs(todoId)
@@ -545,6 +545,29 @@ export const mockApi = {
       code: '200',
       message: 'success',
       body: mockLogs
+    }
+  },
+
+  // 获取操作日志详情接口 Mock
+  async getOpLogDetail(id) {
+    await delay(300)
+
+    const todoId = id.split('_')[1] || 'TODO_1'
+    const mockLogs = generateMockActivityLogs(todoId)
+    const log = mockLogs.find(l => l.id === id) || mockLogs[0]
+
+    if (!log) {
+      return {
+        code: '404',
+        message: 'Log not found',
+        body: null
+      }
+    }
+
+    return {
+      code: '200',
+      message: 'success',
+      body: log
     }
   },
 

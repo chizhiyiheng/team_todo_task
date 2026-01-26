@@ -49,6 +49,20 @@ class ApiService {
         data = { id: unmarkImportantMatch[1] }
       }
 
+      // 处理操作日志列表接口
+      const opLogListMatch = url.match(/^\/api\/todo\/oplog\/getByTodoId\/(.+)$/)
+      if (opLogListMatch) {
+        url = '/api/todo/oplog/getByTodoId'
+        data = { todoId: opLogListMatch[1] }
+      }
+
+      // 处理操作日志详情接口
+      const opLogDetailMatch = url.match(/^\/api\/todo\/oplog\/get\/(.+)$/)
+      if (opLogDetailMatch) {
+        url = '/api/todo/oplog/get'
+        data = { id: opLogDetailMatch[1] }
+      }
+
       // 处理进展列表接口
       const progressListMatch = url.match(/^\/api\/todo\/progress\/list\/(.+)$/)
       if (progressListMatch) {
@@ -134,6 +148,14 @@ class ApiService {
         // 搜索待办列表接口
         case '/api/todo/search':
           result = await this.mockApi.searchTodoList(params || data)
+          break
+        // 操作日志列表接口
+        case '/api/todo/oplog/getByTodoId':
+          result = await this.mockApi.getOpLogList(data?.todoId)
+          break
+        // 操作日志详情接口
+        case '/api/todo/oplog/get':
+          result = await this.mockApi.getOpLogDetail(data?.id)
           break
         default:
           result = { code: '404', message: '接口不存在', body: null }

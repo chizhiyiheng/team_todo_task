@@ -42,14 +42,14 @@
 
     <div class="manage-content">
       <Sidebar
-        v-if="!isMobile || sidebarVisible"
         :executed-count="executedCount"
         :assigned-count="assignedCount"
         :teams="teams"
         :is-collapsed="isSidebarCollapsed"
+        :is-mobile-open="sidebarVisible"
         @tab-changed="handleTabChanged"
         @team-selected="handleTeamSelected"
-        @create-space="handleCreateSpace"
+        @close-sidebar="closeSidebar"
         class="sidebar-component"
       />
       <div
@@ -124,7 +124,28 @@ const searchDebounceTimer = ref(null)
 const showTaskDetail = ref(false)
 const selectedTaskId = ref(null)
 
-const pageTitle = computed(() => route.meta.title || t('menu.myTasks'))
+const pageTitle = computed(() => {
+  // 如果是我的任务页面，根据 tab 参数显示不同标题
+  if (route.path === '/manage/my-tasks') {
+    const tab = route.query.tab || 'executed'
+    if (tab === 'executed') {
+      return t('task.myExecutedTasks')
+    } else if (tab === 'assigned') {
+      return t('task.myAssignedTasks')
+    }
+  }
+  // 如果是团队任务页面，显示团队名称
+  if (route.path.startsWith('/manage/project/')) {
+    const teamId = parseInt(route.params.teamId)
+    const team = teams.value.find(t => t.id === teamId)
+    if (team) {
+      return team.name
+    }
+    return t('menu.teamTasks')
+  }
+  // 其他页面使用 meta.title
+  return route.meta.title || t('menu.myTasks')
+})
 const executedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '0').length)
 const assignedCount = computed(() => (taskStore.taskList || []).filter(task => task.status === '1').length)
 const teams = computed(() => teamStore.teamList || [])
@@ -138,6 +159,12 @@ function toggleSidebar() {
   }
 }
 
+function closeSidebar() {
+  if (isMobile.value) {
+    sidebarVisible.value = false
+  }
+}
+
 function handleTabChanged(type) {
   if (type === 'executed') {
     router.push('/manage/my-tasks?tab=executed')
@@ -148,10 +175,6 @@ function handleTabChanged(type) {
 
 function handleTeamSelected(teamId) {
   router.push(`/manage/project/${teamId}`)
-}
-
-function handleCreateSpace() {
-  console.log('Create new space')
 }
 
 function handleAddTask() {
@@ -425,6 +448,35 @@ function handleClickOutside(event) {
   .manage-layout {
     .page-header {
       padding: 12px 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+      
+      .header-left {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+        
+        .task-search {
+          flex: 1;
+          min-width: 0;
+          
+          :deep(.el-input) {
+            width: 100%;
+          }
+        }
+        
+        .create-task-btn {
+          flex-shrink: 0;
+          padding: 8px 12px;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+      }
     }
 
     .page-title {
@@ -433,7 +485,7 @@ function handleClickOutside(event) {
   }
 
   .main-view {
-    padding: 12px;
+    padding: 8px;
   }
 }
 </style>

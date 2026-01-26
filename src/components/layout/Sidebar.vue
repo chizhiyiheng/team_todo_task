@@ -1,5 +1,5 @@
 <template>
-  <div class="task-sidebar" :class="{ 'sidebar-collapsed': isCollapsed }">
+  <div class="task-sidebar" :class="{ 'sidebar-collapsed': isCollapsed, 'sidebar-mobile-open': isMobileOpen }">
     <div class="sidebar-section">
       <div class="sidebar-section-header">
         <h4>{{ $t('menu.myTasks') }}</h4>
@@ -43,19 +43,13 @@
         </li>
       </ul>
     </div>
-
-    <div class="sidebar-footer">
-      <el-button type="primary" @click="createNewSpace" :icon="Plus">
-        {{ $t('task.createTask') }}
-      </el-button>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowUp, ArrowDown, List, User, OfficeBuilding, Plus } from '@element-plus/icons-vue'
+import { ArrowUp, ArrowDown, List, User, OfficeBuilding } from '@element-plus/icons-vue'
 
 const props = defineProps({
   executedCount: {
@@ -77,10 +71,14 @@ const props = defineProps({
   showTeamTasks: {
     type: Boolean,
     default: false
+  },
+  isMobileOpen: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['tab-changed', 'team-selected', 'create-space'])
+const emit = defineEmits(['tab-changed', 'team-selected', 'close-sidebar'])
 
 const { t } = useI18n()
 
@@ -106,16 +104,14 @@ function toggleMyTasks(type) {
   activeTab.value = type
   selectedTeam.value = null
   emit('tab-changed', type)
+  emit('close-sidebar')
 }
 
 function selectTeam(teamId) {
   selectedTeam.value = teamId
   activeTab.value = null
   emit('team-selected', teamId)
-}
-
-function createNewSpace() {
-  emit('create-space')
+  emit('close-sidebar')
 }
 </script>
 
@@ -258,32 +254,6 @@ function createNewSpace() {
   }
 }
 
-.sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid #eaeaea;
-  margin-top: auto;
-
-  .el-button {
-    width: 100%;
-    border: 1px dashed #d9d9d9;
-    background: #fff;
-    color: #666;
-    height: 32px;
-    font-size: 14px;
-    transition: all 0.3s;
-
-    &:hover {
-      border-color: $primary-color;
-      color: $primary-color;
-      background: #fff;
-    }
-
-    .el-icon {
-      margin-right: 4px;
-    }
-  }
-}
-
 @media (max-width: 768px) {
   .task-sidebar {
     position: fixed;
@@ -292,12 +262,20 @@ function createNewSpace() {
     bottom: 0;
     z-index: 1000;
     transform: translateX(-100%);
-    transition: transform 0.3s;
+    transition: transform 0.3s ease-in-out;
     width: 200px;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
 
     &.sidebar-mobile-open {
       transform: translateX(0);
     }
+  }
+}
+
+@media (min-width: 769px) {
+  .task-sidebar {
+    position: relative;
+    transform: none !important;
   }
 }
 </style>

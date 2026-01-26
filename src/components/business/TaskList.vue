@@ -1784,6 +1784,58 @@ $flow-status-cancel-color: $info-color;
     }
 
     .task-list-view {
+      &.project-table {
+        .project-table-head {
+          overflow-x: auto;
+          overflow-y: hidden;
+          border-radius: 5px;
+          
+          /* 隐藏滚动条但保持滚动功能 */
+          &::-webkit-scrollbar {
+            height: 4px;
+          }
+          
+          &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+          
+          &::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+          }
+          
+          .task-row {
+            min-width: 900px; /* 确保表头不换行 */
+            flex-wrap: nowrap;
+          }
+        }
+        
+        .project-table-body {
+          overflow-x: auto;
+          overflow-y: visible;
+          
+          /* 滚动条样式 */
+          &::-webkit-scrollbar {
+            height: 4px;
+            display: block !important;
+          }
+          
+          &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+          
+          &::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+          }
+          
+          .task-row {
+            min-width: 900px; /* 与表头保持一致 */
+            flex-wrap: nowrap;
+          }
+        }
+      }
+      
       .task-rows {
         .task-item {
           .task-row {

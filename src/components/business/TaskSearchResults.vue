@@ -153,10 +153,11 @@ watch(() => props.visible, (newVal) => {
   right: 0;
   margin-top: 8px;
   z-index: 1000;
+  width: 100%;
 }
 
 .search-results-dropdown {
-  width: 300px;
+  width: 100%;
   max-height: 500px;
   background: #fff;
   border-radius: 8px;
@@ -259,9 +260,29 @@ watch(() => props.visible, (newVal) => {
 }
 
 @media (max-width: 768px) {
+  .search-results-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: auto;
+    margin-top: 4px;
+  }
+  
   .search-results-dropdown {
-    width: calc(100vw - 32px);
-    max-height: 400px;
+    max-height: 60vh;
+  }
+  
+  .results-list {
+    max-height: 60vh;
+  }
+  
+  .result-item {
+    padding: 10px 12px;
+  }
+  
+  .task-title {
+    font-size: 13px;
   }
 }
 </style>

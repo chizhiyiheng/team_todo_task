@@ -172,6 +172,17 @@ class ApiService {
     const { url, method = 'GET', params, data, headers = {} } = config
 
     try {
+      // 构建完整的 URL
+      let fullUrl = `${this.baseURL}${url}`
+      
+      // GET 请求：将 params 拼接到 URL 上
+      if (method === 'GET' && params) {
+        const queryString = new URLSearchParams(params).toString()
+        if (queryString) {
+          fullUrl += (url.includes('?') ? '&' : '?') + queryString
+        }
+      }
+
       let fetchOptions = {
         method,
         headers: {
@@ -184,16 +195,16 @@ class ApiService {
         fetchOptions.headers['Content-Type'] = 'application/json'
       }
 
-      // 处理请求体
+      // 处理请求体（非 GET 请求）
       if (method !== 'GET') {
         if (data instanceof FormData) {
           fetchOptions.body = data
-        } else {
+        } else if (data) {
           fetchOptions.body = JSON.stringify(data)
         }
       }
 
-      const response = await fetch(`${this.baseURL}${url}`, fetchOptions)
+      const response = await fetch(fullUrl, fetchOptions)
 
       const result = await response.json()
       return result

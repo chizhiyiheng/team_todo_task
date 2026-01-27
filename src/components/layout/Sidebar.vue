@@ -47,8 +47,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { ArrowUp, ArrowDown, List, User, OfficeBuilding } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -80,7 +81,7 @@ const props = defineProps({
 
 const emit = defineEmits(['tab-changed', 'team-selected', 'close-sidebar'])
 
-const { t } = useI18n()
+const route = useRoute()
 
 const activeTab = ref('executed')
 const selectedTeam = ref(null)
@@ -88,6 +89,57 @@ const collapsedSections = ref({
   my: false,
   team: false
 })
+
+// 根据当前路由初始化 activeTab
+onMounted(() => {
+  initializeActiveTab()
+})
+
+// 监听路由变化，更新 activeTab
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && (newTab === 'executed' || newTab === 'assigned')) {
+    activeTab.value = newTab
+    selectedTeam.value = null
+  } else if (!newTab && route.path === '/manage/my-tasks') {
+    // 如果没有 tab 参数但在 my-tasks 页面，默认为 executed
+    activeTab.value = 'executed'
+    selectedTeam.value = null
+  }
+})
+
+// 监听路由路径变化，处理团队选择
+watch(() => route.path, (newPath) => {
+  if (newPath.startsWith('/manage/project/')) {
+    const teamId = parseInt(route.params.projectId)
+    if (teamId) {
+      selectedTeam.value = teamId
+      activeTab.value = null
+    }
+  } else if (newPath === '/manage/my-tasks') {
+    selectedTeam.value = null
+    initializeActiveTab()
+  }
+})
+
+// 监听整个路由对象变化，确保状态同步
+watch(() => route, (newRoute) => {
+  if (newRoute.path === '/manage/my-tasks') {
+    const currentTab = newRoute.query.tab || 'executed'
+    if (currentTab === 'executed' || currentTab === 'assigned') {
+      activeTab.value = currentTab
+      selectedTeam.value = null
+    }
+  }
+}, { immediate: true })
+
+function initializeActiveTab() {
+  // 根据当前路由的 tab 参数初始化 activeTab
+  const currentTab = route.query.tab || 'executed'
+  if (currentTab === 'executed' || currentTab === 'assigned') {
+    activeTab.value = currentTab
+  }
+  console.log('[Sidebar] Initialized activeTab:', activeTab.value, 'from route tab:', route.query.tab)
+}
 
 const realTeams = computed(() => {
   if (props.teams && props.teams.length > 0) {

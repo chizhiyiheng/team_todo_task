@@ -26,8 +26,8 @@ const routes = [
       {
         path: 'project/:projectId',
         name: 'project',
-        component: () => import('@/views/Project.vue'),
-        meta: { title: '项目详情' }
+        component: () => import('@/views/TeamTasks.vue'),
+        meta: { title: '团队任务' }
       }
     ]
   }

@@ -41,8 +41,8 @@ const currentTeamName = computed(() => {
 })
 
 onMounted(() => {
-  if (route.params && route.params.teamId) {
-    selectedTeam.value = parseInt(route.params.teamId)
+  if (route.params && route.params.projectId) {
+    selectedTeam.value = parseInt(route.params.projectId)
   }
   taskStore.fetchTaskList({ page: 1, pageSize: 10000 })
   taskStore.fetchTaskStatistics()

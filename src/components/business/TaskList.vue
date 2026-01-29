@@ -30,13 +30,70 @@
                 </el-button>
               </template>
               <div class="filter-content">
-                <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
-                  <el-checkbox :value="TASK_STATUS.PENDING">{{ t('task.statusPending') }}</el-checkbox>
-                  <el-checkbox :value="TASK_STATUS.IN_PROGRESS">{{ t('task.statusInProgress') }}</el-checkbox>
-                  <el-checkbox :value="TASK_STATUS.COMPLETED">{{ t('task.statusCompleted') }}</el-checkbox>
-                  <el-checkbox :value="TASK_STATUS.OVERDUE">{{ t('task.statusOverdue') }}</el-checkbox>
-                  <el-checkbox :value="TASK_STATUS.CANCELLED">{{ t('task.statusCancelled') }}</el-checkbox>
-                </el-checkbox-group>
+                <div class="status-filter-section">
+                  <!-- 全部状态 -->
+                  <div class="status-all">
+                    <el-checkbox 
+                      :model-value="isAllStatusSelected" 
+                      @change="handleAllStatusChange"
+                      :disabled="isDeletedSelected"
+                    >
+                      {{ t('task.statusAll') }}
+                    </el-checkbox>
+                  </div>
+                  
+                  <!-- 正常状态列表 -->
+                  <div class="status-normal">
+                    <el-checkbox-group 
+                      v-model="selectedStatuses" 
+                      @change="handleStatusFilterChange"
+                    >
+                      <el-checkbox 
+                        :value="TASK_STATUS.PENDING"
+                        :disabled="isNormalStatusDisabled"
+                      >
+                        {{ t('task.statusPending') }}
+                      </el-checkbox>
+                      <el-checkbox 
+                        :value="TASK_STATUS.IN_PROGRESS"
+                        :disabled="isNormalStatusDisabled"
+                      >
+                        {{ t('task.statusInProgress') }}
+                      </el-checkbox>
+                      <el-checkbox 
+                        :value="TASK_STATUS.COMPLETED"
+                        :disabled="isNormalStatusDisabled"
+                      >
+                        {{ t('task.statusCompleted') }}
+                      </el-checkbox>
+                      <el-checkbox 
+                        :value="TASK_STATUS.CANCELLED"
+                        :disabled="isNormalStatusDisabled"
+                      >
+                        {{ t('task.statusCancelled') }}
+                      </el-checkbox>
+                      <el-checkbox 
+                        :value="TASK_STATUS.OVERDUE"
+                        :disabled="isNormalStatusDisabled"
+                      >
+                        {{ t('task.statusOverdue') }}
+                      </el-checkbox>
+                    </el-checkbox-group>
+                  </div>
+                  
+                  <!-- 分割线 -->
+                  <el-divider style="margin: 12px 0;" />
+                  
+                  <!-- 已删除状态 -->
+                  <div class="status-deleted">
+                    <el-checkbox 
+                      :model-value="isDeletedSelected" 
+                      @change="handleDeletedStatusChange"
+                    >
+                      {{ t('task.statusDeleted') }}
+                    </el-checkbox>
+                  </div>
+                </div>
               </div>
             </el-popover>
           </div>
@@ -353,10 +410,15 @@ const {
   selectedAssignees,
   selectedStatuses,
   assigneeList,
+  isAllStatusSelected,
+  isDeletedSelected,
+  isNormalStatusDisabled,
   fetchListTasks,
   fetchAssigneeList,
   handleAssigneeFilterChange,
   handleStatusFilterChange,
+  handleAllStatusChange,
+  handleDeletedStatusChange,
   handlePageChange,
   handlePageSizeChange
 } = useListFilter(props)
@@ -1131,6 +1193,61 @@ $flow-status-cancel-color: $info-color;
       
       .el-input {
         width: 100%;
+      }
+    }
+    
+    // 状态筛选特殊样式
+    .status-filter-section {
+      padding: 12px;
+      
+      .status-all {
+        margin-bottom: 8px;
+        
+        .el-checkbox {
+          font-weight: 500;
+          
+          &.is-disabled {
+            .el-checkbox__label {
+              color: #c0c4cc;
+            }
+          }
+        }
+      }
+      
+      .status-normal {
+        .el-checkbox-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          
+          .el-checkbox {
+            margin: 0;
+            
+            &.is-disabled {
+              .el-checkbox__label {
+                color: #c0c4cc;
+              }
+              
+              .el-checkbox__input.is-disabled .el-checkbox__inner {
+                background-color: #f5f7fa;
+                border-color: #e4e7ed;
+                cursor: not-allowed;
+              }
+            }
+          }
+        }
+      }
+      
+      .status-deleted {
+        .el-checkbox {
+          color: #f56c6c;
+          font-weight: 500;
+          
+          .el-checkbox__input.is-checked .el-checkbox__inner {
+            background-color: #f56c6c;
+            border-color: #f56c6c;
+          }
+        }
       }
     }
     

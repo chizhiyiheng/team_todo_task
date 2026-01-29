@@ -1,7 +1,7 @@
 /**
  * Task Status Enums
  * 任务状态枚举
- * 根据接口文档：0-待接收 1-待处理 2-已完成 3-进行中 4-已逾期 5-已取消
+ * 根据接口文档：0-待接收 1-待处理 2-已完成 3-进行中 4-已逾期 5-已取消 6-已删除
  */
 export const TASK_STATUS = {
   TO_RECEIVE: 0,   // 待接收
@@ -9,7 +9,8 @@ export const TASK_STATUS = {
   COMPLETED: 2,    // 已完成
   IN_PROGRESS: 3,  // 进行中
   OVERDUE: 4,      // 已逾期
-  CANCELLED: 5     // 已取消
+  CANCELLED: 5,    // 已取消
+  DELETED: 6       // 已删除
 }
 
 export const TASK_STATUS_OPTIONS = [
@@ -18,7 +19,18 @@ export const TASK_STATUS_OPTIONS = [
   { value: TASK_STATUS.COMPLETED, label: '已完成', type: 'success' },
   { value: TASK_STATUS.IN_PROGRESS, label: '进行中', type: 'primary' },
   { value: TASK_STATUS.OVERDUE, label: '已逾期', type: 'danger' },
-  { value: TASK_STATUS.CANCELLED, label: '已取消', type: 'info' }
+  { value: TASK_STATUS.CANCELLED, label: '已取消', type: 'info' },
+  { value: TASK_STATUS.DELETED, label: '已删除', type: 'danger' }
+]
+
+// 正常状态（非删除状态）
+export const NORMAL_STATUS_LIST = [
+  TASK_STATUS.TO_RECEIVE,
+  TASK_STATUS.PENDING,
+  TASK_STATUS.COMPLETED,
+  TASK_STATUS.IN_PROGRESS,
+  TASK_STATUS.OVERDUE,
+  TASK_STATUS.CANCELLED
 ]
 
 /**

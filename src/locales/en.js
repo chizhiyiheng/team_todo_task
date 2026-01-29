@@ -73,6 +73,7 @@ export default {
     statusCompleted: 'Completed',
     statusOverdue: 'Overdue',
     statusCancelled: 'Cancelled',
+    statusDeleted: 'Deleted',
     priorityHigh: 'High',
     priorityMedium: 'Medium',
     priorityLow: 'Low',

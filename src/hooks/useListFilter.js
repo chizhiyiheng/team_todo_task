@@ -1,6 +1,7 @@
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { todoApi } from '@/api'
+import { TASK_STATUS, NORMAL_STATUS_LIST } from '@/constants/taskEnums'
 
 /**
  * 列表筛选 Hook
@@ -26,6 +27,13 @@ export function useListFilter(props) {
   const selectedAssignees = ref([])    // 已选择的执行人 ID 列表
   const selectedStatuses = ref([])     // 已选择的状态列表
   const assigneeList = ref([])         // 可选的执行人列表
+  
+  // 状态筛选的特殊逻辑状态
+  const isAllStatusSelected = ref(false)  // 是否选择了"全部"
+  const isDeletedSelected = ref(false)    // 是否选择了"已删除"
+  
+  // 计算属性：正常状态是否被禁用（当选择了已删除时）
+  const isNormalStatusDisabled = computed(() => isDeletedSelected.value)
 
   // ==================== 核心方法 ====================
   
@@ -108,9 +116,113 @@ export function useListFilter(props) {
 
   /**
    * 状态筛选变更处理
-   * 变更筛选后回到第一页并重新获取数据
+   * 实现复杂的状态筛选逻辑：
+   * 1. 勾选"全部"时，勾选所有正常状态
+   * 2. 取消任意正常状态时，取消"全部"
+   * 3. 勾选"已删除"时，取消所有正常状态并禁用
+   * 4. 取消"已删除"时，恢复正常状态可选
    */
-  function handleStatusFilterChange() {
+  function handleStatusFilterChange(newSelectedStatuses) {
+    console.log('[useListFilter] Status filter changed:', newSelectedStatuses)
+    
+    // 检查是否包含"全部"和"已删除"
+    const hasAll = newSelectedStatuses.includes('all')
+    const hasDeleted = newSelectedStatuses.includes(TASK_STATUS.DELETED)
+    
+    // 获取正常状态的选择情况
+    const normalStatusesInSelection = newSelectedStatuses.filter(status => 
+      NORMAL_STATUS_LIST.includes(status)
+    )
+    
+    let finalStatuses = [...newSelectedStatuses]
+    
+    // 处理"全部"的逻辑
+    if (hasAll && !isAllStatusSelected.value) {
+      // 刚勾选了"全部"
+      isAllStatusSelected.value = true
+      // 添加所有正常状态，移除"全部"标识
+      finalStatuses = [...NORMAL_STATUS_LIST]
+      if (hasDeleted) {
+        finalStatuses.push(TASK_STATUS.DELETED)
+      }
+    } else if (!hasAll && isAllStatusSelected.value) {
+      // 取消了"全部"
+      isAllStatusSelected.value = false
+    } else if (isAllStatusSelected.value && normalStatusesInSelection.length < NORMAL_STATUS_LIST.length) {
+      // 在"全部"状态下取消了某个正常状态
+      isAllStatusSelected.value = false
+      // 从finalStatuses中移除"all"
+      finalStatuses = finalStatuses.filter(status => status !== 'all')
+    }
+    
+    // 处理"已删除"的逻辑
+    if (hasDeleted && !isDeletedSelected.value) {
+      // 刚勾选了"已删除"
+      isDeletedSelected.value = true
+      isAllStatusSelected.value = false
+      // 只保留"已删除"状态
+      finalStatuses = [TASK_STATUS.DELETED]
+    } else if (!hasDeleted && isDeletedSelected.value) {
+      // 取消了"已删除"
+      isDeletedSelected.value = false
+      // 移除已删除状态
+      finalStatuses = finalStatuses.filter(status => status !== TASK_STATUS.DELETED)
+    }
+    
+    // 检查是否所有正常状态都被选中（用于同步"全部"状态）
+    if (!hasDeleted && !isDeletedSelected.value) {
+      const allNormalSelected = NORMAL_STATUS_LIST.every(status => 
+        finalStatuses.includes(status)
+      )
+      isAllStatusSelected.value = allNormalSelected
+    }
+    
+    // 更新选中的状态
+    selectedStatuses.value = finalStatuses
+    
+    console.log('[useListFilter] Final statuses:', finalStatuses)
+    console.log('[useListFilter] isAllStatusSelected:', isAllStatusSelected.value)
+    console.log('[useListFilter] isDeletedSelected:', isDeletedSelected.value)
+    
+    // 重新获取数据
+    listPage.value = 1
+    fetchListTasks()
+  }
+  
+  /**
+   * 处理"全部"状态的勾选
+   */
+  function handleAllStatusChange(checked) {
+    if (checked) {
+      // 勾选全部：选择所有正常状态
+      isAllStatusSelected.value = true
+      isDeletedSelected.value = false
+      selectedStatuses.value = [...NORMAL_STATUS_LIST]
+    } else {
+      // 取消全部：清空所有状态
+      isAllStatusSelected.value = false
+      selectedStatuses.value = []
+    }
+    
+    listPage.value = 1
+    fetchListTasks()
+  }
+  
+  /**
+   * 处理"已删除"状态的勾选
+   */
+  function handleDeletedStatusChange(checked) {
+    if (checked) {
+      // 勾选已删除：只选择已删除状态
+      isDeletedSelected.value = true
+      isAllStatusSelected.value = false
+      selectedStatuses.value = [TASK_STATUS.DELETED]
+    } else {
+      // 取消已删除：移除已删除状态
+      isDeletedSelected.value = false
+      selectedStatuses.value = selectedStatuses.value.filter(status => status !== TASK_STATUS.DELETED)
+    }
+    
     listPage.value = 1
     fetchListTasks()
   }
@@ -187,11 +299,16 @@ export function useListFilter(props) {
     selectedAssignees,
     selectedStatuses,
     assigneeList,
+    isAllStatusSelected,
+    isDeletedSelected,
+    isNormalStatusDisabled,
     // 方法
     fetchListTasks,
     fetchAssigneeList,
     handleAssigneeFilterChange,
     handleStatusFilterChange,
+    handleAllStatusChange,
+    handleDeletedStatusChange,
     handlePageChange,
     handlePageSizeChange
   }

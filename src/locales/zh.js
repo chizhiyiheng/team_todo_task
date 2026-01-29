@@ -73,6 +73,7 @@ export default {
     statusCompleted: '已完成',
     statusOverdue: '已逾期',
     statusCancelled: '已取消',
+    statusDeleted: '已删除',
     priorityHigh: '高',
     priorityMedium: '中',
     priorityLow: '低',

@@ -85,6 +85,16 @@ export const todoApi = {
   // 获取操作日志详情
   getOpLogDetail(id) {
     return request.get(`/api/todo/oplog/get/${id}`)
+  },
+
+  // 语音转文字接口
+  transcribeAudio(formData) {
+    return request.post('/api/todo/voice/transcribe', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 30000 // 30秒超时，语音转换可能需要较长时间
+    })
   }
 }
 

@@ -71,7 +71,7 @@ const props = defineProps({
   },
   showTeamTasks: {
     type: Boolean,
-    default: false
+    default: true
   },
   isMobileOpen: {
     type: Boolean,

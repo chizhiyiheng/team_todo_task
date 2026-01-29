@@ -37,6 +37,9 @@
         <el-button type="primary" :icon="Plus" @click="handleAddTask" class="create-task-btn">
           {{ $t('task.createTask') }}
         </el-button>
+        <el-button type="success" :icon="Microphone" @click="showVoiceDialog = true" class="voice-task-btn">
+          语音转待办
+        </el-button>
       </div>
     </div>
 
@@ -69,6 +72,12 @@
       @task-created="handleTaskCreated"
     />
 
+    <!-- Voice to Text Dialog -->
+    <VoiceToTextDialog
+      v-model="showVoiceDialog"
+      @todo-created="handleVoiceTodoCreated"
+    />
+
     <!-- Task Detail Dialog -->
     <TaskDetailDialog
       v-model="showTaskDetail"
@@ -82,7 +91,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Menu, Plus, Search } from '@element-plus/icons-vue'
+import { Menu, Plus, Search, Microphone } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useTaskStore } from '@/stores/task'
 import { useTeamStore } from '@/stores/team'
@@ -92,6 +101,7 @@ import Sidebar from '@/components/layout/Sidebar.vue'
 import CreateTaskDialog from '@/components/business/CreateTaskDialog.vue'
 import TaskSearchResults from '@/components/business/TaskSearchResults.vue'
 import TaskDetailDialog from '@/components/business/task-detail/TaskDetailDialog.vue'
+import VoiceToTextDialog from '@/components/business/VoiceToTextDialog.vue'
 import apiService from '@/api/request'
 
 const route = useRoute()
@@ -109,6 +119,7 @@ const sidebarVisible = ref(false)
 const isSidebarCollapsed = ref(false)
 const searchKeyword = ref('')
 const showCreateTask = ref(false)
+const showVoiceDialog = ref(false)
 
 // 搜索相关状态
 const showSearchResults = ref(false)
@@ -311,6 +322,17 @@ function closeSearchResults() {
 }
 
 /**
+ * 语音转待办创建成功处理
+ * @param {Object} todoData - 待办数据
+ */
+function handleVoiceTodoCreated(todoData) {
+  console.log('[Manage] Voice todo created:', todoData)
+  // 调用创建待办接口
+  // 这里可以复用现有的创建逻辑
+  taskStore.fetchTaskStatistics()
+}
+
+/**
  * 任务详情更新后刷新
  */
 function handleTaskUpdated() {
@@ -471,6 +493,13 @@ function handleClickOutside(event) {
         }
         
         .create-task-btn {
+          flex-shrink: 0;
+          padding: 8px 12px;
+          font-size: 13px;
+          white-space: nowrap;
+        }
+        
+        .voice-task-btn {
           flex-shrink: 0;
           padding: 8px 12px;
           font-size: 13px;

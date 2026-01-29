@@ -84,8 +84,6 @@ export function useExecutorActions(taskDetail, emit, t, refreshTask) {
     async function updateTodoUsers(newUmIds, availableUsers) {
         if (!taskDetail.value) return false
 
-        const oldTodoUsers = [...taskDetail.value.todoUsers]
-
         // 构造新的todoUsers数组
         // 对于已存在的执行人，保留其原有的所有字段（包括status等）
         // 对于新增的执行人，只设置umId和name，不设置status（后端会给默认值）

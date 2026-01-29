@@ -206,7 +206,7 @@
                       <el-icon v-if="(task.mark || task.tag === 1 || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star">
                         <StarFilled />
                       </el-icon>
-                      {{ task.title || task.name || task.content }}
+                      <span class="title-text">{{ task.title || task.name || task.content }}</span>
                     </div>
                     <div v-if="taskUsers(task).length" class="task-users">
                       <ul>
@@ -1642,14 +1642,21 @@ $flow-status-cancel-color: $info-color;
             align-items: center;
             font-size: $font-size-base;
             line-height: 1.5;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            min-width: 0; // 关键：允许flex子元素收缩
 
             .important-star {
               color: #f7ba2a;
               margin-right: 4px;
               flex-shrink: 0;
+            }
+
+            // 文字部分需要单独处理省略号
+            .title-text {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              min-width: 0;
+              flex: 1;
             }
           }
 

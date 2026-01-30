@@ -1,6 +1,7 @@
 import { mockTodoList } from './todoData'
 import { mockTaskStatistics, mockAIAnalysis, mockTeamList, mockTaskDetail } from './taskData'
 import { generateMockActivityLogs } from './activityLogData'
+import { getSearchResults } from './searchTestData'
 
 const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -646,35 +647,13 @@ export const mockApi = {
       }
     }
 
-    // 从所有待办中搜索
-    let allTasks = [...mockTodoList]
-    
-    // 根据关键词过滤（标题或ID匹配）
-    const filteredTasks = allTasks.filter(task => {
-      const title = task.content || task.name || ''
-      const id = task.id || ''
-      return title.toLowerCase().includes(keyword.toLowerCase()) || 
-             id.toLowerCase().includes(keyword.toLowerCase())
-    })
-
-    const total = filteredTasks.length
-    const start = (pageNum - 1) * pageSize
-    const end = start + pageSize
-    const list = filteredTasks.slice(start, end).map(task => ({
-      id: task.id,
-      title: task.content || task.name || '未命名任务',
-      deadLine: task.deadLine || ''
-    }))
+    // 使用新的搜索测试数据
+    const searchResult = getSearchResults(keyword, pageNum, pageSize)
 
     return {
       code: '200',
       message: 'success',
-      data: {
-        total,
-        list,
-        pageNum,
-        pageSize
-      }
+      data: searchResult
     }
   }
 }

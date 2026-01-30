@@ -39,9 +39,8 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { Search, Clock, Loading } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 
 const props = defineProps({
@@ -69,8 +68,12 @@ const props = defineProps({
 
 const emit = defineEmits(['task-click', 'load-more', 'close'])
 
-const router = useRouter()
 const resultsListRef = ref(null)
+const savedScrollTop = ref(0)
+const isLoadingMore = ref(false)
+const preventScrollReset = ref(false)
+const lastResultsLength = ref(0)
+const scrollRestoreTimer = ref(null)
 
 /**
  * 高亮关键词
@@ -126,22 +129,122 @@ function handleTaskClick(task) {
 function handleScroll(e) {
   const { scrollTop, scrollHeight, clientHeight } = e.target
   
+  // 始终保存当前滚动位置
+  if (scrollTop > 0) {
+    savedScrollTop.value = scrollTop
+  }
+  
   // 滚动到底部前50px时触发加载
-  if (scrollHeight - scrollTop - clientHeight < 50 && props.hasMore && !props.loading) {
+  if (scrollHeight - scrollTop - clientHeight < 50 && props.hasMore && !props.loading && !isLoadingMore.value) {
+    console.log('[TaskSearchResults] Triggering load more, current scroll:', scrollTop)
+    isLoadingMore.value = true
+    preventScrollReset.value = true
+    // 确保保存了触发加载时的滚动位置
+    savedScrollTop.value = scrollTop
+    
     emit('load-more')
   }
 }
 
 /**
- * 监听visible变化，重置滚动位置
+ * 监听visible变化，只在真正的新搜索时重置滚动位置
  */
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
+watch(() => props.visible, (newVal, oldVal) => {
+  console.log('[TaskSearchResults] Visible changed:', oldVal, '->', newVal)
+  
+  // 只在从隐藏变为显示时重置滚动位置（新搜索）
+  // 并且不是在加载更多过程中
+  if (newVal && !oldVal && !preventScrollReset.value) {
+    console.log('[TaskSearchResults] Resetting scroll to top for new search')
     nextTick(() => {
       if (resultsListRef.value) {
         resultsListRef.value.scrollTop = 0
+        savedScrollTop.value = 0
       }
     })
+  }
+})
+
+/**
+ * 监听结果数组长度变化，用于检测加载更多完成
+ */
+watch(() => props.results.length, (newLength, oldLength) => {
+  console.log('[TaskSearchResults] Results length changed:', oldLength, '->', newLength)
+  
+  // 如果是加载更多完成（长度增加且正在加载更多）
+  if (isLoadingMore.value && newLength > oldLength) {
+    console.log('[TaskSearchResults] Load more completed, will restore scroll position')
+    
+    // 清除之前的定时器
+    if (scrollRestoreTimer.value) {
+      clearTimeout(scrollRestoreTimer.value)
+    }
+    
+    // 使用多次尝试恢复滚动位置
+    const restoreScrollPosition = (attempt = 0) => {
+      if (attempt > 20) { // 增加尝试次数
+        console.log('[TaskSearchResults] Max restore attempts reached')
+        isLoadingMore.value = false
+        preventScrollReset.value = false
+        return
+      }
+      
+      if (resultsListRef.value && savedScrollTop.value > 0) {
+        const currentScrollTop = resultsListRef.value.scrollTop
+        console.log(`[TaskSearchResults] Restore attempt ${attempt + 1}, current: ${currentScrollTop}, target: ${savedScrollTop.value}`)
+        
+        // 只要当前位置小于目标位置（即被重置到了顶部或上方），就尝试恢复
+        if (currentScrollTop < savedScrollTop.value) {
+          resultsListRef.value.scrollTop = savedScrollTop.value
+          
+          // 继续尝试，确保位置稳定
+          scrollRestoreTimer.value = setTimeout(() => {
+            restoreScrollPosition(attempt + 1)
+          }, 50)
+        } else {
+          // 再次确认位置是否正确
+          if (Math.abs(currentScrollTop - savedScrollTop.value) < 10) {
+            console.log('[TaskSearchResults] Scroll position restored successfully')
+            isLoadingMore.value = false
+            preventScrollReset.value = false
+          } else {
+             // 如果当前位置比目标位置还大（用户可能已经手动滚动），或者还没到位
+             // 继续监控一小段时间
+             scrollRestoreTimer.value = setTimeout(() => {
+                restoreScrollPosition(attempt + 1)
+             }, 50)
+          }
+        }
+      } else {
+        // 如果元素不存在或不需要恢复
+        isLoadingMore.value = false
+        preventScrollReset.value = false
+      }
+    }
+    
+    // 等待DOM更新后开始恢复
+    nextTick(() => {
+      // 立即尝试恢复一次
+      if (resultsListRef.value && savedScrollTop.value > 0) {
+         resultsListRef.value.scrollTop = savedScrollTop.value
+      }
+      setTimeout(() => {
+        restoreScrollPosition()
+      }, 10)
+    })
+  } else if (!isLoadingMore.value) {
+      // 非加载更多情况下的数据变化（如首次搜索），重置滚动状态
+      savedScrollTop.value = 0
+  }
+  
+  // 更新上次结果长度
+  lastResultsLength.value = newLength
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  if (scrollRestoreTimer.value) {
+    clearTimeout(scrollRestoreTimer.value)
   }
 })
 </script>

@@ -262,15 +262,16 @@ async function performSearch(isLoadMore = false) {
   if (!searchKeyword.value.trim()) return
 
   try {
-    searchLoading.value = true
-
     // 如果是加载更多，页码+1，否则重置为1
     if (!isLoadMore) {
+      searchLoading.value = true
       searchPageNum.value = 1
       searchResults.value = []
     } else {
       searchPageNum.value++
     }
+
+    console.log('[Manage] Performing search, isLoadMore:', isLoadMore, 'page:', searchPageNum.value)
 
     const response = await apiService.get('/api/todo/search', {
       keyword: searchKeyword.value.trim(),
@@ -281,14 +282,18 @@ async function performSearch(isLoadMore = false) {
     if (response.code === '200' && response.data) {
       const { list, total } = response.data
       
+      console.log('[Manage] Search response:', { listLength: list.length, total, isLoadMore })
+      
       if (isLoadMore) {
-        searchResults.value = [...searchResults.value, ...list]
+        // 使用 push 方法直接添加到现有数组，避免创建新数组引用
+        searchResults.value.push(...list)
       } else {
         searchResults.value = list
+        // 只在新搜索时设置显示状态，避免触发滚动重置
+        showSearchResults.value = true
       }
       
       searchTotal.value = total
-      showSearchResults.value = true
     }
   } catch (error) {
     console.error('[Manage] Search error:', error)

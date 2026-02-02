@@ -88,3 +88,36 @@ export function getPriorityColor(priority) {
   const option = TASK_PRIORITY_OPTIONS.find(opt => opt.value === priority)
   return option?.color || '#909399'
 }
+
+/**
+ * Task Reminder Enums
+ * 任务提醒枚举
+ */
+export const TASK_REMINDER = {
+  NONE: 0,        // 不提醒
+  BEFORE_15_MIN: 1,  // 提前15分钟
+  BEFORE_1_HOUR: 2,  // 提前1小时
+  CUSTOM: 3       // 自定义
+}
+
+/**
+ * Task Reminder Options
+ * 任务提醒选项配置
+ */
+export const TASK_REMINDER_OPTIONS = [
+  { value: TASK_REMINDER.NONE, label: 'task.reminderNone' },
+  { value: TASK_REMINDER.BEFORE_15_MIN, label: 'task.reminder15Min' },
+  { value: TASK_REMINDER.BEFORE_1_HOUR, label: 'task.reminder1Hour' },
+  { value: TASK_REMINDER.CUSTOM, label: 'task.reminderCustom' }
+]
+
+/**
+ * Get reminder label by value
+ * @param {number} remindOption - Reminder option value
+ * @param {Function} t - Translation function
+ * @returns {string} Reminder label
+ */
+export function getReminderLabel(remindOption, t) {
+  const option = TASK_REMINDER_OPTIONS.find(opt => opt.value === remindOption)
+  return option ? t(option.label) : '-'
+}

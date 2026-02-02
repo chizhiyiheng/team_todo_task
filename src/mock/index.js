@@ -1,7 +1,7 @@
 import { mockTodoList } from './todoData'
 import { mockTaskStatistics, mockAIAnalysis, mockTeamList, mockTaskDetail } from './taskData'
 import { generateMockActivityLogs } from './activityLogData'
-import { getSearchResults } from './searchTestData'
+// import { getSearchResults } from './searchTestData'
 
 const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -648,12 +648,13 @@ export const mockApi = {
     }
 
     // 使用新的搜索测试数据
-    const searchResult = getSearchResults(keyword, pageNum, pageSize)
+    // const searchResult = getSearchResults(keyword, pageNum, pageSize)
+
 
     return {
       code: '200',
       message: 'success',
-      data: searchResult
+      data: []
     }
   }
 }

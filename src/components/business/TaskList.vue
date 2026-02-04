@@ -30,74 +30,20 @@
                 </el-button>
               </template>
               <div class="filter-content">
-                <div class="status-filter-section">
-                  <!-- 全部状态 -->
-                  <div class="status-all">
-                    <el-checkbox 
-                      :model-value="isAllStatusSelected" 
-                      @change="handleAllStatusChange"
-                      :disabled="isDeletedSelected"
-                    >
-                      {{ t('task.statusAll') }}
-                    </el-checkbox>
-                  </div>
-                  
-                  <!-- 正常状态列表 -->
-                  <div class="status-normal">
-                    <el-checkbox-group 
-                      v-model="selectedStatuses" 
-                      @change="handleStatusFilterChange"
-                    >
-                      <el-checkbox 
-                        :value="TASK_STATUS.PENDING"
-                        :disabled="isNormalStatusDisabled"
-                      >
-                        {{ t('task.statusPending') }}
-                      </el-checkbox>
-                      <el-checkbox 
-                        :value="TASK_STATUS.IN_PROGRESS"
-                        :disabled="isNormalStatusDisabled"
-                      >
-                        {{ t('task.statusInProgress') }}
-                      </el-checkbox>
-                      <el-checkbox 
-                        :value="TASK_STATUS.COMPLETED"
-                        :disabled="isNormalStatusDisabled"
-                      >
-                        {{ t('task.statusCompleted') }}
-                      </el-checkbox>
-                      <el-checkbox 
-                        :value="TASK_STATUS.CANCELLED"
-                        :disabled="isNormalStatusDisabled"
-                      >
-                        {{ t('task.statusCancelled') }}
-                      </el-checkbox>
-                      <el-checkbox 
-                        :value="TASK_STATUS.OVERDUE"
-                        :disabled="isNormalStatusDisabled"
-                      >
-                        {{ t('task.statusOverdue') }}
-                      </el-checkbox>
-                    </el-checkbox-group>
-                  </div>
-                  
-                  <!-- 分割线 -->
-                  <el-divider style="margin: 12px 0;" />
-                  
-                  <!-- 已删除状态 -->
-                  <div class="status-deleted">
-                    <el-checkbox 
-                      :model-value="isDeletedSelected" 
-                      @change="handleDeletedStatusChange"
-                    >
-                      {{ t('task.statusDeleted') }}
-                    </el-checkbox>
-                  </div>
-                </div>
+                <el-checkbox-group v-model="selectedStatuses" @change="handleStatusFilterChange">
+                  <el-checkbox :label="TASK_STATUS.ALL">{{ t('task.statusAll') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.PENDING" :disabled="isOtherStatusDisabled">{{ t('task.statusPending') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.IN_PROGRESS" :disabled="isOtherStatusDisabled">{{ t('task.statusInProgress') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.COMPLETED" :disabled="isOtherStatusDisabled">{{ t('task.statusCompleted') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.OVERDUE" :disabled="isOtherStatusDisabled">{{ t('task.statusOverdue') }}</el-checkbox>
+                  <el-checkbox :label="TASK_STATUS.CANCELLED" :disabled="isOtherStatusDisabled">{{ t('task.statusCancelled') }}</el-checkbox>
+                  <div class="status-divider"></div>
+                  <el-checkbox :label="TASK_STATUS.DELETED" class="deleted-status">{{ t('task.statusDeleted') }}</el-checkbox>
+                </el-checkbox-group>
               </div>
             </el-popover>
           </div>
-          <div class="el-col filter-col" style="width: 120px; flex: none">
+          <div class="el-col filter-col" style="width: 150px; flex: none">
             {{ t('task.assignee') }}
             <el-popover placement="bottom" :width="240" trigger="click" @show="handleAssigneePopoverShow">
               <template #reference>
@@ -127,14 +73,16 @@
                     @change="handleAssigneeFilterChange"
                     class="assignee-checkbox-group"
                   >
-                    <el-checkbox 
-                      v-for="user in filteredAssigneeList" 
-                      :key="user.id" 
-                      :value="user.id"
+                    <el-checkbox
+                      v-for="user in filteredAssigneeList"
+                      :key="user.umId"
+                      :value="user.umId"
                       class="assignee-checkbox"
                       style="display: block; width: 100%; margin: 0;"
                     >
-                      <span class="assignee-name">{{ user.name }}</span>
+                      <el-tooltip :content="`${user.name}(${user.umId})`" placement="top">
+                        <span class="assignee-name">{{ `${user.name}(${user.umId})` }}</span>
+                      </el-tooltip>
                     </el-checkbox>
                   </el-checkbox-group>
                   <!-- 无结果提示 -->
@@ -145,9 +93,9 @@
               </div>
             </el-popover>
           </div>
-          <div class="el-col" style="width: 120px; flex: none">{{ t('task.creator') }}</div>
+          <div class="el-col" style="width: 150px; flex: none">{{ t('task.assignor') }}</div>
           <div class="el-col" style="width: 170px; flex: none">{{ t('task.deadline') }}</div>
-          <div class="el-col" style="width: 100px; flex: none">{{ t('task.source') }}</div>
+          <!-- <div class="el-col" style="width: 150px; flex: none">{{ t('task.source') }}</div> -->
           <div class="el-col" style="width: 160px; flex: none">{{ t('task.actions') }}</div>
         </div>
       </div>
@@ -160,52 +108,58 @@
         >
           <div class="priority-color" :style="{ backgroundColor: getPriorityColor(task) }"></div>
           <div class="el-row">
-            <div class="el-col row-name" :class="{ complete: isTaskCompleted(task) }" style="flex: 1">
+            <div class="el-col row-name" :class="{ complete: isTaskCompleted(task), deleted: task.deleted }" style="flex: 1">
               <div class="item-title">
-                <el-icon v-if="task.mark === '1' || task.isTop === 1" class="important-star"><StarFilled /></el-icon>
+                <el-icon v-if="task.mark === '1' || task.tag === 1" class="important-star"><StarFilled /></el-icon>
                 {{ task.title || task.content || task.name }}
               </div>
             </div>
             <div class="el-col row-status" style="width: 120px; flex: none; justify-content: center">
               <span class="flow-item-status" :class="getTaskStatusClass(task)">{{ getTaskStatusName(task) }}</span>
             </div>
-            <div class="el-col row-user" style="width: 120px; flex: none">
+            <div class="el-col row-user" style="width: 150px; flex: none">
               <div class="user-list">
-                <el-avatar
-                  v-for="user in getAttendeeList(task).slice(0, 3)"
-                  :key="user.umId || user.userid"
-                  :size="24"
-                  :src="user.avatar"
-                  class="user-avatar"
-                >
-                  {{ user.name ? user.name.substring(0, 1) : 'U' }}
-                </el-avatar>
+                <el-tooltip v-for="user in getAttendeeList(task).slice(0, 3)" :key="user.umId || user.userid" :content="`${user.name}(${user.umId})`" placement="top">
+                  <el-avatar
+                    :size="24"
+                    :src="user.avatar"
+                    class="user-avatar"
+                  >
+                    {{ user.name ? user.name.substring(0, 1) : 'U' }}
+                  </el-avatar>
+                </el-tooltip>
                 <span v-if="getAttendeeList(task).length > 3" class="more-users">...</span>
               </div>
             </div>
-            <div class="el-col row-assigner" style="width: 120px; flex: none">
-              {{ task.creatorName || '-' }}
+            <div class="el-col row-assigner" style="width: 150px; flex: none">
+              {{ task.name || '-' }}
             </div>
             <div class="el-col row-time" style="width: 170px; flex: none">
               <span :class="['task-time', { overdue: isOverdue(task.deadLine) }]">
                 {{ task.deadLine ? formatDate(task.deadLine) : '-' }}
               </span>
             </div>
-            <div class="el-col row-source" style="width: 100px; flex: none">
+            <!-- <div class="el-col row-source" style="width: 150px; flex: none">
               {{ getSourceName(task.source) }}
-            </div>
+            </div> -->
             <div class="el-col row-operation" style="width: 160px; flex: none">
               <div class="operation-icons">
-                <div class="op-icon" :class="{ active: task.mark === '1' }" @click.stop="handleOperationAction('mark-important', task)">
-                  <el-icon v-if="task.mark === '1'"><StarFilled /></el-icon>
-                  <el-icon v-else><Star /></el-icon>
-                </div>
-                <div class="op-icon" @click.stop="handleOperationAction('set-reminder', task)">
-                  <el-icon><Bell /></el-icon>
-                </div>
-                <div class="op-icon" @click.stop="handleOperationAction('delete-task', task)">
-                  <el-icon><Delete /></el-icon>
-                </div>
+                <el-tooltip :content="task.tag === 1 ? t('task.cancelImportant') : t('task.markImportant')" placement="top">
+                  <div class="op-icon" :class="{ active: task.tag === 1 }" @click.stop="handleOperationAction('mark-important', task)">
+                    <el-icon v-if="task.tag === 1"><StarFilled /></el-icon>
+                    <el-icon v-else><Star /></el-icon>
+                  </div>
+                </el-tooltip>
+                <el-tooltip :content="t('task.reminderAction')" placement="top">
+                  <div class="op-icon" @click.stop="handleOperationAction('set-reminder', task)">
+                    <el-icon><Bell /></el-icon>
+                  </div>
+                </el-tooltip>
+                <el-tooltip :content="t('task.deleteAction')" placement="top">
+                  <div class="op-icon" @click.stop="handleOperationAction('delete-task', task)">
+                    <el-icon><Delete /></el-icon>
+                  </div>
+                </el-tooltip>
               </div>
             </div>
           </div>
@@ -215,9 +169,11 @@
       <!-- Pagination -->
       <div class="task-list-pagination">
         <el-pagination
-          v-model:current-page="listPage"
-          v-model:page-size="listPageSize"
-          :page-sizes="[10, 20, 50, 100]"
+          :current-page="listPage"
+          @update:current-page="(val) => listPage = val"
+          :page-size="listPageSize"
+          @update:page-size="(val) => listPageSize = val"
+          :page-sizes="[10, 20, 50]"
           :total="listTotal"
           :background="true"
           layout="total, prev, pager, next, sizes, jumper"
@@ -227,10 +183,25 @@
       </div>
     </div>
 
-    <div v-else-if="viewMode === 'kanban'" class="task-kanban-view">
+    <div v-else-if="viewMode === 'kanban'" class="task-kanban-view" :class="{ 'mobile-view': isMobile }">
+      <!-- 移动端状态Tab -->
+      <div v-if="isMobile" class="mobile-status-tabs" ref="mobileTabsRef">
+        <div class="tabs-wrapper">
+          <div
+            v-for="statusKey in mobileStatusList"
+            :key="statusKey"
+            :class="['status-tab', { active: activeMobileStatus === statusKey }]"
+            @click="handleMobileStatusChange(statusKey)"
+          >
+            <span class="tab-label">{{ getStatusText(statusKey) }}</span>
+            <span class="tab-count">{{ getMobileStatusCount(statusKey) }}</span>
+          </div>
+        </div>
+      </div>
+      
       <div class="kanban-columns">
         <div
-          v-for="statusKey in kanbanStatusList"
+          v-for="statusKey in displayKanbanStatusList"
           :key="statusKey"
           :class="['kanban-column', 'status-' + statusKey]"
         >
@@ -244,13 +215,14 @@
           >
             <draggable
               :list="kanbanColumns[statusKey].list"
-              :group="{ name: 'tasks', pull: true, put: true }"
+              :group="{ name: 'tasks', pull: enableDrag, put: enableDrag }"
               item-key="id"
               class="kanban-tasks"
               :animation="200"
               ghost-class="ghost-card"
               :move="onDragMove"
               @change="handleDragChange($event, statusKey)"
+              :disabled="!enableDrag"
             >
               <template #item="{ element: task }">
                 <div
@@ -259,8 +231,8 @@
                 >
                   <div class="task-card">
                     <div class="task-card-priority" v-if="task.p_name" :style="{ backgroundColor: task.p_color }"></div>
-                    <div class="task-title">
-                      <el-icon v-if="(task.mark || task.tag === 1 || (task.isTop === 1 ? '1' : '0')) === '1'" class="important-star">
+                    <div class="task-title" :class="{ deleted: task.deleted }">
+                      <el-icon v-if="(task.tag - 1 === 0)" class="important-star">
                         <StarFilled />
                       </el-icon>
                       <span class="title-text">{{ task.title || task.name || task.content }}</span>
@@ -270,12 +242,14 @@
                         <li
                           v-for="(user, idx) in taskUsers(task)"
                           :key="idx">
-                          <el-avatar
-                            :size="28"
-                            :src="user.avatar"
-                            :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
-                            {{ user.name ? user.name.substring(0, 1) : 'U' }}
-                          </el-avatar>
+                          <el-tooltip :content="`${user.name}(${user.umId})`" placement="top">
+                            <el-avatar
+                              :size="28"
+                              :src="user.avatar"
+                              :style="{ border: '2px solid ' + (task.color || '#e6e6e6') }">
+                              {{ user.name ? user.name.substring(0, 1) : 'U' }}
+                            </el-avatar>
+                          </el-tooltip>
                         </li>
                       </ul>
                     </div>
@@ -335,21 +309,21 @@
  * - showHeader: 是否显示头部
  */
 
-import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useTaskStore } from '@/stores/task'
-import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading, Search } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
-import { isOverdue, isToday, expiresFormat, completeAtFormat, formatDate } from '@/utils/date'
-import TaskMenu from './TaskMenu.vue'
-import TableAction from '@/components/common/TableAction.vue'
-import TaskDetailDialog from './task-detail/TaskDetailDialog.vue'
-import { todoApi } from '@/api'
-import draggable from 'vuedraggable'
-import { useKanban } from '@/hooks/useKanban'
-import { useListFilter } from '@/hooks/useListFilter'
-import { TASK_STATUS, getStatusLabel, getStatusType } from '@/constants/taskEnums'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { useTaskStore } from '@/stores/task';
+import { List, Grid, Calendar, Star, StarFilled, Edit, Delete, Bell, Clock, Filter, Loading, Search } from '@element-plus/icons-vue';
+import * as echarts from 'echarts';
+import { isOverdue, isToday, expiresFormat, completeAtFormat, formatDate } from '@/utils/date';
+import TaskMenu from './TaskMenu.vue';
+import TableAction from '@/components/common/TableAction.vue';
+import TaskDetailDialog from './task-detail/TaskDetailDialog.vue';
+import { todoApi } from '@/api';
+import draggable from 'vuedraggable';
+import { useKanban } from '@/hooks/useKanban';
+import { useListFilter } from '@/hooks/useListFilter';
+import { TASK_STATUS, getStatusLabel, getStatusType } from '@/constants/taskEnums';
+import { useI18n } from 'vue-i18n';
 
 // ==================== Props & Emits ====================
 
@@ -385,18 +359,92 @@ const props = defineProps({
   showHeader: {
     type: Boolean,
     default: true
+  },
+  isMobile: {
+    type: Boolean,
+    default: true
   }
-})
+});
 
-const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted'])
+const emit = defineEmits(['view-mode-changed', 'filter-changed', 'assignee-filter-changed', 'task-deleted']);
 
 // ==================== 基础设置 ====================
 
-const { t } = useI18n()
-const taskStore = useTaskStore()
+const { t } = useI18n();
+const taskStore = useTaskStore();
 
 // 当前视图模式
-const viewMode = ref(props.viewMode)
+const viewMode = ref(props.viewMode);
+
+// 移动端状态Tab相关
+const mobileStatusList = ['pending', 'in_progress', 'overdue', 'completed', 'cancelled'];
+const activeMobileStatus = ref('pending');
+const mobileTabsRef = ref(null);
+const showScrollHint = ref(false);
+
+// 移动端滚动优化
+onMounted(() => {
+  // 为移动端状态tabs添加滚动优化
+  if (props.isMobile && mobileTabsRef.value) {
+    const tabsContainer = mobileTabsRef.value;
+    
+    // 检查是否需要显示滚动提示
+    const checkScrollHint = () => {
+      if (tabsContainer) {
+        const canScroll = tabsContainer.scrollWidth > tabsContainer.clientWidth;
+        showScrollHint.value = canScroll;
+        
+        // 动态添加/移除渐变遮罩类
+        if (canScroll) {
+          tabsContainer.classList.add('has-scroll-hint');
+        } else {
+          tabsContainer.classList.remove('has-scroll-hint');
+        }
+      }
+    };
+    
+    // 初始检查
+    nextTick(() => {
+      checkScrollHint();
+    });
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', checkScrollHint);
+    
+    // 添加触摸事件监听，优化滚动体验
+    let isScrolling = false;
+    
+    tabsContainer.addEventListener('touchstart', () => {
+      isScrolling = false;
+    }, { passive: true });
+    
+    tabsContainer.addEventListener('touchmove', () => {
+      isScrolling = true;
+    }, { passive: true });
+    
+    // 防止在滚动时触发点击事件
+    tabsContainer.addEventListener('touchend', (e) => {
+      if (isScrolling) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+    
+    // 滚动时隐藏渐变提示
+    tabsContainer.addEventListener('scroll', () => {
+      const isAtEnd = tabsContainer.scrollLeft + tabsContainer.clientWidth >= tabsContainer.scrollWidth - 5;
+      if (isAtEnd) {
+        tabsContainer.classList.add('scroll-at-end');
+      } else {
+        tabsContainer.classList.remove('scroll-at-end');
+      }
+    }, { passive: true });
+    
+    // 清理函数
+    onBeforeUnmount(() => {
+      window.removeEventListener('resize', checkScrollHint);
+    });
+  }
+});
 
 // ==================== Hooks ====================
 
@@ -410,18 +458,13 @@ const {
   selectedAssignees,
   selectedStatuses,
   assigneeList,
-  isAllStatusSelected,
-  isDeletedSelected,
-  isNormalStatusDisabled,
   fetchListTasks,
   fetchAssigneeList,
   handleAssigneeFilterChange,
-  handleStatusFilterChange,
-  handleAllStatusChange,
-  handleDeletedStatusChange,
+  handleStatusFilterChange: handleStatusFilterChangeFromHook,
   handlePageChange,
   handlePageSizeChange
-} = useListFilter(props)
+} = useListFilter(props);
 
 // 使用看板 hook - 管理看板视图的数据和拖拽
 const {
@@ -429,18 +472,19 @@ const {
   kanbanColumns,
   initKanbanData,
   handleKanbanScroll,
-  handleDragChange
-} = useKanban(props)
+  handleDragChange,
+  enableDrag
+} = useKanban(props);
 
 // ==================== 状态管理 ====================
 
 // 甘特图相关
-const ganttChart = ref(null)                    // 甘特图 DOM 引用
-const ganttChartInstance = ref(null)            // 甘特图 ECharts 实例
+const ganttChart = ref(null);                    // 甘特图 DOM 引用
+const ganttChartInstance = ref(null);            // 甘特图 ECharts 实例
 
 // 任务详情弹窗状态
-const showTaskDetail = ref(false)               // 是否显示任务详情弹窗
-const selectedTaskId = ref(null)                // 当前选中的任务 ID
+const showTaskDetail = ref(false);               // 是否显示任务详情弹窗
+const selectedTaskId = ref(null);                // 当前选中的任务 ID
 
 // 操作菜单配置
 const operationMenu = [
@@ -448,36 +492,197 @@ const operationMenu = [
   { icon: Edit, title: t('task.editAction'), action: 'edit-task' },
   { icon: Delete, title: t('task.deleteAction'), action: 'delete-task' },
   { icon: Bell, title: t('task.reminderAction'), action: 'set-reminder' }
-]
+];
 
 // 执行人列表加载状态
-const assigneeLoading = ref(false)
+const assigneeLoading = ref(false);
 
 // 执行人搜索关键词
-const assigneeSearchKeyword = ref('')
+const assigneeSearchKeyword = ref('');
 
 // 过滤后的执行人列表
 const filteredAssigneeList = computed(() => {
   if (!assigneeSearchKeyword.value) {
-    return assigneeList.value
+    return assigneeList.value;
   }
-  const keyword = assigneeSearchKeyword.value.toLowerCase().trim()
+  const keyword = assigneeSearchKeyword.value.toLowerCase().trim();
   return assigneeList.value.filter(user => 
     user.name.toLowerCase().includes(keyword)
-  )
-})
+  );
+});
 
-// ==================== 生命周期 ====================
+// 是否禁用其他状态（当已删除状态被选中时）
+const isOtherStatusDisabled = computed(() => {
+  return selectedStatuses.value.includes(TASK_STATUS.DELETED);
+});
+
+// 移动端显示的看板状态列表（根据当前选中的tab显示）
+const displayKanbanStatusList = computed(() => {
+  if (props.isMobile) {
+    return [activeMobileStatus.value];
+  }
+  return kanbanStatusList;
+});
+
+// ==================== 状态筛选处理 ====================
+
+// 用于跟踪上一次的状态列表，用于检测用户点击了哪个状态
+let previousStatuses = [];
 
 /**
- * 组件卸载前
- * 清理甘特图实例
+ * 状态筛选变更处理
+ * 逻辑：
+ * 1. 勾选"全部"时，自动勾选所有状态（待处理、进行中、已取消、已逾期、已完成），不包括已删除
+ * 2. 勾选"已删除"时，取消勾选"全部"，只保留"已删除"
+ * 3. 取消勾选"全部"时，所有状态都要取消
+ * 4. "全部"已勾选时，取消勾选任一状态，"全部"也要跟着取消，保留其他已勾选的状态
+ * 5. "全部"已勾选时，勾选任一状态，"全部"和该状态都要取消
+ * 6. 取消勾选任一状态时，如果"全部"已勾选，也要取消"全部"
  */
-onBeforeUnmount(() => {
-  if (ganttChartInstance.value) {
-    ganttChartInstance.value.dispose()
+
+/**
+ * 移动端状态Tab切换处理
+ * @param {String} status - 状态键值 (pending/in_progress/overdue/completed/cancelled)
+ */
+function handleMobileStatusChange(status) {
+  activeMobileStatus.value = status;
+}
+function handleStatusFilterChange() {
+  const currentStatuses = [...selectedStatuses.value];
+  const hadAll = previousStatuses.includes(TASK_STATUS.ALL);
+  const hasAll = currentStatuses.includes(TASK_STATUS.ALL);
+  
+  // 如果选中了已删除状态
+  if (currentStatuses.includes(TASK_STATUS.DELETED)) {
+    // 只保留已删除状态，清除其他状态
+    selectedStatuses.value = [TASK_STATUS.DELETED];
+    previousStatuses = [...selectedStatuses.value];
+    handleStatusFilterChangeFromHook();
+    return;
   }
-})
+  console.log('sssss')
+  // 如果选中了"全部"且之前有"全部"，说明是刚勾选"全部"
+  if (hasAll && hadAll) {
+    // 找出哪个状态被取消了
+    const allStatuses = [
+      TASK_STATUS.PENDING,
+      TASK_STATUS.IN_PROGRESS,
+      TASK_STATUS.CANCELLED,
+      TASK_STATUS.OVERDUE,
+      TASK_STATUS.COMPLETED
+    ];
+    
+    // 找出之前有但现在没有的状态（被取消勾选的）
+    const removedStatus = allStatuses.find(status => 
+      previousStatuses.includes(status) && !currentStatuses.includes(status)
+    );
+    
+    // 找出之前没有但现在有的状态（被勾选的）
+    const addedStatus = allStatuses.find(status => 
+      !previousStatuses.includes(status) && currentStatuses.includes(status)
+    );
+    console.log('removedStatus', removedStatus, 'addedStatus', addedStatus);
+    if (removedStatus !== undefined) {
+      // 用户取消了某个状态的勾选，"全部"已经被取消，只保留剩余状态
+      selectedStatuses.value = currentStatuses.filter(status => status !== TASK_STATUS.ALL);
+    } else if (addedStatus !== undefined) {
+      // 用户勾选了某个状态，需要取消"全部"和该状态
+      selectedStatuses.value = currentStatuses.filter(status => status !== addedStatus && status !== TASK_STATUS.ALL);
+    } else {
+      // 用户直接取消了"全部"的勾选，所有状态都要取消
+      selectedStatuses.value = [];
+    }
+    console.log('selectedStatuses', selectedStatuses.value);
+    previousStatuses = [...selectedStatuses.value];
+    handleStatusFilterChangeFromHook();
+    return;
+  }
+  if (hasAll && !hadAll) {
+    // 自动勾选所有状态（待处理、进行中、已取消、已逾期、已完成），不包括已删除
+    selectedStatuses.value = [
+      TASK_STATUS.ALL,
+      TASK_STATUS.PENDING,
+      TASK_STATUS.IN_PROGRESS,
+      TASK_STATUS.CANCELLED,
+      TASK_STATUS.OVERDUE,
+      TASK_STATUS.COMPLETED
+    ];
+    previousStatuses = [...selectedStatuses.value];
+    handleStatusFilterChangeFromHook();
+    return;
+  }
+  
+  // 如果之前有"全部"，现在没有"全部"了
+  if (hadAll && !hasAll) {
+    // 找出哪个状态被取消了
+    const allStatuses = [
+      TASK_STATUS.PENDING,
+      TASK_STATUS.IN_PROGRESS,
+      TASK_STATUS.CANCELLED,
+      TASK_STATUS.OVERDUE,
+      TASK_STATUS.COMPLETED
+    ];
+    
+    // 找出之前有但现在没有的状态（被取消勾选的）
+    const removedStatus = allStatuses.find(status => 
+      previousStatuses.includes(status) && !currentStatuses.includes(status)
+    );
+    
+    // 找出之前没有但现在有的状态（被勾选的）
+    const addedStatus = allStatuses.find(status => 
+      !previousStatuses.includes(status) && currentStatuses.includes(status)
+    );
+    console.log('removedStatus', removedStatus, 'addedStatus', addedStatus);
+    if (removedStatus !== undefined) {
+      // 用户取消了某个状态的勾选，"全部"已经被取消，只保留剩余状态
+      selectedStatuses.value = currentStatuses.filter(status => status !== TASK_STATUS.ALL);
+    } else if (addedStatus !== undefined) {
+      // 用户勾选了某个状态，需要取消"全部"和该状态
+      selectedStatuses.value = currentStatuses.filter(status => status !== addedStatus);
+    } else {
+      // 用户直接取消了"全部"的勾选，所有状态都要取消
+      selectedStatuses.value = [];
+    }
+    console.log('selectedStatuses', selectedStatuses.value);
+    previousStatuses = [...selectedStatuses.value];
+    handleStatusFilterChangeFromHook();
+    return;
+  }
+  
+  // 如果之前没有"全部"，现在也没有"全部"，但用户取消勾选了某个状态
+  if (!hadAll && !hasAll) {
+    const allStatuses = [
+      TASK_STATUS.PENDING,
+      TASK_STATUS.IN_PROGRESS,
+      TASK_STATUS.CANCELLED,
+      TASK_STATUS.OVERDUE,
+      TASK_STATUS.COMPLETED
+    ];
+    
+    // 找出之前有但现在没有的状态（被取消勾选的）
+    const removedStatus = allStatuses.find(status => 
+      previousStatuses.includes(status) && !currentStatuses.includes(status)
+    );
+    
+    if (removedStatus !== undefined) {
+      // 用户取消了某个状态的勾选，保持当前选中的状态即可
+      selectedStatuses.value = currentStatuses;
+    } else {
+      // 用户勾选了某个状态，保持当前选中的状态即可
+      selectedStatuses.value = currentStatuses;
+    }
+    previousStatuses = [...selectedStatuses.value];
+    handleStatusFilterChangeFromHook();
+    return;
+  }
+  
+  // 其他情况：用户手动勾选或取消部分状态
+  selectedStatuses.value = currentStatuses;
+  previousStatuses = [...selectedStatuses.value];
+  
+  // 调用hook中的处理方法
+  handleStatusFilterChangeFromHook();
+}
 
 // ==================== 监听器 ====================
 
@@ -487,20 +692,37 @@ onBeforeUnmount(() => {
  * 注意：跳过初始化时的触发，避免重复请求
  */
 watch(() => props.viewMode, (newVal, oldVal) => {
-  console.log('[TaskList] viewMode prop changed:', oldVal, '->', newVal)
+  console.log('[TaskList] viewMode prop changed:', oldVal, '->', newVal);
   // 避免初始化时重复调用
-  if (oldVal === undefined) return
+  if (oldVal === undefined) return;
   
-  viewMode.value = newVal
+  viewMode.value = newVal;
   if (newVal === 'list') {
-    fetchListTasks()
-    fetchAssigneeList()
+    fetchListTasks();
+    fetchAssigneeList();
   } else if (newVal === 'kanban') {
-    initKanbanData()
+    initKanbanData();
   } else if (newVal === 'gantt') {
-    nextTick(() => initGanttChart())
+    nextTick(() => initGanttChart());
   }
-})
+});
+
+/**
+ * 监听 mode prop 变化
+ * 当父组件改变任务模式（我执行的/我分配的）时，重新获取数据
+ */
+watch(() => props.mode, (newVal, oldVal) => {
+  console.log('[TaskList] mode prop changed:', oldVal, '->', newVal);
+  // 避免初始化时重复调用
+  if (oldVal === undefined) return;
+  
+  // 重新获取当前视图的数据
+  if (viewMode.value === 'list') {
+    fetchListTasks();
+  } else if (viewMode.value === 'kanban') {
+    initKanbanData();
+  }
+});
 
 // ==================== 工具方法 ====================
 
@@ -511,7 +733,7 @@ watch(() => props.viewMode, (newVal, oldVal) => {
 function handleAssigneePopoverShow() {
   // Fetch assignee list when popover shows
   if (assigneeList.value.length === 0) {
-    fetchAssigneeList()
+    fetchAssigneeList();
   }
 }
 
@@ -519,7 +741,7 @@ function handleAssigneePopoverShow() {
  * 清除执行人搜索
  */
 function handleAssigneeSearchClear() {
-  assigneeSearchKeyword.value = ''
+  assigneeSearchKeyword.value = '';
 }
 
 /**
@@ -528,36 +750,55 @@ function handleAssigneeSearchClear() {
  * @returns {Array} 执行人列表
  */
 function getAttendeeList(task) {
-  return task.todoUsers || []
+  return task.todoUsers || [];
 }
 
 function getPriorityColor(task) {
-  const colors = ['#ed4014', '#ff9900', '#19be6b', '#2db7f5']
-  if (!task.id) return colors[0]
-  return colors[task.id.charCodeAt(0) % 4] || '#2db7f5'
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status);
+
+  // 根据任务状态返回对应颜色
+  // 待处理: 橙色 #ff9900
+  // 进行中: 蓝色 #2db7f5
+  // 已完成: 绿色 #19be6b
+  // 已逾期: 红色 #ed4014
+  // 已取消: 灰色 #909399
+  if (status === TASK_STATUS.PENDING || status === TASK_STATUS.TO_RECEIVE) {
+    return '#ff9900'; // 橙色
+  } else if (status === TASK_STATUS.IN_PROGRESS) {
+    return '#2db7f5'; // 蓝色
+  } else if (status === TASK_STATUS.COMPLETED) {
+    return '#19be6b'; // 绿色
+  } else if (status === TASK_STATUS.OVERDUE) {
+    return '#ed4014'; // 红色
+  } else if (status === TASK_STATUS.CANCELLED) {
+    return '#909399'; // 灰色
+  }
+
+  // 默认颜色
+  return '#2db7f5';
 }
 
 function getTaskStatusName(task) {
-  const status = task.status !== undefined ? task.status : task.todoStatus
-  return getStatusLabel(status)
+  const status = task.status !== undefined ? task.status : task.todoStatus;
+  return getStatusLabel(status);
 }
 
 function getTaskStatusClass(task) {
-  const status = task.status !== undefined ? task.status : task.todoStatus
+  const status = task.status !== undefined ? task.status : task.todoStatus;
   const classMap = {
     [TASK_STATUS.TO_RECEIVE]: 'start',
     [TASK_STATUS.PENDING]: 'start',
     [TASK_STATUS.COMPLETED]: 'end',
     [TASK_STATUS.IN_PROGRESS]: 'progress',
-    [TASK_STATUS.OVERDUE]: 'start',
+    [TASK_STATUS.OVERDUE]: 'overdue',
     [TASK_STATUS.CANCELLED]: 'cancel'
-  }
-  return classMap[status] || 'start'
+  };
+  return classMap[status] || 'start';
 }
 
 function isTaskCompleted(task) {
-  const status = task.status !== undefined ? task.status : task.todoStatus
-  return status === TASK_STATUS.COMPLETED
+  const status = task.status !== undefined ? task.status : task.todoStatus;
+  return status === TASK_STATUS.COMPLETED || status === TASK_STATUS.CANCELLED;
 }
 
 /**
@@ -569,26 +810,29 @@ function isTaskCompleted(task) {
  */
 
 onMounted(() => {
-  refreshCurrentView()
-})
+  // 初始化 previousStatuses
+  previousStatuses = [...selectedStatuses.value];
+  console.log('props.isMobile', props.isMobile)
+  refreshCurrentView();
+});
 
 onBeforeUnmount(() => {
   if (ganttChartInstance.value) {
-    ganttChartInstance.value.dispose()
+    ganttChartInstance.value.dispose();
   }
-})
+});
 
 watch(() => props.viewMode, (newVal) => {
-  viewMode.value = newVal
-  refreshCurrentView()
-})
+  viewMode.value = newVal;
+  refreshCurrentView();
+});
 
 /**
  * 拖拽移动判断
  * @returns {Boolean} 是否允许拖拽
  */
 function onDragMove(evt) {
-  return true
+  return true;
 }
 
 /**
@@ -597,12 +841,13 @@ function onDragMove(evt) {
  * @returns {String} 状态键值 (pending/in_progress/completed/overdue/cancelled)
  */
 function getTaskStatusKey(task) {
-  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  if (status === TASK_STATUS.COMPLETED) return 'completed'
-  if (status === TASK_STATUS.IN_PROGRESS) return 'in_progress'
-  if (status === TASK_STATUS.OVERDUE) return 'overdue'
-  if (status === TASK_STATUS.CANCELLED) return 'cancelled'
-  return 'pending'
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status);
+  if (status === TASK_STATUS.COMPLETED) return 'completed';
+  if (status === TASK_STATUS.IN_PROGRESS) return 'in_progress';
+  if (status === TASK_STATUS.OVERDUE) return 'overdue';
+  if (status === TASK_STATUS.CANCELLED) return 'cancelled';
+  if (status === TASK_STATUS.DELETED) return 'deleted';
+  return 'pending';
 }
 
 /**
@@ -611,32 +856,33 @@ function getTaskStatusKey(task) {
  * @returns {String} Element Plus 标签类型
  */
 function getStatusTagType(task) {
-  const status = getTaskStatusKey(task)
+  const status = getTaskStatusKey(task);
   const typeMap = {
     pending: 'warning',
     in_progress: 'primary',
     completed: 'success',
     overdue: 'danger',
-    cancelled: 'info'
-  }
-  return typeMap[status] || ''
+    cancelled: 'info',
+    deleted: 'info'
+  };
+  return typeMap[status] || '';
 }
 
 function getTaskStatus(task) {
-  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status);
   if (status === TASK_STATUS.COMPLETED) {
-    return 'completed'
+    return 'completed';
   }
   if (status === TASK_STATUS.IN_PROGRESS) {
-    return 'in_progress'
+    return 'in_progress';
   }
   if (status === TASK_STATUS.OVERDUE || isOverdue(task.deadLine || task.end_at)) {
-    return 'overdue'
+    return 'overdue';
   }
   if (status === TASK_STATUS.CANCELLED) {
-    return 'cancelled'
+    return 'cancelled';
   }
-  return 'pending'
+  return 'pending';
 }
 
 function getStatusText(status) {
@@ -645,9 +891,21 @@ function getStatusText(status) {
     in_progress: t('task.statusInProgress'),
     completed: t('task.statusCompleted'),
     overdue: t('task.statusOverdue'),
-    cancelled: t('task.statusCancelled')
+    cancelled: t('task.statusCancelled'),
+  };
+  return statusMap[status] || status;
+}
+
+/**
+ * 获取移动端指定状态的任务数量
+ * @param {String} status - 状态键值
+ * @returns {Number} 任务数量
+ */
+function getMobileStatusCount(status) {
+  if (kanbanColumns.value[status]) {
+    return kanbanColumns.value[status].total || 0;
   }
-  return statusMap[status] || status
+  return 0;
 }
 
 /**
@@ -656,46 +914,53 @@ function getStatusText(status) {
  * @returns {String} 执行人名称，逗号分隔
  */
 function getAttendeeNames(todoUsers) {
-  if (!todoUsers || todoUsers.length === 0) return '-'
-  return todoUsers.map(a => a.name).join(', ')
+  if (!todoUsers || todoUsers.length === 0) return '-';
+  return todoUsers.map(a => a.name).join(', ');
 }
 
 /**
  * 获取任务的执行人列表（用于看板视图）
- * 只返回状态为已接收或负责人的执行人
+ * 返回所有执行人，不限制状态
  * @param {Object} task - 任务对象
  * @returns {Array} 执行人列表
  */
 function taskUsers(task) {
-  const list = Array.isArray(task.todoUsers) ? task.todoUsers : []
-  return list.filter(user => user && (user.status === 1 || user.owner === 1)).slice(0, 3)
+  const list = Array.isArray(task.todoUsers) ? task.todoUsers : [];
+  return list.filter(user => user);
 }
 
 function refreshCurrentView() {
   if (viewMode.value === 'list') {
-    fetchListTasks()
+    fetchListTasks();
     // 列表模式下也尝试获取执行人列表，以防万一
     if (assigneeList.value.length === 0) {
-      fetchAssigneeList()
+      fetchAssigneeList();
     }
   } else if (viewMode.value === 'kanban') {
-    initKanbanData()
+    initKanbanData();
   } else if (viewMode.value === 'gantt') {
-    nextTick(() => initGanttChart())
+    nextTick(() => initGanttChart());
   }
 }
 
+
 function switchView(mode) {
-  viewMode.value = mode
-  emit('view-mode-changed', mode)
-  refreshCurrentView()
+  viewMode.value = mode;
+  emit('view-mode-changed', mode);
+  refreshCurrentView();
 }
 
 function viewTask(task) {
   // Open task detail dialog
-  selectedTaskId.value = task.id
-  showTaskDetail.value = true
+  selectedTaskId.value = task.id;
+  showTaskDetail.value = true;
 }
+
+// 监听任务刷新信号
+watch(() => taskStore.refreshFlag, () => {
+  console.log('[TaskList] Refresh signal received')
+  refreshCurrentView()
+})
 
 /**
  * 编辑任务
@@ -703,97 +968,97 @@ function viewTask(task) {
  * TODO: 实现编辑功能
  */
 function editTask(task) {
-  console.log('Edit task:', task)
+  console.log('Edit task:', task);
 }
 
 function onTaskUpdate(data) {
-  console.log('Task updated:', data)
-  refreshCurrentView()
+  console.log('Task updated:', data);
+  refreshCurrentView();
 }
 
 function taskItemStyle(task) {
-  const style = {}
+  const style = {};
   if (task.color) {
-    style.backgroundColor = task.color
-    style.borderBottomColor = task.color
+    style.backgroundColor = task.color;
+    style.borderBottomColor = task.color;
   }
-  return style
+  return style;
 }
 
 function ownerUser(list) {
-  if (!list || !Array.isArray(list)) return []
+  if (!list || !Array.isArray(list)) return [];
   return list.filter(({ status, owner }) => status === 1 || owner === 1).sort((a, b) => {
-    return a.id - b.id
-  })
+    return a.id - b.id;
+  });
 }
 
 function handleOperationAction(action, task) {
   if (!task) {
-    return
+    return;
   }
   switch (action) {
     case 'mark-important':
-      setImportant(task)
-      break
+      setImportant(task);
+      break;
     case 'edit-task':
-      editTask(task)
-      break
+      editTask(task);
+      break;
     case 'delete-task':
-      removeTask(task)
-      break
+      removeTask(task);
+      break;
     case 'set-reminder':
-      setReminder(task)
-      break
+      setReminder(task);
+      break;
   }
 }
 
 function setImportant(task) {
-  if (!task) return
+  if (!task) return;
   
-  const newIsTop = task.mark === '1' ? 0 : 1
-  const oldMark = task.mark
+  const newIsTop = task.tag - 1 === 0 ? 0 : 1;
+  const oldMark = task.tag;
   
   // Optimistically update the UI
-  task.mark = newIsTop === 1 ? '1' : '0'
-  
+  task.tag = newIsTop === 1 ? '1' : '0';
+  console.log('task.tag', task.tag, newIsTop);
   // Call API
   ;(async () => {
     try {
-      const response = newIsTop === 1 
+      const response = newIsTop - 1 === 0 
         ? await todoApi.markImportant(task.id)
-        : await todoApi.unmarkImportant(task.id)
+        : await todoApi.unmarkImportant(task.id);
       
       if (response.code === '200') {
-        ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelMarkImportantSuccess'))
+        ElMessage.success(newIsTop === 1 ? t('task.markImportant') : t('task.cancelMarkImportantSuccess'));
         // Refresh task list to ensure consistency
         if (viewMode.value === 'list') {
-          fetchListTasks()
+          fetchListTasks();
         } else if (viewMode.value === 'kanban') {
-          initKanbanData()
+          initKanbanData();
         }
       } else {
         // Rollback on failure
-        task.mark = oldMark
-        ElMessage.error(response.message || t('task.operationFailed'))
+        task.tag = oldMark;
+        ElMessage.error(response.message || t('task.operationFailed'));
       }
     } catch (error) {
       // Rollback on error
-      task.mark = oldMark
-      ElMessage.error(t('task.operationFailed'))
-      console.error('Toggle important error:', error)
+      task.tag = oldMark;
+      ElMessage.error(t('task.operationFailed'));
+      console.error('Toggle important error:', error);
     }
-  })()
+  })();
 }
 
 function removeTask(task) {
-  console.log('Remove task:', task)
+  console.log('Remove task:', task);
   
   // Check task status - only completed tasks can be deleted
-  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status)
-  if (status !== TASK_STATUS.COMPLETED) {
-    ElMessage.warning(t('task.onlyCompletedCanDelete'))
-    return
-  }
+  const status = task.todoStatus !== undefined ? task.todoStatus : parseInt(task.status);
+  // if (status !== TASK_STATUS.COMPLETED) {
+  //   ElMessage.warning(t('task.onlyCompletedCanDelete'));
+  //   return;
+  // }
   
   // Confirm deletion
   ElMessageBox.confirm(
@@ -806,77 +1071,85 @@ function removeTask(task) {
     }
   ).then(async () => {
     try {
-      const result = await todoApi.deleteTodo(task.id)
+      const result = await todoApi.deleteTodo(task.id);
       if (result.code === '200') {
-        ElMessage.success(t('task.taskDeleteSuccess'))
-        emit('task-deleted', task.id)
+        ElMessage.success(t('task.taskDeleteSuccess'));
+        emit('task-deleted', task.id);
         // Refresh current view's task list
         if (viewMode.value === 'list') {
-          fetchListTasks()
+          fetchListTasks();
         } else if (viewMode.value === 'kanban') {
-          initKanbanData()
+          initKanbanData();
         }
       } else {
-        ElMessage.error(result.message || t('task.deleteFailed'))
+        ElMessage.error(result.message || t('task.deleteFailed'));
       }
     } catch (error) {
-      console.error('Delete task error:', error)
-      ElMessage.error(t('task.deleteFailed'))
+      console.error('Delete task error:', error);
+      ElMessage.error(t('task.deleteFailed'));
     }
   }).catch(() => {
     // User cancelled deletion
-  })
+  });
 }
 
 function setReminder(task) {
   // Reminder functionality
-  console.log('Set reminder:', task)
+  ElMessage.info('暂不支持催办功能');
+  console.log('Set reminder:', task);
 }
 
 function handleTaskUpdated(updatedTask) {
-  console.log('Task updated in dialog:', updatedTask)
+  console.log('Task updated in dialog:', updatedTask);
   // Refresh the task list to show updated data
-  refreshCurrentView()
+  refreshCurrentView();
 }
 
 function handleTaskDeleted(taskId) {
-  console.log('Task deleted in dialog:', taskId)
+  console.log('Task deleted in dialog:', taskId);
   // Refresh the task list to remove deleted task
-  refreshCurrentView()
+  refreshCurrentView();
 }
 
 function getSourceName(source) {
   const sourceMap = {
-    0: t('task.sourceSystem'),
-    7: t('task.sourceTask'),
-    8: t('task.sourceProject'),
-    9: t('task.sourceMeeting')
-  }
-  return sourceMap[source] || '-'
+    '-1': t('task.sourceOldData'),
+    '0': t('task.sourceSystem'),
+    '1': t('task.sourceMeetingNotes'),
+    '2': t('task.sourceEmail'),
+    '3': t('task.sourceIM'),
+    '4': t('task.sourceAskBob'),
+    '5': t('task.sourceOpenPlatform'),
+    '6': t('task.sourcePaCalendar'),
+    '7': t('task.sourceTask'),
+    '8': t('task.sourceProject'),
+    '9': t('task.sourceMeeting')
+  };
+  return sourceMap[source] || '-';
 }
 
 function initGanttChart() {
   if (!ganttChart.value) {
-    console.warn('Gantt chart element not found')
-    return
+    console.warn('Gantt chart element not found');
+    return;
   }
   
   if (typeof echarts === 'undefined') {
-    console.error('ECharts is not loaded')
-    return
+    console.error('ECharts is not loaded');
+    return;
   }
 
   if (ganttChartInstance.value) {
-    ganttChartInstance.value.dispose()
+    ganttChartInstance.value.dispose();
   }
 
-  ganttChartInstance.value = echarts.init(ganttChart.value)
+  ganttChartInstance.value = echarts.init(ganttChart.value);
 
-  let tasks = listTasks.value
+  let tasks = listTasks.value;
   
   // Use mock data in development environment if no data available
   if (import.meta.env.DEV && tasks.length === 0) {
-    const now = new Date()
+    const now = new Date();
     const mockTasks = [
       {
         id: 'gantt-mock-1',
@@ -942,8 +1215,8 @@ function initGanttChart() {
         deadLine: new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000).getTime(),
         todoStatus: 1
       }
-    ]
-    tasks = mockTasks
+    ];
+    tasks = mockTasks;
   }
   
   if (tasks.length === 0) {
@@ -955,15 +1228,15 @@ function initGanttChart() {
         left: 'center',
         top: 'center'
       }
-    }
-    ganttChartInstance.value.setOption(option)
-    return
+    };
+    ganttChartInstance.value.setOption(option);
+    return;
   }
 
   // Prepare data
-  const categories = tasks.map(task => task.content || task.name || task.title || t('task.title'))
+  const categories = tasks.map(task => task.content || task.name || task.title || t('task.title'));
   const data = tasks.map((task, index) => {
-    const times = getTimeObj(task)
+    const times = getTimeObj(task);
     return {
       name: categories[index],
       value: [
@@ -977,8 +1250,8 @@ function initGanttChart() {
           color: '#409EFF'  // Use bright blue color, consistent with create task button
         }
       }
-    }
-  })
+    };
+  });
 
   const option = {
     title: {
@@ -992,10 +1265,10 @@ function initGanttChart() {
     },
     tooltip: {
       formatter: function(params) {
-        const startDate = new Date(params.value[1]).toLocaleDateString('zh-CN')
-        const endDate = new Date(params.value[2]).toLocaleDateString('zh-CN')
-        const duration = Math.ceil((params.value[2] - params.value[1]) / (1000 * 60 * 60 * 24))
-        return `${params.name}<br/>${t('task.ganttStart')}: ${startDate}<br/>${t('task.ganttEnd')}: ${endDate}<br/>${t('task.ganttDuration')}: ${duration}${t('task.ganttDays')}`
+        const startDate = new Date(params.value[1]).toLocaleDateString('zh-CN');
+        const endDate = new Date(params.value[2]).toLocaleDateString('zh-CN');
+        const duration = Math.ceil((params.value[2] - params.value[1]) / (1000 * 60 * 60 * 24));
+        return `${params.name}<br/>${t('task.ganttStart')}: ${startDate}<br/>${t('task.ganttEnd')}: ${endDate}<br/>${t('task.ganttDuration')}: ${duration}${t('task.ganttDays')}`;
       }
     },
     grid: {
@@ -1022,8 +1295,8 @@ function initGanttChart() {
       },
       axisLabel: {
         formatter: function(value) {
-          const date = new Date(value)
-          return `${date.getMonth() + 1}/${date.getDate()}`
+          const date = new Date(value);
+          return `${date.getMonth() + 1}/${date.getDate()}`;
         },
         color: '#929ABA'
       }
@@ -1055,10 +1328,10 @@ function initGanttChart() {
       {
         type: 'custom',
         renderItem: function(params, api) {
-          const categoryIndex = api.value(0)
-          const start = api.coord([api.value(1), categoryIndex])
-          const end = api.coord([api.value(2), categoryIndex])
-          const height = api.size([0, 1])[1] * 0.6
+          const categoryIndex = api.value(0);
+          const start = api.coord([api.value(1), categoryIndex]);
+          const end = api.coord([api.value(2), categoryIndex]);
+          const height = api.size([0, 1])[1] * 0.6;
           
           const rectShape = echarts.graphic.clipRectByRect(
             {
@@ -1073,7 +1346,7 @@ function initGanttChart() {
               width: params.coordSys.width,
               height: params.coordSys.height
             }
-          )
+          );
           
           return (
             rectShape && {
@@ -1082,7 +1355,7 @@ function initGanttChart() {
               shape: rectShape,
               style: api.style()
             }
-          )
+          );
         },
         encode: {
           x: [1, 2],
@@ -1091,43 +1364,43 @@ function initGanttChart() {
         data: data
       }
     ]
-  }
+  };
 
-  ganttChartInstance.value.setOption(option)
+  ganttChartInstance.value.setOption(option);
   
   // Listen for window resize
   const resizeHandler = () => {
     if (ganttChartInstance.value) {
-      ganttChartInstance.value.resize()
+      ganttChartInstance.value.resize();
     }
-  }
+  };
   
-  window.removeEventListener('resize', resizeHandler)
-  window.addEventListener('resize', resizeHandler)
+  window.removeEventListener('resize', resizeHandler);
+  window.addEventListener('resize', resizeHandler);
 }
 
 function getTimeObj(taskData) {
   if (!taskData) {
-    const now = new Date()
+    const now = new Date();
     return {
       start: now.getTime(),
       end: now.getTime() + 86400000
-    }
+    };
   }
 
   // Prefer startTime, then createTime
   let start = taskData.startTime ? new Date(taskData.startTime).getTime() : 
-              (taskData.createTime ? new Date(taskData.createTime).getTime() : new Date().getTime())
+              (taskData.createTime ? new Date(taskData.createTime).getTime() : new Date().getTime());
   
   // Prefer deadLine, then end_at, default to start time + 1 day
   let end = taskData.deadLine ? new Date(taskData.deadLine).getTime() : 
-            (taskData.end_at ? new Date(taskData.end_at).getTime() : start + 86400000)
+            (taskData.end_at ? new Date(taskData.end_at).getTime() : start + 86400000);
 
   // Ensure end time is greater than start time
   return {
     start,
     end: Math.max(end, start + 60000)
-  }
+  };
 }
 
 function getStatusColor(status) {
@@ -1136,20 +1409,22 @@ function getStatusColor(status) {
     in_progress: 'var(--el-color-primary)',
     completed: 'var(--el-color-success)',
     overdue: 'var(--el-color-danger)'
-  }
-  return colorMap[status] || 'var(--el-color-primary)'
+  };
+  return colorMap[status] || 'var(--el-color-primary)';
 }
+
 </script>
 
 <style scoped lang="scss">
 // Style variables
 $primary-title-color: #1f2937;
 $primary-desc-color: #909399;
-$flow-status-start-color: $danger-color;
-$flow-status-progress-color: #fc984b;
+$flow-status-start-color: #ff9900;  // 橙色 - 待处理
+$flow-status-progress-color: #2db7f5;  // 蓝色 - 进行中
+$flow-status-overdue-color: #ed4014;  // 红色 - 已逾期
 $flow-status-test-color: #8b5cf6;
-$flow-status-end-color: $success-color;
-$flow-status-cancel-color: $info-color;
+$flow-status-end-color: #19be6b;  // 绿色 - 已完成
+$flow-status-cancel-color: #909399;  // 灰色 - 已取消
 
 .task-list {
   .task-list-header {
@@ -1178,170 +1453,6 @@ $flow-status-cancel-color: $info-color;
     .filter-btn {
       padding: 0 4px;
       min-width: auto;
-    }
-  }
-
-  .filter-content {
-    padding: 0;
-    max-height: 400px;
-    display: flex;
-    flex-direction: column;
-    
-    .filter-search {
-      padding: 12px;
-      flex-shrink: 0;
-      
-      .el-input {
-        width: 100%;
-      }
-    }
-    
-    // 状态筛选特殊样式
-    .status-filter-section {
-      padding: 12px;
-      
-      .status-all {
-        margin-bottom: 8px;
-        
-        .el-checkbox {
-          font-weight: 500;
-          
-          &.is-disabled {
-            .el-checkbox__label {
-              color: #c0c4cc;
-            }
-          }
-        }
-      }
-      
-      .status-normal {
-        .el-checkbox-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          
-          .el-checkbox {
-            margin: 0;
-            
-            &.is-disabled {
-              .el-checkbox__label {
-                color: #c0c4cc;
-              }
-              
-              .el-checkbox__input.is-disabled .el-checkbox__inner {
-                background-color: #f5f7fa;
-                border-color: #e4e7ed;
-                cursor: not-allowed;
-              }
-            }
-          }
-        }
-      }
-      
-      .status-deleted {
-        .el-checkbox {
-          color: #f56c6c;
-          font-weight: 500;
-          
-          .el-checkbox__input.is-checked .el-checkbox__inner {
-            background-color: #f56c6c;
-            border-color: #f56c6c;
-          }
-        }
-      }
-    }
-    
-    .assignee-list-wrapper {
-      flex: 1;
-      overflow-y: auto;
-      max-height: 320px;
-      margin-top: 16px !important;;
-      padding-top: 16px;
-      
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      &::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-      }
-      
-      &::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 3px;
-        
-        &:hover {
-          background: #a8a8a8;
-        }
-      }
-      
-      .no-result {
-        padding: 20px 12px;
-        text-align: center;
-        color: #909399;
-        font-size: 13px;
-      }
-    }
-    
-    .assignee-checkbox-group {
-      display: grid !important;
-      grid-template-columns: 1fr !important;
-      gap: 0 !important;
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-      
-      :deep(.el-checkbox) {
-        display: block !important;
-        width: 100% !important;
-      }
-    }
-    
-    .assignee-list-wrapper .el-checkbox-group {
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    
-    .assignee-list-wrapper .el-checkbox-group .el-checkbox {
-      display: block !important;
-      width: 100% !important;
-      padding: 10px 12px !important;
-      border-radius: 0 !important;
-      transition: background-color 0.2s;
-      
-      &:hover {
-        background-color: #f5f7fa;
-      }
-      
-      :deep(.el-checkbox__input) {
-        vertical-align: middle;
-        margin-right: 8px;
-      }
-      
-      :deep(.el-checkbox__label) {
-        font-size: 13px;
-        color: #606266;
-        padding-left: 0;
-        vertical-align: middle;
-      }
-      
-      :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
-        color: #409eff;
-      }
-    }
-    
-    .assignee-list-wrapper .el-checkbox-group .assignee-checkbox {
-      display: block !important;
-      width: 100% !important;
-      
-      .assignee-name {
-        display: inline-block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 180px;
-        vertical-align: middle;
-      }
     }
   }
 
@@ -1446,11 +1557,17 @@ $flow-status-cancel-color: $info-color;
             padding: 12px 12px 12px 12px !important;
             line-height: 24px;
             position: relative;
-            
+
             &.complete {
               .item-title {
                 color: #aaaaaa;
+              }
+            }
+
+            &.deleted {
+              .item-title {
                 text-decoration: line-through;
+                color: #999999;
               }
             }
 
@@ -1462,6 +1579,12 @@ $flow-status-cancel-color: $info-color;
               display: flex;
               align-items: center;
               flex-wrap: wrap;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              line-clamp: 2;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
+              text-overflow: ellipsis;
 
               .important-star {
                 color: #f7ba2a;
@@ -1478,34 +1601,40 @@ $flow-status-cancel-color: $info-color;
             display: flex;
             align-items: center;
             justify-content: center;
-            
+
             .flow-item-status {
-              font-size: 12px;
+              font-size: 14px;
               height: 20px;
               line-height: 18px;
               padding: 0 4px;
               border-radius: 3px;
               border: 1px solid transparent;
               display: inline-block;
-              
+
               &.start {
                 background-color: rgba($flow-status-start-color, 0.1);
                 border-color: rgba($flow-status-start-color, 0.1);
                 color: $flow-status-start-color;
               }
-              
+
               &.progress {
                 background-color: rgba($flow-status-progress-color, 0.1);
                 border-color: rgba($flow-status-progress-color, 0.1);
                 color: $flow-status-progress-color;
               }
-              
+
+              &.overdue {
+                background-color: rgba($flow-status-overdue-color, 0.1);
+                border-color: rgba($flow-status-overdue-color, 0.1);
+                color: $flow-status-overdue-color;
+              }
+
               &.end {
                 background-color: rgba($flow-status-end-color, 0.1);
                 border-color: rgba($flow-status-end-color, 0.1);
                 color: $flow-status-end-color;
               }
-              
+
               &.cancel {
                 background-color: rgba($flow-status-cancel-color, 0.1);
                 border-color: rgba($flow-status-cancel-color, 0.1);
@@ -1518,16 +1647,17 @@ $flow-status-cancel-color: $info-color;
             .user-list {
               display: flex;
               align-items: center;
-              
+              height: 24px;
+
               .user-avatar {
                 border: 2px solid #fff;
                 margin-left: -8px;
-                
+
                 &:first-child {
                   margin-left: 0;
                 }
               }
-              
+
               .more-users {
                 margin-left: 4px;
                 color: #909399;
@@ -1683,6 +1813,30 @@ $flow-status-cancel-color: $info-color;
       overflow-x: auto;
       padding-bottom: $spacing-lg;
 
+    
+
+    &.mobile-view {
+      .kanban-columns {
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+
+        .kanban-column {
+          min-width: 100%;
+          margin-bottom: 0;
+
+          .kanban-column-header {
+            display: none;
+          }
+
+          .kanban-tasks-wrapper {
+            height: auto;
+            max-height: calc(100vh - 350px);
+          }
+        }
+      }
+    }
+
       .kanban-column {
         flex: 1;
         min-width: 280px;
@@ -1761,22 +1915,26 @@ $flow-status-cancel-color: $info-color;
             line-height: 1.5;
             min-width: 0; // 关键：允许flex子元素收缩
 
+            &.deleted {
+              text-decoration: line-through;
+              color: #999999;
+            }
+
             .important-star {
               color: #f7ba2a;
               margin-right: 4px;
-              flex-shrink: 0;
-            }
-
-            // 文字部分需要单独处理省略号
-            .title-text {
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-              min-width: 0;
-              flex: 1;
+              flex-shrink: 0; // 图标不收缩
             }
           }
 
+          // 文字部分单独处理省略号
+          .title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+            flex: 1;
+          }
           .task-desc {
             font-size: $font-size-small;
             color: $text-secondary;
@@ -1820,7 +1978,7 @@ $flow-status-cancel-color: $info-color;
 
               li {
                 list-style: none;
-                margin-right: -6px;
+                margin-right: 4x;
                 flex-shrink: 0;
 
                 &:first-child {
@@ -1865,6 +2023,7 @@ $flow-status-cancel-color: $info-color;
     }
   }
 
+
   .task-gantt-view {
     background: #fff;
     border-radius: 8px;
@@ -1878,22 +2037,131 @@ $flow-status-cancel-color: $info-color;
   }
 }
 
-@font-face {
-  font-family: 'taskfont';
-  src: url('@/assets/fonts/taskfont.woff2') format('woff2'),
-       url('@/assets/fonts/taskfont.woff') format('woff'),
-       url('@/assets/fonts/taskfont.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+.filter-content {
+    padding: 0;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    
+    .status-divider {
+      border-top: 1px solid #e4e7ed;
+      margin: 8px 0;
+    }
+    
+    .deleted-status {
+      :deep(.el-checkbox__label) {
+        color: #f56c6c;
+      }
+      
+      :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+        color: #f56c6c;
+      }
+    }
+    
+    .filter-search {
+      padding: 0 12px 12px 12px;
+      flex-shrink: 0;
+      
+      .el-input {
+        width: 100%;
+      }
+    }
+    
+    .assignee-list-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 320px;
+      
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+        
+        &:hover {
+          background: #a8a8a8;
+        }
+      }
+      
+      .no-result {
+        padding: 20px 12px;
+        text-align: center;
+        color: #909399;
+        font-size: 13px;
+      }
+    }
+    
+    .assignee-checkbox-group {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 0 !important;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+      
+      :deep(.el-checkbox) {
+        display: block !important;
+        width: 100% !important;
+      }
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group .el-checkbox {
+      display: block !important;
+      width: 100% !important;
+      // padding: 10px 12px !important;
+      border-radius: 0 !important;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: #f5f7fa;
+      }
+      
+      :deep(.el-checkbox__input) {
+        vertical-align: middle;
+        margin-right: 8px;
+      }
+      
+      :deep(.el-checkbox__label) {
+        font-size: 13px;
+        color: #606266;
+        padding-left: 0;
+        vertical-align: middle;
+      }
+      
+      :deep(.el-checkbox__input.is-checked + .el-checkbox__label) {
+        color: #409eff;
+      }
+    }
+    
+    .assignee-list-wrapper .el-checkbox-group .assignee-checkbox {
+      display: block !important;
+      width: 100% !important;
 
-.taskfont {
-  font-family: "taskfont" !important;
-  font-style: normal;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+      .assignee-name {
+        display: inline-block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 180px;
+        height: 15px;
+        vertical-align: middle;
+      }
+    }
+  }
+</style>
 
+<style lang="scss">
 @media (max-width: 768px) {
   .task-list {
     .task-list-header {
@@ -1912,11 +2180,14 @@ $flow-status-cancel-color: $info-color;
         .project-table-head {
           overflow-x: auto;
           overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x pan-y;
           border-radius: 5px;
           
           /* 隐藏滚动条但保持滚动功能 */
           &::-webkit-scrollbar {
             height: 4px;
+            display: none;
           }
           
           &::-webkit-scrollbar-track {
@@ -1936,12 +2207,14 @@ $flow-status-cancel-color: $info-color;
         
         .project-table-body {
           overflow-x: auto;
-          overflow-y: visible;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x pan-y;
           
           /* 滚动条样式 */
           &::-webkit-scrollbar {
             height: 4px;
-            display: block !important;
+            display: block;
           }
           
           &::-webkit-scrollbar-track {
@@ -1996,6 +2269,144 @@ $flow-status-cancel-color: $info-color;
           min-width: 100%;
           margin-bottom: 16px;
         }
+      }
+    }
+  }
+  // 移动端状态Tab样式
+  .mobile-status-tabs {
+    /* 使用块级容器，内部包含flex容器 */
+    display: block;
+    padding: 8px 12px;
+    background: #f5f7fa;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 优化移动端触摸滚动 */
+    touch-action: pan-x;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    
+    /* 优化滚动条样式 - 更适合移动端 */
+    scrollbar-width: thin; /* Firefox - 细滚动条 */
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent; /* Firefox */
+    
+    &::-webkit-scrollbar {
+      height: 3px; /* 更细的滚动条 */
+      display: block;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+      
+      &:hover {
+        background: rgba(0, 0, 0, 0.3);
+      }
+      
+      /* 移动端触摸时的样式 */
+      &:active {
+        background: rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    /* 右侧渐变遮罩，提示用户可以滑动 - 只在有滚动内容时显示 */
+    &.has-scroll-hint::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      bottom: 8px;
+      width: 20px;
+      background: linear-gradient(to right, transparent, #f5f7fa);
+      pointer-events: none;
+      border-radius: 0 8px 8px 0;
+      opacity: 0.8;
+      transition: opacity 0.3s ease;
+    }
+    
+    /* 滚动到末尾时隐藏渐变遮罩 */
+    &.scroll-at-end::after {
+      opacity: 0;
+    }
+
+    /* 内部flex容器 */
+    .tabs-wrapper {
+      display: flex;
+      gap: 8px;
+      /* 确保内容宽度足够滚动 */
+      min-width: max-content;
+      width: max-content;
+      /* 为滚动条留出空间 */
+      padding-bottom: 2px;
+      /* 为右侧渐变遮罩留出空间 */
+      padding-right: 25px;
+    }
+
+    .status-tab {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      /* 确保每个tab有最小宽度且不收缩 */
+      min-width: 70px;
+      flex-shrink: 0;
+      padding: 6px 12px;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid #e4e7ed;
+      height: 32px;
+      box-sizing: border-box;
+      
+      /* 移动端触摸优化 */
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+
+      &:active {
+        transform: scale(0.95);
+      }
+
+      &.active {
+        background: #409eff;
+        border-color: #409eff;
+        box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+
+        .tab-label {
+          color: #fff;
+        }
+
+        .tab-count {
+          color: rgba(255, 255, 255, 0.9);
+        }
+      }
+
+      .tab-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #606266;
+        margin-bottom: 0;
+        transition: color 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .tab-count {
+        font-size: 13px;
+        font-weight: 600;
+        color: #409eff;
+        transition: color 0.2s ease;
+        white-space: nowrap;
       }
     }
   }
